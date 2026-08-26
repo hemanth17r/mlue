@@ -1,7 +1,8 @@
-"""MLUE Phase 0.5 Data Model
+"""MLUE Phase 0.6 Data Model
 
 Defines structured representations for MLUE entities, geometry, velocity,
-declarative state variables, relational trigger rules, and evaluated states.
+declarative state variables, relational trigger rules, collision events,
+entity lifecycles, and evaluated simulation states.
 """
 
 from dataclasses import dataclass, field
@@ -39,6 +40,7 @@ class Entity:
     size: Union[CircleSize, BoxSize]
     velocity: Velocity = field(default_factory=Velocity)
     properties: Dict[str, Any] = field(default_factory=dict)
+    active: bool = True
 
 
 @dataclass(frozen=True)
@@ -50,10 +52,11 @@ class Environment:
 
 @dataclass(frozen=True)
 class Condition:
-    entity: str
-    property: str
     op: str
-    value: float
+    value: Any
+    entity: Optional[str] = None
+    property: Optional[str] = None
+    state_variable: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -62,6 +65,7 @@ class Action:
     target: str
     amount: Optional[float] = None
     value: Optional[Any] = None
+    property: Optional[str] = None
     position: Optional[Position] = None
     velocity: Optional[Velocity] = None
 
@@ -69,8 +73,10 @@ class Action:
 @dataclass(frozen=True)
 class Rule:
     trigger: str
-    condition: Condition
-    actions: List[Action]
+    actions: List[Action] = field(default_factory=list)
+    event: Optional[str] = None
+    entities: Optional[Tuple[str, str]] = None
+    condition: Optional[Condition] = None
 
 
 @dataclass(frozen=True)

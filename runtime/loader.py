@@ -1,13 +1,13 @@
-"""MLUE Phase 0.5 Document Loader & Validator
+"""MLUE Phase 0.6 Document Loader & Validator
 
 Loads machine-oriented MLUE specifications and verifies semantic constraints.
-Supports MLUE schema versions 0.1, 0.2, 0.3, 0.4, and 0.5.
+Supports MLUE schema versions 0.1, 0.2, 0.3, 0.4, 0.5, and 0.6.
 """
 
 import json
 import math
 from pathlib import Path
-from typing import Union, Dict, Any, List
+from typing import Union, Dict, Any, List, Optional, Tuple
 from .model import (
     MLUEDocument,
     Entity,
@@ -60,9 +60,9 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         raise MLUEValidationError("MLUE document root must be a dictionary/object.")
 
     version = data.get("mlue_version")
-    if version not in ("0.1", "0.2", "0.3", "0.4", "0.5"):
+    if version not in ("0.1", "0.2", "0.3", "0.4", "0.5", "0.6"):
         raise MLUEValidationError(
-            f"Unsupported MLUE version '{version}'. Expected '0.1', '0.2', '0.3', '0.4', or '0.5'."
+            f"Unsupported MLUE version '{version}'. Expected '0.1', '0.2', '0.3', '0.4', '0.5', or '0.6'."
         )
 
     # Environment
@@ -80,7 +80,7 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
 
     environment = Environment(width=dims[0], height=dims[1], background=background)
 
-    # State Variables (Phase 0.5)
+    # State Variables
     state_variables_raw = data.get("state_variables", {})
     if not isinstance(state_variables_raw, dict):
         raise MLUEValidationError("'state_variables' must be a dictionary.")
@@ -111,6 +111,9 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             raise MLUEValidationError(
                 f"Entity '{ent_id}' has unsupported type '{ent_type}'. Supported types: 'circle', 'box'."
             )
+
+        # Active state (default True)
+        active = bool(ent_raw.get("active", True))
 
         # Position
         pos_raw = ent_raw.get("position")
@@ -149,7 +152,7 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
                 )
             size = BoxSize(width=float(width), height=float(height))
 
-        # Velocity (Optional, defaults to 0.0, 0.0)
+        # Velocity (Optional)
         vel_raw = ent_raw.get("velocity", {})
         if not isinstance(vel_raw, dict):
             raise MLUEValidationError(f"Entity '{ent_id}' 'velocity' must be an object if specified.")
@@ -171,7 +174,7 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         if "solid" in properties and not isinstance(properties["solid"], bool):
             raise MLUEValidationError(f"Entity '{ent_id}' properties.solid must be a boolean.")
 
-        # Control Configuration (Phase 0.4)
+        # Control Configuration
         if "control" in properties:
             ctrl = properties["control"]
             if not isinstance(ctrl, dict):
@@ -192,11 +195,12 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             position=Position(x=float(x), y=float(y)),
             size=size,
             velocity=velocity,
-            properties=properties
+            properties=dict(properties),
+            active=active,
         )
         entities.append(entity)
 
-    # Rules Validation (Phase 0.5)
+    # Rules Validation
     rules_data = data.get("rules", [])
     if not isinstance(rules_data, list):
         raise MLUEValidationError("'rules' must be a list of rule objects.")
@@ -210,33 +214,62 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         if not isinstance(trigger, str):
             raise MLUEValidationError(f"Rule at index {r_idx} 'trigger' must be a string.")
 
-        cond_raw = rule_raw.get("condition")
-        if not isinstance(cond_raw, dict):
-            raise MLUEValidationError(f"Rule '{trigger}' requires a 'condition' object.")
+        event_name = rule_raw.get("event")
+        entities_pair: Optional[Tuple[str, str]] = None
+        condition: Optional[Condition] = None
 
-        target_ent = cond_raw.get("entity")
-        if target_ent not in seen_ids:
-            raise MLUEValidationError(
-                f"Rule '{trigger}' condition targets unknown entity '{target_ent}'."
-            )
+        if event_name is not None:
+            if event_name != "collision":
+                raise MLUEValidationError(
+                    f"Rule '{trigger}' event '{event_name}' is unsupported. Supported: 'collision'."
+                )
+            pair_raw = rule_raw.get("entities")
+            if not (isinstance(pair_raw, list) and len(pair_raw) == 2 and all(isinstance(e, str) for e in pair_raw)):
+                raise MLUEValidationError(
+                    f"Rule '{trigger}' collision event requires 'entities' list of two entity IDs."
+                )
+            for ent_ref in pair_raw:
+                if ent_ref not in seen_ids:
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' collision event targets unknown entity '{ent_ref}'."
+                    )
+            entities_pair = (pair_raw[0], pair_raw[1])
+        else:
+            cond_raw = rule_raw.get("condition")
+            if not isinstance(cond_raw, dict):
+                raise MLUEValidationError(f"Rule '{trigger}' requires either an 'event' or 'condition' object.")
 
-        prop_name = cond_raw.get("property")
-        if prop_name not in ("position.x", "position.y", "velocity.vx", "velocity.vy"):
-            raise MLUEValidationError(
-                f"Rule '{trigger}' condition property '{prop_name}' is invalid. Supported: position.x, position.y, velocity.vx, velocity.vy."
-            )
+            op = cond_raw.get("op", "==")
+            if op not in ("<=", ">=", "==", "<", ">"):
+                raise MLUEValidationError(
+                    f"Rule '{trigger}' condition op '{op}' is invalid. Supported: <=, >=, ==, <, >."
+                )
 
-        op = cond_raw.get("op")
-        if op not in ("<=", ">=", "==", "<", ">"):
-            raise MLUEValidationError(
-                f"Rule '{trigger}' condition op '{op}' is invalid. Supported: <=, >=, ==, <, >."
-            )
+            val = cond_raw.get("value")
 
-        cond_val = cond_raw.get("value")
-        if not (isinstance(cond_val, (int, float)) and not math.isnan(cond_val)):
-            raise MLUEValidationError(f"Rule '{trigger}' condition 'value' must be a finite number.")
+            if "state_variable" in cond_raw:
+                sv_name = cond_raw["state_variable"]
+                if sv_name not in state_variables:
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' condition targets unknown state_variable '{sv_name}'."
+                    )
+                condition = Condition(state_variable=sv_name, op=op, value=val)
+            else:
+                target_ent = cond_raw.get("entity")
+                if target_ent not in seen_ids:
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' condition targets unknown entity '{target_ent}'."
+                    )
 
-        condition = Condition(entity=target_ent, property=prop_name, op=op, value=float(cond_val))
+                prop_name = cond_raw.get("property")
+                if prop_name not in ("position.x", "position.y", "velocity.vx", "velocity.vy"):
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' condition property '{prop_name}' is invalid."
+                    )
+                if not (isinstance(val, (int, float)) and not math.isnan(val)):
+                    raise MLUEValidationError(f"Rule '{trigger}' condition 'value' must be a finite number.")
+
+                condition = Condition(entity=target_ent, property=prop_name, op=op, value=float(val))
 
         actions_data = rule_raw.get("actions")
         if not isinstance(actions_data, list) or len(actions_data) == 0:
@@ -250,7 +283,25 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             act_type = act_raw.get("type")
             target = act_raw.get("target")
 
-            if act_type == "increment":
+            if act_type in ("destroy_entity", "deactivate_entity"):
+                if target not in seen_ids:
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' {act_type} action targets unknown entity '{target}'."
+                    )
+                actions.append(Action(type="destroy_entity", target=target))
+            elif act_type == "set_property":
+                if target not in seen_ids:
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' set_property action targets unknown entity '{target}'."
+                    )
+                prop_key = act_raw.get("property")
+                if not isinstance(prop_key, str):
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' set_property action requires a 'property' string."
+                    )
+                prop_val = act_raw.get("value")
+                actions.append(Action(type="set_property", target=target, property=prop_key, value=prop_val))
+            elif act_type == "increment":
                 if target not in state_variables:
                     raise MLUEValidationError(
                         f"Rule '{trigger}' increment action targets unknown state_variable '{target}'."
@@ -278,10 +329,16 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
                 )
             else:
                 raise MLUEValidationError(
-                    f"Rule '{trigger}' action type '{act_type}' is unsupported. Supported: increment, set, reset_entity."
+                    f"Rule '{trigger}' action type '{act_type}' is unsupported."
                 )
 
-        rules.append(Rule(trigger=trigger, condition=condition, actions=actions))
+        rules.append(Rule(
+            trigger=trigger,
+            actions=actions,
+            event=event_name,
+            entities=entities_pair,
+            condition=condition,
+        ))
 
     return MLUEDocument(
         version=version,

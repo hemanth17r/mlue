@@ -1,4 +1,4 @@
-# MLUE — Phase 0.5 Capstone (Emergent Pong)
+# MLUE — Phase 0.6 Emergent Destruction & Dynamic Collision Triggers
 
 > **"AI is the builder. Humans are users."**
 
@@ -6,15 +6,14 @@ MLUE is a long-term research and engineering project to build a fundamentally **
 
 ---
 
-## 1. Phase 0.5 Objective (Phase 0 Capstone Proof)
+## 1. Phase 0.6 Objective
 
-Deliver the foundational capstone proof of the MLUE primitive vocabulary: **Emergent Pong**.
-
-Proving that a complete, real-time interactive game emerges **100% from declarative MLUE primitives** without a single line of bespoke "game engine" code:
-1. **State Variables**: Declarative document-level variables (`score_left`, `score_right`).
-2. **Relational Condition Triggers & Actions**: Universal declarative rules evaluated on every simulation step:
-   $$\text{Condition } (x_{\text{ball}} \le 0.025) \implies \text{Actions } \{\text{increment score\_right}, \text{reset ball position \& velocity}\}$$
-3. **Emergent Game Loop**: Combining solid geometry, velocity integration, pairwise collisions, input channels, and trigger rules into a sovereign game system.
+Advance MLUE declarative architecture from boundary rules to **dynamic collision-based triggers and entity lifecycle management**:
+1. **Collision-Based Rule Triggers**: First-class detection and firing of events when two solid entities collide (`event: "collision"`).
+2. **Entity Lifecycle Management**: Deactivation and removal of entities from the computational and rendering space (`"destroy_entity"` / `"deactivate_entity"`).
+3. **Property Mutations**: Dynamic modification of entity properties (`"set_property"`).
+4. **State Variable Condition Triggers**: Evaluating rules based on document-level state variables (e.g. win/loss thresholds: `bricks_remaining <= 0`).
+5. **Emergent Breakout Capstone**: A complete Brick Breaker game (`examples/breakout.mlue`) composed 100% from declarative MLUE primitives without bespoke game engine code.
 
 ---
 
@@ -29,22 +28,24 @@ mlue/
 │   ├── 0.3.md                        # Phase 0.3 spec (relational constraints & collisions)
 │   ├── 0.4.md                        # Phase 0.4 spec (input signals & control channels)
 │   ├── 0.5.md                        # Phase 0.5 spec (state variables, rules & Emergent Pong)
+│   ├── 0.6.md                        # Phase 0.6 spec (collision events, destruction & Emergent Breakout)
 │   └── replacement_map.md            # Dependency tracking and replacement map
 ├── runtime/
 │   ├── __init__.py                    # Package exports
-│   ├── loader.py                      # Parses & validates .mlue representations (0.1 through 0.5)
-│   ├── model.py                       # Computational data structures, rules & simulation state
-│   ├── engine.py                      # Deterministic MLUE evaluation, collisions, inputs & rule engine
-│   └── adapter.py                     # Bootstrap scaffolding adapter (Tkinter animation, keys & score HUD)
+│   ├── loader.py                      # Parses & validates .mlue representations (0.1 through 0.6)
+│   ├── model.py                       # Computational data structures, lifecycle & simulation state
+│   ├── engine.py                      # Deterministic MLUE evaluation, collisions, destruction & rule engine
+│   └── adapter.py                     # Bootstrap scaffolding adapter (Tkinter animation, keys & multi-HUD)
 ├── examples/
 │   ├── first_object.mlue              # Phase 0.1 static circle entity
 │   ├── bouncing_ball.mlue             # Phase 0.2 single bouncing ball simulation
 │   ├── multi_entity_simulation.mlue   # Phase 0.2 multi-entity simulation (paddles + ball)
 │   ├── collision_showcase.mlue        # Phase 0.3 multi-entity relational collision showcase
 │   ├── interactive_paddles.mlue       # Phase 0.4 keyboard-controllable paddles
-│   └── pong.mlue                      # Phase 0.5 Emergent Pong (Complete Capstone Game)
+│   ├── pong.mlue                      # Phase 0.5 Emergent Pong (Complete Capstone Game)
+│   └── breakout.mlue                  # Phase 0.6 Emergent Breakout (Destruction Capstone Game)
 ├── tests/
-│   └── test_runtime.py                # Automated unit tests (12 tests: geometry, collisions, rules, match loop)
+│   └── test_runtime.py                # Automated unit tests (14 tests: geometry, collisions, destruction, matches)
 └── mlue.py                            # CLI runner (static snapshot & dynamic simulation)
 ```
 
@@ -54,6 +55,9 @@ mlue/
 
 ### Interactive Simulations (Desktop Window)
 ```bash
+# Play Phase 0.6 Emergent Breakout (Paddle: A/D or Left/Right)
+python mlue.py run examples/breakout.mlue
+
 # Play Phase 0.5 Emergent Pong (Left: W/S, Right: Up/Down)
 python mlue.py run examples/pong.mlue
 
@@ -72,8 +76,8 @@ python mlue.py run examples/first_object.mlue
 
 ### Headless Mode (Deterministic Evaluation Engine)
 ```bash
-# Evaluate 60 simulation steps of Pong deterministically in headless mode
-python mlue.py run examples/pong.mlue --headless --ticks 60
+# Evaluate 60 simulation steps of Breakout deterministically in headless mode
+python mlue.py run examples/breakout.mlue --headless --ticks 60
 ```
 
 ### Run Unit Tests
@@ -88,35 +92,37 @@ python -m unittest discover -s tests -p "test_*.py"
 ```text
                      MLUE LAYER (Native & Enduring)
 ─────────────────────────────────────────────────────────────────────────────
-• Representation Schema (spec/0.1.md through spec/0.5.md)
+• Representation Schema (spec/0.1.md through spec/0.6.md)
 • Normalized Spatial Extents, Geometry & Velocity Vectors
 • Abstract Control Channels & Input Vector Modulation
 • Pairwise Relational Collisions & Exact Normal Reflections
-• Declarative Trigger Rules, State Variable Mutations & Entity Resets (runtime/engine.py)
+• Collision Event Sets, Entity Lifecycle Destruction & State Conditions (runtime/engine.py)
 ─────────────────────────────────────────────────────────────────────────────
                      BOOTSTRAP LAYER (Disposable Scaffolding)
 ─────────────────────────────────────────────────────────────────────────────
 • Host Runtime Language (Python 3.13 standard library)
 • Host Windowing & Canvas Driver (Tkinter / Win32)
-• Host Key Scancode Mapper & Score Header Display
+• Host Key Scancode Mapper & Multi-variable HUD Display
 ```
 
 * **No External Dependencies**: Built 100% with Python standard library (0 third-party packages).
-* **Pure Mathematical Core**: All game rules, collision responses, input modulations, and score updates run inside `MLUEEngine`, with zero dependencies on external game frameworks.
+* **Pure Mathematical Core**: Collision detection, destruction filtering, and state transitions operate inside `MLUEEngine`, with zero external dependencies.
 
 ---
 
 ## 5. Scope Boundaries
 
-### What Was Built in Phase 0.5:
-* Declarative state variables (`state_variables`).
-* Universal declarative trigger rules (`rules`: conditions + actions).
-* State variable mutations (`increment`, `set`) and entity state resets (`reset_entity`).
-* The complete Emergent Pong game document (`examples/pong.mlue`).
-* 12 automated unit tests verifying rules, triggers, score mutations, and full headless match simulations.
+### What Was Built in Phase 0.6:
+* First-class collision event rules (`event: "collision"`).
+* Entity lifecycle deactivation actions (`destroy_entity`, `deactivate_entity`).
+* Property mutation actions (`set_property`).
+* State variable condition rules (e.g. `bricks_remaining <= 0`).
+* Horizontal player control routing (`player_bottom`).
+* The complete Emergent Breakout game document (`examples/breakout.mlue`).
+* 14 automated unit tests verifying destruction, collision triggers, state conditions, and regression.
 
-### What Was Deliberately NOT Built in Phase 0.5 (Strict Scope Control):
-* Bespoke `PongManager` classes or hardcoded game scripts.
+### What Was Deliberately NOT Built in Phase 0.6 (Strict Scope Control):
+* Bespoke `BreakoutManager` or hardcoded brick grid scripts.
+* Particle effect explosion engines.
 * Audio synthesis libraries.
 * Network multiplayer sockets.
-* Custom binary execution runtimes (Phase 1).

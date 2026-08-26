@@ -1,0 +1,242 @@
+{
+  "mlue_version": "0.6",
+  "environment": {
+    "dimensions": [750, 500],
+    "background": "#0F172A"
+  },
+  "state_variables": {
+    "score": 0,
+    "lives": 3,
+    "bricks_remaining": 6,
+    "game_state": "PLAYING"
+  },
+  "entities": [
+    {
+      "id": "ball_01",
+      "type": "circle",
+      "position": {
+        "x": 0.5,
+        "y": 0.7
+      },
+      "size": {
+        "radius": 0.025
+      },
+      "velocity": {
+        "vx": 0.35,
+        "vy": -0.45
+      },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": true
+      }
+    },
+    {
+      "id": "paddle_bottom",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "size": {
+        "width": 0.22,
+        "height": 0.035
+      },
+      "properties": {
+        "color": "#10B981",
+        "solid": true,
+        "control": {
+          "channel": "player_bottom",
+          "axis": "x",
+          "speed": 0.7
+        }
+      }
+    },
+    {
+      "id": "brick_01",
+      "type": "box",
+      "position": {
+        "x": 0.25,
+        "y": 0.18
+      },
+      "size": {
+        "width": 0.18,
+        "height": 0.055
+      },
+      "properties": {
+        "color": "#F43F5E",
+        "solid": true
+      }
+    },
+    {
+      "id": "brick_02",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.18
+      },
+      "size": {
+        "width": 0.18,
+        "height": 0.055
+      },
+      "properties": {
+        "color": "#F43F5E",
+        "solid": true
+      }
+    },
+    {
+      "id": "brick_03",
+      "type": "box",
+      "position": {
+        "x": 0.75,
+        "y": 0.18
+      },
+      "size": {
+        "width": 0.18,
+        "height": 0.055
+      },
+      "properties": {
+        "color": "#F43F5E",
+        "solid": true
+      }
+    },
+    {
+      "id": "brick_04",
+      "type": "box",
+      "position": {
+        "x": 0.25,
+        "y": 0.26
+      },
+      "size": {
+        "width": 0.18,
+        "height": 0.055
+      },
+      "properties": {
+        "color": "#F59E0B",
+        "solid": true
+      }
+    },
+    {
+      "id": "brick_05",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.26
+      },
+      "size": {
+        "width": 0.18,
+        "height": 0.055
+      },
+      "properties": {
+        "color": "#F59E0B",
+        "solid": true
+      }
+    },
+    {
+      "id": "brick_06",
+      "type": "box",
+      "position": {
+        "x": 0.75,
+        "y": 0.26
+      },
+      "size": {
+        "width": 0.18,
+        "height": 0.055
+      },
+      "properties": {
+        "color": "#F59E0B",
+        "solid": true
+      }
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "hit_brick_01",
+      "event": "collision",
+      "entities": ["ball_01", "brick_01"],
+      "actions": [
+        { "type": "destroy_entity", "target": "brick_01" },
+        { "type": "increment", "target": "score", "amount": 100 },
+        { "type": "increment", "target": "bricks_remaining", "amount": -1 }
+      ]
+    },
+    {
+      "trigger": "hit_brick_02",
+      "event": "collision",
+      "entities": ["ball_01", "brick_02"],
+      "actions": [
+        { "type": "destroy_entity", "target": "brick_02" },
+        { "type": "increment", "target": "score", "amount": 100 },
+        { "type": "increment", "target": "bricks_remaining", "amount": -1 }
+      ]
+    },
+    {
+      "trigger": "hit_brick_03",
+      "event": "collision",
+      "entities": ["ball_01", "brick_03"],
+      "actions": [
+        { "type": "destroy_entity", "target": "brick_03" },
+        { "type": "increment", "target": "score", "amount": 100 },
+        { "type": "increment", "target": "bricks_remaining", "amount": -1 }
+      ]
+    },
+    {
+      "trigger": "hit_brick_04",
+      "event": "collision",
+      "entities": ["ball_01", "brick_04"],
+      "actions": [
+        { "type": "destroy_entity", "target": "brick_04" },
+        { "type": "increment", "target": "score", "amount": 100 },
+        { "type": "increment", "target": "bricks_remaining", "amount": -1 }
+      ]
+    },
+    {
+      "trigger": "hit_brick_05",
+      "event": "collision",
+      "entities": ["ball_01", "brick_05"],
+      "actions": [
+        { "type": "destroy_entity", "target": "brick_05" },
+        { "type": "increment", "target": "score", "amount": 100 },
+        { "type": "increment", "target": "bricks_remaining", "amount": -1 }
+      ]
+    },
+    {
+      "trigger": "hit_brick_06",
+      "event": "collision",
+      "entities": ["ball_01", "brick_06"],
+      "actions": [
+        { "type": "destroy_entity", "target": "brick_06" },
+        { "type": "increment", "target": "score", "amount": 100 },
+        { "type": "increment", "target": "bricks_remaining", "amount": -1 }
+      ]
+    },
+    {
+      "trigger": "floor_breach",
+      "condition": {
+        "entity": "ball_01",
+        "property": "position.y",
+        "op": ">=",
+        "value": 0.98
+      },
+      "actions": [
+        { "type": "increment", "target": "lives", "amount": -1 },
+        {
+          "type": "reset_entity",
+          "target": "ball_01",
+          "position": { "x": 0.5, "y": 0.7 },
+          "velocity": { "vx": 0.35, "vy": -0.45 }
+        }
+      ]
+    },
+    {
+      "trigger": "check_victory",
+      "condition": {
+        "state_variable": "bricks_remaining",
+        "op": "<=",
+        "value": 0
+      },
+      "actions": [
+        { "type": "set", "target": "game_state", "value": "VICTORY" }
+      ]
+    }
+  ]
+}

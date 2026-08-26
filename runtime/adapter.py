@@ -1,7 +1,8 @@
-"""MLUE Phase 0.5 Bootstrap Display Adapter
+"""MLUE Phase 0.6 Bootstrap Display Adapter
 
 Temporary scaffolding adapter that maps evaluated MLUE computational state,
-simulations, and state variable HUDs to an observable desktop window via Tkinter.
+simulations, dynamic entity destructions, and multi-variable HUDs to an
+observable desktop window via Tkinter.
 """
 
 import sys
@@ -14,7 +15,7 @@ from .engine import MLUEEngine
 class TkinterAdapter:
     """Disposable bootstrap scaffolding for rendering MLUE state and simulations to OS display."""
 
-    def __init__(self, title: str = "MLUE Runtime — Phase 0.5 Capstone"):
+    def __init__(self, title: str = "MLUE Runtime — Phase 0.6 Capstone"):
         self.title = title
 
     def _draw_shape(self, canvas, shape: ComputedShape):
@@ -96,7 +97,7 @@ class TkinterAdapter:
             if cid is not None:
                 item_ids[shape.id] = cid
 
-        # HUD Text item for state variables (e.g. scores)
+        # HUD Text item for state variables (e.g. scores, lives, game state)
         hud_id: Optional[int] = None
         if state.state_variables:
             hud_text = "   ".join(f"{k.upper()}: {int(v) if isinstance(v, (int, float)) else v}" for k, v in state.state_variables.items())
@@ -154,15 +155,29 @@ class TkinterAdapter:
                 right_y += 1.0
             inputs["player_right"] = right_y
 
+            # Bottom horizontal channel for Breakout paddle (A/Left = -1.0, D/Right = +1.0)
+            bottom_x = 0.0
+            if "a" in pressed_keys or "left" in pressed_keys:
+                bottom_x -= 1.0
+            if "d" in pressed_keys or "right" in pressed_keys:
+                bottom_x += 1.0
+            inputs["player_bottom"] = bottom_x
+
             # Advance simulation step in MLUE Engine with input signals
             state = engine.step(state, dt, inputs=inputs)
 
-            # Update presentation layer coords
-            for shape in state.result.shapes:
-                cid = item_ids.get(shape.id)
-                if cid is not None:
+            # Map active shapes
+            active_shapes = {shape.id: shape for shape in state.result.shapes}
+
+            # Update presentation layer coords or hide destroyed shapes
+            for ent_id, cid in item_ids.items():
+                if ent_id in active_shapes:
+                    shape = active_shapes[ent_id]
                     x0, y0, x1, y1 = shape.bbox
                     canvas.coords(cid, x0, y0, x1, y1)
+                    canvas.itemconfig(cid, fill=shape.color, state="normal")
+                else:
+                    canvas.itemconfig(cid, state="hidden")
 
             # Update HUD text if present
             if hud_id is not None and state.state_variables:
