@@ -1,0 +1,84 @@
+{
+  "mlue_version": "0.2",
+  "environment": {
+    "dimensions": [600, 400],
+    "background": "#0F172A"
+  },
+  "entities": [
+    {
+      "id": "ball_01",
+      "type": "circle",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "radius": 0.04
+      },
+      "velocity": {
+        "vx": 0.35,
+        "vy": 0.25
+      },
+      "properties": {
+        "color": "#38BDF8"
+      }
+    },
+    {
+      "id": "paddle_left",
+      "type": "box",
+      "position": {
+        "x": 0.05,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.025,
+        "height": 0.25
+      },
+      "velocity": {
+        "vx": 0.0,
+        "vy": 0.2
+      },
+      "properties": {
+        "color": "#F43F5E"
+      }
+    },
+    {
+      "id": "paddle_right",
+      "type": "box",
+      "position": {
+        "x": 0.95,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.025,
+        "height": 0.25
+      },
+      "velocity": {
+        "vx": 0.0,
+        "vy": -0.2
+      },
+      "properties": {
+        "color": "#10B981"
+      }
+    },
+    {
+      "id": "center_barrier",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.008,
+        "height": 0.75
+      },
+      "velocity": {
+        "vx": 0.0,
+        "vy": 0.0
+      },
+      "properties": {
+        "color": "#334155"
+      }
+    }
+  ]
+}

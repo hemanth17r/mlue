@@ -1,0 +1,86 @@
+{
+  "mlue_version": "0.4",
+  "environment": {
+    "dimensions": [700, 450],
+    "background": "#0F172A"
+  },
+  "entities": [
+    {
+      "id": "ball_01",
+      "type": "circle",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "radius": 0.035
+      },
+      "velocity": {
+        "vx": 0.45,
+        "vy": 0.28
+      },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": true
+      }
+    },
+    {
+      "id": "paddle_left",
+      "type": "box",
+      "position": {
+        "x": 0.05,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.025,
+        "height": 0.35
+      },
+      "properties": {
+        "color": "#F43F5E",
+        "solid": true,
+        "control": {
+          "channel": "player_left",
+          "axis": "y",
+          "speed": 0.55
+        }
+      }
+    },
+    {
+      "id": "paddle_right",
+      "type": "box",
+      "position": {
+        "x": 0.95,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.025,
+        "height": 0.35
+      },
+      "properties": {
+        "color": "#10B981",
+        "solid": true,
+        "control": {
+          "channel": "player_right",
+          "axis": "y",
+          "speed": 0.55
+        }
+      }
+    },
+    {
+      "id": "center_net",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.005,
+        "height": 0.85
+      },
+      "properties": {
+        "color": "#334155",
+        "solid": false
+      }
+    }
+  ]
+}

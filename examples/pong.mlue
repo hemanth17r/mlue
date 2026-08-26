@@ -1,0 +1,148 @@
+{
+  "mlue_version": "0.5",
+  "environment": {
+    "dimensions": [750, 480],
+    "background": "#0F172A"
+  },
+  "state_variables": {
+    "score_left": 0,
+    "score_right": 0
+  },
+  "entities": [
+    {
+      "id": "ball_01",
+      "type": "circle",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "radius": 0.035
+      },
+      "velocity": {
+        "vx": 0.45,
+        "vy": 0.28
+      },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": true
+      }
+    },
+    {
+      "id": "paddle_left",
+      "type": "box",
+      "position": {
+        "x": 0.05,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.02,
+        "height": 0.28
+      },
+      "properties": {
+        "color": "#F43F5E",
+        "solid": true,
+        "control": {
+          "channel": "player_left",
+          "axis": "y",
+          "speed": 0.6
+        }
+      }
+    },
+    {
+      "id": "paddle_right",
+      "type": "box",
+      "position": {
+        "x": 0.95,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.02,
+        "height": 0.28
+      },
+      "properties": {
+        "color": "#10B981",
+        "solid": true,
+        "control": {
+          "channel": "player_right",
+          "axis": "y",
+          "speed": 0.6
+        }
+      }
+    },
+    {
+      "id": "net_divider",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "width": 0.004,
+        "height": 0.9
+      },
+      "properties": {
+        "color": "#334155",
+        "solid": false
+      }
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "goal_left",
+      "condition": {
+        "entity": "ball_01",
+        "property": "position.x",
+        "op": "<=",
+        "value": 0.025
+      },
+      "actions": [
+        {
+          "type": "increment",
+          "target": "score_right",
+          "amount": 1
+        },
+        {
+          "type": "reset_entity",
+          "target": "ball_01",
+          "position": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "velocity": {
+            "vx": 0.45,
+            "vy": 0.28
+          }
+        }
+      ]
+    },
+    {
+      "trigger": "goal_right",
+      "condition": {
+        "entity": "ball_01",
+        "property": "position.x",
+        "op": ">=",
+        "value": 0.975
+      },
+      "actions": [
+        {
+          "type": "increment",
+          "target": "score_left",
+          "amount": 1
+        },
+        {
+          "type": "reset_entity",
+          "target": "ball_01",
+          "position": {
+            "x": 0.5,
+            "y": 0.5
+          },
+          "velocity": {
+            "vx": -0.45,
+            "vy": 0.28
+          }
+        }
+      ]
+    }
+  ]
+}

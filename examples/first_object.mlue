@@ -1,0 +1,23 @@
+{
+  "mlue_version": "0.1",
+  "environment": {
+    "dimensions": [400, 400],
+    "background": "#0F172A"
+  },
+  "entities": [
+    {
+      "id": "circle_01",
+      "type": "circle",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "radius": 0.2
+      },
+      "properties": {
+        "color": "#38BDF8"
+      }
+    }
+  ]
+}

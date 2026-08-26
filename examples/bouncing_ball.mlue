@@ -1,0 +1,27 @@
+{
+  "mlue_version": "0.2",
+  "environment": {
+    "dimensions": [500, 500],
+    "background": "#0B0F19"
+  },
+  "entities": [
+    {
+      "id": "ball_01",
+      "type": "circle",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "radius": 0.06
+      },
+      "velocity": {
+        "vx": 0.45,
+        "vy": 0.32
+      },
+      "properties": {
+        "color": "#38BDF8"
+      }
+    }
+  ]
+}
