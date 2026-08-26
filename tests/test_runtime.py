@@ -478,6 +478,35 @@ class TestMLUERuntime(unittest.TestCase):
         self.assertAlmostEqual(reset_ball.position.x, 0.5)
         self.assertAlmostEqual(reset_ball.position.y, 0.7)
 
+    def test_static_reachability_validation_rejection(self):
+        """Verify loader statically rejects mathematically unreachable spatial rule conditions."""
+        # Ball with radius 0.05 in 400x400 -> bottom boundary is 1.0 - 0.05 = 0.95
+        # Attempting condition y >= 0.98 must be rejected at load time!
+        unreachable_payload = {
+            "mlue_version": "0.6",
+            "environment": {"dimensions": [400, 400], "background": "#000000"},
+            "entities": [
+                {
+                    "id": "b1",
+                    "type": "circle",
+                    "position": {"x": 0.5, "y": 0.5},
+                    "size": {"radius": 0.05},
+                    "properties": {"solid": True}
+                }
+            ],
+            "rules": [
+                {
+                    "trigger": "impossible_floor",
+                    "condition": {"entity": "b1", "property": "position.y", "op": ">=", "value": 0.98},
+                    "actions": [{"type": "reset_entity", "target": "b1"}]
+                }
+            ]
+        }
+        with self.assertRaises(MLUEValidationError) as ctx:
+            validate_and_parse(unreachable_payload)
+        self.assertIn("mathematically unreachable", str(ctx.exception))
+        self.assertIn("bottom boundary limit is 0.9500", str(ctx.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,6 +1,7 @@
-"""MLUE Phase 0.6 Document Loader & Validator
+"""MLUE Document Loader & Semantic Invariant Validator
 
-Loads machine-oriented MLUE specifications and verifies semantic constraints.
+Loads machine-oriented MLUE specifications and verifies semantic constraints,
+type bounds, and static physical/spatial reachability invariants.
 Supports MLUE schema versions 0.1, 0.2, 0.3, 0.4, 0.5, and 0.6.
 """
 
@@ -23,7 +24,7 @@ from .model import (
 
 
 class MLUEValidationError(Exception):
-    """Raised when an MLUE document fails schema or semantic validation."""
+    """Raised when an MLUE document fails schema, semantic, or reachability validation."""
     pass
 
 
@@ -54,8 +55,22 @@ def load_mlue(source: Union[str, Path, Dict[str, Any]]) -> MLUEDocument:
     return validate_and_parse(data)
 
 
+def _get_entity_half_extents(entity: Entity, env: Environment) -> Tuple[float, float]:
+    """Calculates exact normalized half-extents (ex, ey) for an entity in the given environment."""
+    w = env.width
+    h = env.height
+    min_dim = min(w, h)
+
+    if entity.type == "circle" and isinstance(entity.size, CircleSize):
+        r = entity.size.radius
+        return r * (min_dim / w), r * (min_dim / h)
+    elif entity.type == "box" and isinstance(entity.size, BoxSize):
+        return entity.size.width / 2.0, entity.size.height / 2.0
+    return 0.0, 0.0
+
+
 def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
-    """Validate raw dictionary structure against MLUE specification schema."""
+    """Validate raw dictionary structure and static mathematical invariants against MLUE specification schema."""
     if not isinstance(data, dict):
         raise MLUEValidationError("MLUE document root must be a dictionary/object.")
 
@@ -200,7 +215,7 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         )
         entities.append(entity)
 
-    # Rules Validation
+    # Rules Validation & Static Reachability Verification
     rules_data = data.get("rules", [])
     if not isinstance(rules_data, list):
         raise MLUEValidationError("'rules' must be a list of rule objects.")
@@ -269,7 +284,41 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
                 if not (isinstance(val, (int, float)) and not math.isnan(val)):
                     raise MLUEValidationError(f"Rule '{trigger}' condition 'value' must be a finite number.")
 
-                condition = Condition(entity=target_ent, property=prop_name, op=op, value=float(val))
+                float_val = float(val)
+
+                # Static Reachability Invariant Check
+                if prop_name in ("position.x", "position.y"):
+                    ent_obj = next(e for e in entities if e.id == target_ent)
+                    ex, ey = _get_entity_half_extents(ent_obj, environment)
+
+                    if prop_name == "position.x":
+                        min_x = ex
+                        max_x = 1.0 - ex
+                        if op in ("<=", "<") and float_val < (min_x - 1e-6):
+                            raise MLUEValidationError(
+                                f"Rule '{trigger}' condition 'position.x {op} {float_val}' is mathematically unreachable: "
+                                f"entity '{target_ent}' left boundary limit is {min_x:.4f}."
+                            )
+                        elif op in (">=", ">") and float_val > (max_x + 1e-6):
+                            raise MLUEValidationError(
+                                f"Rule '{trigger}' condition 'position.x {op} {float_val}' is mathematically unreachable: "
+                                f"entity '{target_ent}' right boundary limit is {max_x:.4f}."
+                            )
+                    elif prop_name == "position.y":
+                        min_y = ey
+                        max_y = 1.0 - ey
+                        if op in ("<=", "<") and float_val < (min_y - 1e-6):
+                            raise MLUEValidationError(
+                                f"Rule '{trigger}' condition 'position.y {op} {float_val}' is mathematically unreachable: "
+                                f"entity '{target_ent}' top boundary limit is {min_y:.4f}."
+                            )
+                        elif op in (">=", ">") and float_val > (max_y + 1e-6):
+                            raise MLUEValidationError(
+                                f"Rule '{trigger}' condition 'position.y {op} {float_val}' is mathematically unreachable: "
+                                f"entity '{target_ent}' bottom boundary limit is {max_y:.4f}."
+                            )
+
+                condition = Condition(entity=target_ent, property=prop_name, op=op, value=float_val)
 
         actions_data = rule_raw.get("actions")
         if not isinstance(actions_data, list) or len(actions_data) == 0:
