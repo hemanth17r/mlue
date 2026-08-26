@@ -24,6 +24,7 @@ from runtime import (
     Condition,
     Action,
     Rule,
+    SimulationState,
 )
 
 
@@ -436,6 +437,46 @@ class TestMLUERuntime(unittest.TestCase):
         self.assertGreater(state.state_variables["score"], 0)
         self.assertLess(state.state_variables["bricks_remaining"], 6)
         self.assertLess(len(state.result.shapes), 8)
+
+    def test_breakout_floor_breach_lives_reduction(self):
+        """Verify that when ball misses paddle and hits floor, lives reduce from 3 to 2 and ball resets."""
+        path = self.examples_dir / "breakout.mlue"
+        doc = load_mlue(path)
+        state = self.engine.init_simulation(doc)
+        self.assertEqual(state.state_variables["lives"], 3)
+
+        # Paddle is at x=0.5. Move paddle far left (inputs player_bottom = -1.0) so ball misses paddle completely!
+        # Ball starts at y=0.7 moving downward vy=0.45 (or we send ball downward)
+        # Let's set ball velocity downward to floor
+        ball = state.entities[0]
+        state = SimulationState(
+            time=state.time,
+            environment=state.environment,
+            entities=[
+                Entity(
+                    id=ball.id,
+                    type=ball.type,
+                    position=Position(x=0.8, y=0.85),
+                    size=ball.size,
+                    velocity=Velocity(vx=0.0, vy=0.5),
+                    properties=ball.properties,
+                    active=ball.active,
+                ),
+                state.entities[1], # paddle at x=0.1
+                *state.entities[2:],
+            ],
+            result=state.result,
+            state_variables=state.state_variables,
+            rules=state.rules,
+        )
+
+        # In dt = 0.3s, ball goes to y = 0.85 + 0.5*0.3 = 1.0 (clamped to 0.975 >= 0.97) -> floor_breach fires!
+        next_state = self.engine.step(state, dt=0.3, inputs={"player_bottom": -1.0})
+        self.assertEqual(next_state.state_variables["lives"], 2)
+        # Ball should have reset to position (0.5, 0.7)
+        reset_ball = next_state.entities[0]
+        self.assertAlmostEqual(reset_ball.position.x, 0.5)
+        self.assertAlmostEqual(reset_ball.position.y, 0.7)
 
 
 if __name__ == "__main__":

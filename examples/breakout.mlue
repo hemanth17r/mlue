@@ -215,7 +215,7 @@
         "entity": "ball_01",
         "property": "position.y",
         "op": ">=",
-        "value": 0.98
+        "value": 0.97
       },
       "actions": [
         { "type": "increment", "target": "lives", "amount": -1 },
