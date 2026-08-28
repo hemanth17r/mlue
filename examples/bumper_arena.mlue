@@ -1,0 +1,226 @@
+{
+  "mlue_version": "0.6",
+  "environment": {
+    "dimensions": [
+      750,
+      500
+    ],
+    "background": "#0B0F19"
+  },
+  "state_variables": {
+    "score": 0,
+    "bumper_hits": 0,
+    "orbs_caught": 0,
+    "status": "PLAYING"
+  },
+  "entities": [
+    {
+      "id": "energy_orb",
+      "type": "circle",
+      "position": {
+        "x": 0.5,
+        "y": 0.25
+      },
+      "size": {
+        "radius": 0.028
+      },
+      "velocity": {
+        "vx": 0.38,
+        "vy": 0.42
+      },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": true
+      }
+    },
+    {
+      "id": "catcher_paddle",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.93
+      },
+      "size": {
+        "width": 0.24,
+        "height": 0.038
+      },
+      "velocity": {
+        "vx": 0.0,
+        "vy": 0.0
+      },
+      "properties": {
+        "color": "#10B981",
+        "solid": true,
+        "control": {
+          "channel": "player_bottom",
+          "axis": "x",
+          "speed": 0.75
+        }
+      }
+    },
+    {
+      "id": "center_bumper",
+      "type": "circle",
+      "position": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "size": {
+        "radius": 0.055
+      },
+      "velocity": {
+        "vx": 0.0,
+        "vy": 0.0
+      },
+      "properties": {
+        "color": "#F43F5E",
+        "solid": true
+      }
+    },
+    {
+      "id": "left_bumper",
+      "type": "box",
+      "position": {
+        "x": 0.22,
+        "y": 0.38
+      },
+      "size": {
+        "width": 0.08,
+        "height": 0.08
+      },
+      "velocity": {
+        "vx": 0.0,
+        "vy": 0.0
+      },
+      "properties": {
+        "color": "#F59E0B",
+        "solid": true
+      }
+    },
+    {
+      "id": "right_bumper",
+      "type": "box",
+      "position": {
+        "x": 0.78,
+        "y": 0.38
+      },
+      "size": {
+        "width": 0.08,
+        "height": 0.08
+      },
+      "velocity": {
+        "vx": 0.0,
+        "vy": 0.0
+      },
+      "properties": {
+        "color": "#8B5CF6",
+        "solid": true
+      }
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "hit_center_bumper",
+      "event": "collision",
+      "entities": [
+        "energy_orb",
+        "center_bumper"
+      ],
+      "actions": [
+        {
+          "type": "increment",
+          "target": "score",
+          "amount": 250
+        },
+        {
+          "type": "increment",
+          "target": "bumper_hits",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "trigger": "hit_left_bumper",
+      "event": "collision",
+      "entities": [
+        "energy_orb",
+        "left_bumper"
+      ],
+      "actions": [
+        {
+          "type": "increment",
+          "target": "score",
+          "amount": 100
+        },
+        {
+          "type": "increment",
+          "target": "bumper_hits",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "trigger": "hit_right_bumper",
+      "event": "collision",
+      "entities": [
+        "energy_orb",
+        "right_bumper"
+      ],
+      "actions": [
+        {
+          "type": "increment",
+          "target": "score",
+          "amount": 100
+        },
+        {
+          "type": "increment",
+          "target": "bumper_hits",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "trigger": "catch_orb",
+      "event": "collision",
+      "entities": [
+        "energy_orb",
+        "catcher_paddle"
+      ],
+      "actions": [
+        {
+          "type": "increment",
+          "target": "score",
+          "amount": 50
+        },
+        {
+          "type": "increment",
+          "target": "orbs_caught",
+          "amount": 1
+        }
+      ]
+    },
+    {
+      "trigger": "floor_reset",
+      "condition": {
+        "entity": "energy_orb",
+        "property": "position.y",
+        "op": ">=",
+        "value": 0.97
+      },
+      "actions": [
+        {
+          "type": "reset_entity",
+          "target": "energy_orb",
+          "position": {
+            "x": 0.5,
+            "y": 0.25
+          },
+          "velocity": {
+            "vx": 0.38,
+            "vy": 0.42
+          }
+        }
+      ]
+    }
+  ]
+}

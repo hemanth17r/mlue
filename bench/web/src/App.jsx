@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import HeadToHeadComparison from './components/HeadToHeadComparison';
 import BenchmarkCard from './components/BenchmarkCard';
 import VerificationTerminal from './components/VerificationTerminal';
 
@@ -29,11 +30,14 @@ export default function App() {
         {/* Content Container */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           
-          {/* Apple Keynote Style Hero */}
+          {/* Keynote Style Hero */}
           <Hero latestRun={latestRun} />
 
+          {/* E-Commerce Spec Style Head-to-Head Comparison */}
+          <HeadToHeadComparison />
+
           {/* Section Divider & Filter Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 mb-6 border-t border-white/[0.06] pt-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-12 mb-6 border-t border-white/[0.06] pt-8">
             <div className="flex items-center space-x-2">
               <h2 className="text-sm font-semibold tracking-tight text-white font-mono uppercase">
                 The 10 Invariant Matrix
@@ -43,7 +47,7 @@ export default function App() {
               </span>
             </div>
 
-            {/* Apple Filter Pills */}
+            {/* Filter Pills */}
             <div className="flex flex-wrap items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/[0.06] text-[11px] font-mono">
               {categories.map(cat => (
                 <button
@@ -61,20 +65,20 @@ export default function App() {
             </div>
           </div>
 
-          {/* 10 Apple-Grade Benchmark Cards Grid */}
+          {/* 10 Benchmark Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredBenchmarks.map(benchmark => (
               <BenchmarkCard key={benchmark.id} benchmark={benchmark} />
             ))}
           </div>
 
-          {/* Apple Terminal Verification Drawer */}
+          {/* Verification Drawer */}
           <VerificationTerminal />
 
         </main>
       </div>
 
-      {/* Apple Clean Footer */}
+      {/* Clean Footer */}
       <footer className="border-t border-white/[0.06] bg-black/30 backdrop-blur-xl py-6 mt-16 text-[11px] text-slate-500 font-mono text-center">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
