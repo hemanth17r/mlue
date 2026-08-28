@@ -1,4 +1,4 @@
-"""MLUE Runtime Package (Phase 0.5)"""
+"""MLUE Runtime Package (Phase 0.7)"""
 
 from .model import (
     MLUEDocument,
@@ -18,6 +18,7 @@ from .model import (
 from .loader import load_mlue, validate_and_parse, MLUEValidationError
 from .engine import MLUEEngine
 from .adapter import TkinterAdapter
+from .ai_interface import MLUEAIInterface
 
 __all__ = [
     "MLUEDocument",
@@ -38,4 +39,5 @@ __all__ = [
     "MLUEValidationError",
     "MLUEEngine",
     "TkinterAdapter",
+    "MLUEAIInterface",
 ]

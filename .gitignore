@@ -7,3 +7,9 @@ __pycache__/
 # Temporary / Scratch
 .tmp/
 *.tmp
+
+# Benchmark Web App Artifacts (Zone 4)
+bench/web/node_modules/
+bench/web/dist/
+bench/web/.vite/
+

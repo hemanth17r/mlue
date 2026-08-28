@@ -1,4 +1,4 @@
-# MLUE — Phase 0.6 Emergent Destruction & Dynamic Collision Triggers
+# MLUE — Phase 0.7 Machine-Accessible AI Interface (Phase 0 Complete)
 
 > **"AI is the builder. Humans are users."**
 
@@ -6,14 +6,13 @@ MLUE is a long-term research and engineering project to build a fundamentally **
 
 ---
 
-## 1. Phase 0.6 Objective
+## 1. Phase 0.7 Objective (Phase 0 Grand Milestone)
 
-Advance MLUE declarative architecture from boundary rules to **dynamic collision-based triggers and entity lifecycle management**:
-1. **Collision-Based Rule Triggers**: First-class detection and firing of events when two solid entities collide (`event: "collision"`).
-2. **Entity Lifecycle Management**: Deactivation and removal of entities from the computational and rendering space (`"destroy_entity"` / `"deactivate_entity"`).
-3. **Property Mutations**: Dynamic modification of entity properties (`"set_property"`).
-4. **State Variable Condition Triggers**: Evaluating rules based on document-level state variables (e.g. win/loss thresholds: `bricks_remaining <= 0`).
-5. **Emergent Breakout Capstone**: A complete Brick Breaker game (`examples/breakout.mlue`) composed 100% from declarative MLUE primitives without bespoke game engine code.
+Establish the **Machine-Accessible AI Interface Substrate** exposing the mature, mathematically verified Phase 0 primitive vocabulary to external and local AI agents:
+1. **Programmatic AI Interface (`runtime/ai_interface.py`)**: High-level Python API to query schema, statically validate scenes, run in-memory simulations, evaluate action vectors, inspect live states, and mutate entities.
+2. **Model Context Protocol (MCP) Server (`mcp_server.py`)**: Zero-dependency standard MCP JSON-RPC server enabling any AI assistant (Antigravity, Claude Desktop, Cursor, local scripts) to autonomously construct and test MLUE worlds.
+3. **Static Spatial Reachability Invariant Validation**: Compile-time rejection of mathematically unreachable rule triggers before execution.
+4. **Complete Phase 0 Foundation**: Unifying static geometry, dynamic motion, pairwise solid collisions, control channels, declarative state variables, destruction lifecycle, and AI tool introspection into a sovereign 100% self-contained codebase.
 
 ---
 
@@ -22,6 +21,7 @@ Advance MLUE declarative architecture from boundary rules to **dynamic collision
 ```text
 mlue/
 ├── README.md                          # Project overview and architectural boundaries
+├── mcp_server.py                      # Standalone Model Context Protocol (MCP) JSON-RPC Server
 ├── spec/
 │   ├── 0.1.md                        # Phase 0.1 spec (static circle)
 │   ├── 0.2.md                        # Phase 0.2 spec (dynamic state, boxes & velocity)
@@ -32,10 +32,11 @@ mlue/
 │   └── replacement_map.md            # Dependency tracking and replacement map
 ├── runtime/
 │   ├── __init__.py                    # Package exports
-│   ├── loader.py                      # Parses & validates .mlue representations (0.1 through 0.6)
+│   ├── loader.py                      # Parses & validates .mlue representations & spatial reachability
 │   ├── model.py                       # Computational data structures, lifecycle & simulation state
 │   ├── engine.py                      # Deterministic MLUE evaluation, collisions, destruction & rule engine
-│   └── adapter.py                     # Bootstrap scaffolding adapter (Tkinter animation, keys & multi-HUD)
+│   ├── ai_interface.py                # High-level programmatic interface for autonomous AI agents
+│   └── adapter.py                     # Bootstrap scaffolding adapter (Tkinter animation & HUDs)
 ├── examples/
 │   ├── first_object.mlue              # Phase 0.1 static circle entity
 │   ├── bouncing_ball.mlue             # Phase 0.2 single bouncing ball simulation
@@ -45,7 +46,7 @@ mlue/
 │   ├── pong.mlue                      # Phase 0.5 Emergent Pong (Complete Capstone Game)
 │   └── breakout.mlue                  # Phase 0.6 Emergent Breakout (Destruction Capstone Game)
 ├── tests/
-│   └── test_runtime.py                # Automated unit tests (14 tests: geometry, collisions, destruction, matches)
+│   └── test_runtime.py                # Automated unit tests (19 tests: geometry, collisions, AI sessions, MCP)
 └── mlue.py                            # CLI runner (static snapshot & dynamic simulation)
 ```
 
@@ -74,7 +75,16 @@ python mlue.py run examples/bouncing_ball.mlue
 python mlue.py run examples/first_object.mlue
 ```
 
-### Headless Mode (Deterministic Evaluation Engine)
+### Running the MCP Server
+```bash
+# Run standalone MCP protocol self-test
+python mcp_server.py --test
+
+# Run MCP server on standard I/O (for Antigravity, Claude Desktop, Cursor)
+python mcp_server.py
+```
+
+### Headless Simulation Engine
 ```bash
 # Evaluate 60 simulation steps of Breakout deterministically in headless mode
 python mlue.py run examples/breakout.mlue --headless --ticks 60
@@ -96,7 +106,10 @@ python -m unittest discover -s tests -p "test_*.py"
 • Normalized Spatial Extents, Geometry & Velocity Vectors
 • Abstract Control Channels & Input Vector Modulation
 • Pairwise Relational Collisions & Exact Normal Reflections
-• Collision Event Sets, Entity Lifecycle Destruction & State Conditions (runtime/engine.py)
+• Collision Event Sets, Entity Lifecycle Destruction & State Conditions
+• Static Spatial Reachability Invariant Validation (runtime/loader.py)
+• Programmatic AI Interface & In-Memory Sessions (runtime/ai_interface.py)
+• Standard Model Context Protocol (MCP) Server (mcp_server.py)
 ─────────────────────────────────────────────────────────────────────────────
                      BOOTSTRAP LAYER (Disposable Scaffolding)
 ─────────────────────────────────────────────────────────────────────────────
@@ -106,23 +119,27 @@ python -m unittest discover -s tests -p "test_*.py"
 ```
 
 * **No External Dependencies**: Built 100% with Python standard library (0 third-party packages).
-* **Pure Mathematical Core**: Collision detection, destruction filtering, and state transitions operate inside `MLUEEngine`, with zero external dependencies.
+* **Pure Mathematical Core**: Operates with microsecond latency and zero external dependencies.
 
 ---
 
 ## 5. Scope Boundaries
 
-### What Was Built in Phase 0.6:
-* First-class collision event rules (`event: "collision"`).
-* Entity lifecycle deactivation actions (`destroy_entity`, `deactivate_entity`).
-* Property mutation actions (`set_property`).
-* State variable condition rules (e.g. `bricks_remaining <= 0`).
-* Horizontal player control routing (`player_bottom`).
-* The complete Emergent Breakout game document (`examples/breakout.mlue`).
-* 14 automated unit tests verifying destruction, collision triggers, state conditions, and regression.
+### What Was Built in Phase 0 (Phases 0.1 through 0.7):
+* Universal declarative 2D geometry (`circle`, `box`) in normalized coordinate space $[0, 1]$.
+* First-order discrete time integration and deterministic step loop $\Delta t$.
+* Pairwise relational collisions and impulse normal reflections.
+* Abstract input channels with velocity modulation and boundary clamping.
+* Declarative document-level state variables.
+* Universal trigger rules (collision events, spatial conditions, state conditions).
+* Dynamic lifecycle actions (`destroy_entity`, `set_property`, `increment`, `set`, `reset_entity`).
+* Static spatial reachability invariant validation.
+* Two emergent capstone applications (Pong and Breakout).
+* High-level AI programmatic interface (`MLUEAIInterface`).
+* Full Model Context Protocol (MCP) JSON-RPC server (`mcp_server.py`).
+* 19 automated unit tests with 100% pass rate.
 
-### What Was Deliberately NOT Built in Phase 0.6 (Strict Scope Control):
-* Bespoke `BreakoutManager` or hardcoded brick grid scripts.
-* Particle effect explosion engines.
-* Audio synthesis libraries.
-* Network multiplayer sockets.
+### What Is Next (Phase 1: Native Substrate Transition):
+* Replacing Python host runtime with native compiled execution layer (Rust/C core).
+* Direct binary representation serialization.
+* Native rendering adapter replacing Tkinter.

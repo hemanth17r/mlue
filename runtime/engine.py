@@ -315,6 +315,199 @@ class MLUEEngine:
             return entity.velocity.vy
         return 0.0
 
+    def _integrate_entity_motion(
+        self,
+        entity: Entity,
+        dt: float,
+        input_map: Dict[str, float],
+        env: Environment,
+    ) -> Entity:
+        """Applies input control modulation, time integration, and boundary constraints to a single entity."""
+        if not entity.active:
+            return entity
+
+        ex, ey = self._get_entity_extents(entity, env)
+        x, y = entity.position.x, entity.position.y
+        vx, vy = entity.velocity.vx, entity.velocity.vy
+        is_controlled = False
+
+        if "control" in entity.properties:
+            ctrl = entity.properties["control"]
+            channel = ctrl.get("channel")
+            axis = ctrl.get("axis", "y")
+            speed = ctrl.get("speed", 0.0)
+            is_controlled = True
+
+            if channel in input_map:
+                signal = max(-1.0, min(1.0, float(input_map[channel])))
+                if axis == "y":
+                    vy = signal * speed
+                elif axis == "x":
+                    vx = signal * speed
+            else:
+                if axis == "y":
+                    vy = 0.0
+                elif axis == "x":
+                    vx = 0.0
+
+        new_x = x + vx * dt
+        new_y = y + vy * dt
+        new_vx, new_vy = vx, vy
+
+        if is_controlled:
+            if new_x - ex <= 0.0:
+                new_x = ex
+                new_vx = max(0.0, new_vx)
+            elif new_x + ex >= 1.0:
+                new_x = 1.0 - ex
+                new_vx = min(0.0, new_vx)
+
+            if new_y - ey <= 0.0:
+                new_y = ey
+                new_vy = max(0.0, new_vy)
+            elif new_y + ey >= 1.0:
+                new_y = 1.0 - ey
+                new_vy = min(0.0, new_vy)
+        else:
+            if new_x - ex <= 0.0:
+                new_x = ex
+                if new_vx < 0.0:
+                    new_vx = -new_vx
+            elif new_x + ex >= 1.0:
+                new_x = 1.0 - ex
+                if new_vx > 0.0:
+                    new_vx = -new_vx
+
+            if new_y - ey <= 0.0:
+                new_y = ey
+                if new_vy < 0.0:
+                    new_vy = -new_vy
+            elif new_y + ey >= 1.0:
+                new_y = 1.0 - ey
+                if new_vy > 0.0:
+                    new_vy = -new_vy
+
+        return Entity(
+            id=entity.id,
+            type=entity.type,
+            position=Position(x=new_x, y=new_y),
+            size=entity.size,
+            velocity=Velocity(vx=new_vx, vy=new_vy),
+            properties=dict(entity.properties),
+            active=entity.active,
+        )
+
+    def _resolve_pairwise_collisions(
+        self, entities: List[Entity], env: Environment
+    ) -> Tuple[List[Entity], Set[FrozenSet[str]]]:
+        """Resolves pairwise relational collisions between active solid entities and records collision events."""
+        collision_events: Set[FrozenSet[str]] = set()
+        n = len(entities)
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                e1 = entities[i]
+                e2 = entities[j]
+                if not (e1.active and e2.active):
+                    continue
+
+                if e1.properties.get("solid", False) and e2.properties.get("solid", False):
+                    has_collided = False
+                    if e1.type == "circle" and e2.type == "box":
+                        e1_res, e2_res, has_collided = self._resolve_circle_box_collision(e1, e2, env)
+                        entities[i], entities[j] = e1_res, e2_res
+                    elif e1.type == "box" and e2.type == "circle":
+                        e2_res, e1_res, has_collided = self._resolve_circle_box_collision(e2, e1, env)
+                        entities[i], entities[j] = e1_res, e2_res
+                    elif e1.type == "circle" and e2.type == "circle":
+                        e1_res, e2_res, has_collided = self._resolve_circle_circle_collision(e1, e2, env)
+                        entities[i], entities[j] = e1_res, e2_res
+                    elif e1.type == "box" and e2.type == "box":
+                        e1_res, e2_res, has_collided = self._resolve_box_box_collision(e1, e2, env)
+                        entities[i], entities[j] = e1_res, e2_res
+
+                    if has_collided:
+                        collision_events.add(frozenset([e1.id, e2.id]))
+
+        return entities, collision_events
+
+    def _evaluate_rule_condition(
+        self,
+        cond: Condition,
+        entities: List[Entity],
+        entity_map: Dict[str, int],
+        state_variables: Dict[str, Any],
+    ) -> bool:
+        """Evaluates whether a single rule condition is satisfied."""
+        if cond.state_variable is not None:
+            actual_val = state_variables.get(cond.state_variable, 0)
+            threshold = cond.value
+            if cond.op == "<=": return actual_val <= threshold
+            if cond.op == ">=": return actual_val >= threshold
+            if cond.op == "<":  return actual_val < threshold
+            if cond.op == ">":  return actual_val > threshold
+            if cond.op == "==": return actual_val == threshold
+
+        elif cond.entity is not None:
+            ent_idx = entity_map.get(cond.entity)
+            if ent_idx is not None and entities[ent_idx].active:
+                target_entity = entities[ent_idx]
+                actual_val = self._get_entity_property_value(target_entity, cond.property or "position.x")
+                threshold = float(cond.value)
+                if cond.op == "<=": return actual_val <= threshold
+                if cond.op == ">=": return actual_val >= threshold
+                if cond.op == "<":  return actual_val < threshold
+                if cond.op == ">":  return actual_val > threshold
+                if cond.op == "==": return abs(actual_val - threshold) < 1e-6
+
+        return False
+
+    def _execute_rule_actions(
+        self,
+        actions: List[Action],
+        entities: List[Entity],
+        entity_map: Dict[str, int],
+        state_variables: Dict[str, Any],
+    ) -> None:
+        """Executes a list of state mutation actions."""
+        for action in actions:
+            if action.type in ("destroy_entity", "deactivate_entity"):
+                t_idx = entity_map.get(action.target)
+                if t_idx is not None:
+                    curr = entities[t_idx]
+                    entities[t_idx] = Entity(
+                        id=curr.id, type=curr.type, position=curr.position,
+                        size=curr.size, velocity=curr.velocity, properties=curr.properties,
+                        active=False,
+                    )
+            elif action.type == "set_property":
+                t_idx = entity_map.get(action.target)
+                if t_idx is not None and action.property is not None:
+                    curr = entities[t_idx]
+                    props = dict(curr.properties)
+                    props[action.property] = action.value
+                    entities[t_idx] = Entity(
+                        id=curr.id, type=curr.type, position=curr.position,
+                        size=curr.size, velocity=curr.velocity, properties=props,
+                        active=curr.active,
+                    )
+            elif action.type == "increment" and action.target in state_variables:
+                amt = action.amount if action.amount is not None else 1.0
+                state_variables[action.target] = state_variables[action.target] + amt
+            elif action.type == "set" and action.target in state_variables:
+                state_variables[action.target] = action.value
+            elif action.type == "reset_entity":
+                reset_idx = entity_map.get(action.target)
+                if reset_idx is not None:
+                    curr = entities[reset_idx]
+                    new_pos = action.position if action.position is not None else curr.position
+                    new_vel = action.velocity if action.velocity is not None else curr.velocity
+                    entities[reset_idx] = Entity(
+                        id=curr.id, type=curr.type, position=new_pos,
+                        size=curr.size, velocity=new_vel, properties=curr.properties,
+                        active=True,
+                    )
+
     def step(
         self,
         state: SimulationState,
@@ -325,237 +518,48 @@ class MLUEEngine:
         if dt < 0:
             raise ValueError(f"Time step dt must be non-negative (got {dt}).")
 
-        w = state.environment.width
-        h = state.environment.height
+        env = state.environment
         input_map = inputs or {}
         state_variables = dict(state.state_variables)
 
-        moved_entities: List[Entity] = []
+        # 1. Integrate motion & environment boundary constraints
+        moved_entities = [
+            self._integrate_entity_motion(e, dt, input_map, env)
+            for e in state.entities
+        ]
 
-        # 1. Apply input modulation, integrate position over dt & enforce environment boundaries
-        for entity in state.entities:
-            if not entity.active:
-                moved_entities.append(entity)
-                continue
+        # 2. Resolve pairwise solid collisions
+        moved_entities, collision_events = self._resolve_pairwise_collisions(moved_entities, env)
 
-            ex, ey = self._get_entity_extents(entity, state.environment)
-
-            x = entity.position.x
-            y = entity.position.y
-            vx = entity.velocity.vx
-            vy = entity.velocity.vy
-
-            is_controlled = False
-
-            # Check for input signal control
-            if "control" in entity.properties:
-                ctrl = entity.properties["control"]
-                channel = ctrl.get("channel")
-                axis = ctrl.get("axis", "y")
-                speed = ctrl.get("speed", 0.0)
-
-                is_controlled = True
-                if channel in input_map:
-                    signal = max(-1.0, min(1.0, float(input_map[channel])))
-                    if axis == "y":
-                        vy = signal * speed
-                    elif axis == "x":
-                        vx = signal * speed
-                else:
-                    if axis == "y":
-                        vy = 0.0
-                    elif axis == "x":
-                        vx = 0.0
-
-            new_x = x + vx * dt
-            new_y = y + vy * dt
-            new_vx = vx
-            new_vy = vy
-
-            if is_controlled:
-                if new_x - ex <= 0.0:
-                    new_x = ex
-                    new_vx = max(0.0, new_vx)
-                elif new_x + ex >= 1.0:
-                    new_x = 1.0 - ex
-                    new_vx = min(0.0, new_vx)
-
-                if new_y - ey <= 0.0:
-                    new_y = ey
-                    new_vy = max(0.0, new_vy)
-                elif new_y + ey >= 1.0:
-                    new_y = 1.0 - ey
-                    new_vy = min(0.0, new_vy)
-            else:
-                if new_x - ex <= 0.0:
-                    new_x = ex
-                    if new_vx < 0.0:
-                        new_vx = -new_vx
-                elif new_x + ex >= 1.0:
-                    new_x = 1.0 - ex
-                    if new_vx > 0.0:
-                        new_vx = -new_vx
-
-                if new_y - ey <= 0.0:
-                    new_y = ey
-                    if new_vy < 0.0:
-                        new_vy = -new_vy
-                elif new_y + ey >= 1.0:
-                    new_y = 1.0 - ey
-                    if new_vy > 0.0:
-                        new_vy = -new_vy
-
-            updated_entity = Entity(
-                id=entity.id,
-                type=entity.type,
-                position=Position(x=new_x, y=new_y),
-                size=entity.size,
-                velocity=Velocity(vx=new_vx, vy=new_vy),
-                properties=dict(entity.properties),
-                active=entity.active,
-            )
-            moved_entities.append(updated_entity)
-
-        # 2. Pairwise Relational Collision Resolution between active solid entities
-        collision_events: Set[FrozenSet[str]] = set()
-        n = len(moved_entities)
-
-        for i in range(n):
-            for j in range(i + 1, n):
-                e1 = moved_entities[i]
-                e2 = moved_entities[j]
-
-                if not (e1.active and e2.active):
-                    continue
-
-                s1 = e1.properties.get("solid", False)
-                s2 = e2.properties.get("solid", False)
-
-                if s1 and s2:
-                    has_collided = False
-                    if e1.type == "circle" and e2.type == "box":
-                        e1_res, e2_res, has_collided = self._resolve_circle_box_collision(e1, e2, state.environment)
-                        moved_entities[i], moved_entities[j] = e1_res, e2_res
-                    elif e1.type == "box" and e2.type == "circle":
-                        e2_res, e1_res, has_collided = self._resolve_circle_box_collision(e2, e1, state.environment)
-                        moved_entities[i], moved_entities[j] = e1_res, e2_res
-                    elif e1.type == "circle" and e2.type == "circle":
-                        e1_res, e2_res, has_collided = self._resolve_circle_circle_collision(e1, e2, state.environment)
-                        moved_entities[i], moved_entities[j] = e1_res, e2_res
-                    elif e1.type == "box" and e2.type == "box":
-                        e1_res, e2_res, has_collided = self._resolve_box_box_collision(e1, e2, state.environment)
-                        moved_entities[i], moved_entities[j] = e1_res, e2_res
-
-                    if has_collided:
-                        collision_events.add(frozenset([e1.id, e2.id]))
-
-        # 3. Evaluate Declarative Rules & Trigger Actions (Phase 0.6)
+        # 3. Evaluate declarative rules and execute actions
         entity_map: Dict[str, int] = {e.id: idx for idx, e in enumerate(moved_entities)}
-
         for rule in state.rules:
             is_triggered = False
-
             if rule.event == "collision" and rule.entities:
-                target_pair = frozenset(rule.entities)
-                is_triggered = target_pair in collision_events
+                is_triggered = frozenset(rule.entities) in collision_events
             elif rule.condition is not None:
-                cond = rule.condition
-                if cond.state_variable is not None:
-                    actual_val = state_variables.get(cond.state_variable, 0)
-                    threshold = cond.value
-                    if cond.op == "<=":
-                        is_triggered = actual_val <= threshold
-                    elif cond.op == ">=":
-                        is_triggered = actual_val >= threshold
-                    elif cond.op == "<":
-                        is_triggered = actual_val < threshold
-                    elif cond.op == ">":
-                        is_triggered = actual_val > threshold
-                    elif cond.op == "==":
-                        is_triggered = actual_val == threshold
-                elif cond.entity is not None:
-                    ent_idx = entity_map.get(cond.entity)
-                    if ent_idx is not None and moved_entities[ent_idx].active:
-                        target_entity = moved_entities[ent_idx]
-                        actual_val = self._get_entity_property_value(target_entity, cond.property or "position.x")
-                        threshold = float(cond.value)
-
-                        if cond.op == "<=":
-                            is_triggered = actual_val <= threshold
-                        elif cond.op == ">=":
-                            is_triggered = actual_val >= threshold
-                        elif cond.op == "<":
-                            is_triggered = actual_val < threshold
-                        elif cond.op == ">":
-                            is_triggered = actual_val > threshold
-                        elif cond.op == "==":
-                            is_triggered = abs(actual_val - threshold) < 1e-6
+                is_triggered = self._evaluate_rule_condition(
+                    rule.condition, moved_entities, entity_map, state_variables
+                )
 
             if is_triggered:
-                for action in rule.actions:
-                    if action.type == "destroy_entity" or action.type == "deactivate_entity":
-                        t_idx = entity_map.get(action.target)
-                        if t_idx is not None:
-                            curr_ent = moved_entities[t_idx]
-                            moved_entities[t_idx] = Entity(
-                                id=curr_ent.id,
-                                type=curr_ent.type,
-                                position=curr_ent.position,
-                                size=curr_ent.size,
-                                velocity=curr_ent.velocity,
-                                properties=curr_ent.properties,
-                                active=False,
-                            )
-                    elif action.type == "set_property":
-                        t_idx = entity_map.get(action.target)
-                        if t_idx is not None and action.property is not None:
-                            curr_ent = moved_entities[t_idx]
-                            updated_props = dict(curr_ent.properties)
-                            updated_props[action.property] = action.value
-                            moved_entities[t_idx] = Entity(
-                                id=curr_ent.id,
-                                type=curr_ent.type,
-                                position=curr_ent.position,
-                                size=curr_ent.size,
-                                velocity=curr_ent.velocity,
-                                properties=updated_props,
-                                active=curr_ent.active,
-                            )
-                    elif action.type == "increment" and action.target in state_variables:
-                        amt = action.amount if action.amount is not None else 1.0
-                        state_variables[action.target] = state_variables[action.target] + amt
-                    elif action.type == "set" and action.target in state_variables:
-                        state_variables[action.target] = action.value
-                    elif action.type == "reset_entity":
-                        reset_idx = entity_map.get(action.target)
-                        if reset_idx is not None:
-                            curr_ent = moved_entities[reset_idx]
-                            new_pos = action.position if action.position is not None else curr_ent.position
-                            new_vel = action.velocity if action.velocity is not None else curr_ent.velocity
-                            moved_entities[reset_idx] = Entity(
-                                id=curr_ent.id,
-                                type=curr_ent.type,
-                                position=new_pos,
-                                size=curr_ent.size,
-                                velocity=new_vel,
-                                properties=curr_ent.properties,
-                                active=True,
-                            )
+                self._execute_rule_actions(rule.actions, moved_entities, entity_map, state_variables)
 
-        # 4. Compute updated shapes for rendering (excluding inactive entities)
-        new_shapes = self._compute_shapes(state.environment, moved_entities)
+        # 4. Compute concrete shape coordinates for active entities
+        new_shapes = self._compute_shapes(env, moved_entities)
         new_result = EvaluationResult(
-            width=w,
-            height=h,
-            background=state.environment.background,
+            width=env.width,
+            height=env.height,
+            background=env.background,
             shapes=new_shapes,
         )
 
         return SimulationState(
             time=state.time + dt,
-            environment=state.environment,
+            environment=env,
             entities=moved_entities,
             result=new_result,
             state_variables=state_variables,
             rules=state.rules,
         )
+

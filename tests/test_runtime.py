@@ -25,6 +25,7 @@ from runtime import (
     Action,
     Rule,
     SimulationState,
+    MLUEAIInterface,
 )
 
 
@@ -506,6 +507,81 @@ class TestMLUERuntime(unittest.TestCase):
             validate_and_parse(unreachable_payload)
         self.assertIn("mathematically unreachable", str(ctx.exception))
         self.assertIn("bottom boundary limit is 0.9500", str(ctx.exception))
+
+    def test_ai_interface_schema_and_validation(self):
+        """Verify programmatic AI interface schema discovery and scene validation."""
+        ai = MLUEAIInterface()
+        schema = ai.get_schema()
+        self.assertEqual(schema["mlue_version"], "0.6")
+        self.assertIn("entities", schema["root_fields"])
+        self.assertIn("rules", schema["root_fields"])
+        self.assertIn("spatial_invariants", schema)
+
+        # Validate a valid scene
+        valid_res = ai.validate_scene(str(self.examples_dir / "breakout.mlue"))
+        self.assertTrue(valid_res["valid"])
+        self.assertEqual(valid_res["entity_count"], 8)
+
+        # Validate an invalid scene
+        invalid_res = ai.validate_scene({"mlue_version": "9.9", "entities": []})
+        self.assertFalse(invalid_res["valid"])
+        self.assertIn("error", invalid_res)
+
+    def test_ai_interface_session_lifecycle(self):
+        """Verify complete AI session lifecycle (create, step with inputs, inspect, mutate, close)."""
+        ai = MLUEAIInterface()
+
+        # 1. Create session
+        res = ai.create_session(str(self.examples_dir / "pong.mlue"))
+        self.assertTrue(res["success"])
+        session_id = res["session_id"]
+        self.assertIn("ball_01", [e["id"] for e in res["initial_state"]["entities"]])
+
+        # 2. Step session with inputs
+        step_res = ai.step_session(session_id, dt=0.0167, inputs={"player_left": -1.0}, ticks=5)
+        self.assertTrue(step_res["success"])
+        self.assertEqual(step_res["ticks_evaluated"], 5)
+
+        # 3. Inspect session
+        insp_res = ai.inspect_session(session_id)
+        self.assertTrue(insp_res["success"])
+        self.assertIn("score_left", insp_res["state"]["state_variables"])
+
+        # 4. Mutate entity
+        mut_res = ai.mutate_entity(
+            session_id,
+            "ball_01",
+            {"position": {"x": 0.3, "y": 0.4}, "velocity": {"vx": 0.1, "vy": 0.2}}
+        )
+        self.assertTrue(mut_res["success"])
+        self.assertAlmostEqual(mut_res["entity"]["position"]["x"], 0.3)
+        self.assertAlmostEqual(mut_res["entity"]["velocity"]["vx"], 0.1)
+
+        # 5. Close session
+        close_res = ai.close_session(session_id)
+        self.assertTrue(close_res["success"])
+        # Subsequent inspection fails
+        fail_insp = ai.inspect_session(session_id)
+        self.assertFalse(fail_insp["success"])
+
+    def test_mcp_server_protocol_roundtrip(self):
+        """Verify MCP JSON-RPC message handling and tool dispatches."""
+        import mcp_server
+
+        # 1. Handshake
+        resp = mcp_server.handle_jsonrpc_message({"jsonrpc": "2.0", "id": 101, "method": "initialize", "params": {}})
+        self.assertEqual(resp["result"]["serverInfo"]["name"], "mlue-mcp-server")
+
+        # 2. Tool list
+        resp = mcp_server.handle_jsonrpc_message({"jsonrpc": "2.0", "id": 102, "method": "tools/list", "params": {}})
+        tool_names = [t["name"] for t in resp["result"]["tools"]]
+        self.assertIn("mlue_get_schema", tool_names)
+        self.assertIn("mlue_validate_scene", tool_names)
+        self.assertIn("mlue_start_simulation", tool_names)
+        self.assertIn("mlue_step_simulation", tool_names)
+        self.assertIn("mlue_inspect_state", tool_names)
+        self.assertIn("mlue_mutate_entity", tool_names)
+        self.assertIn("mlue_close_simulation", tool_names)
 
 
 if __name__ == "__main__":
