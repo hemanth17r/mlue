@@ -251,10 +251,10 @@ To maintain architectural rigor, MLUE documents its exact operational boundaries
   - Compile-time spatial reachability validation.
   - Native Model Context Protocol (MCP) server integration.
   - 10/10 Passing ruthless benchmarks on live telemetry dashboard.
-- [ ] **Phase 1: Native Substrate Transition & Hierarchical Storage (Active)** — *[Read Full Phase 1 Blueprint](docs/PHASE_1.md)* • *[Benchmark Roadmap](docs/BENCHMARK_ROADMAP.md)*
+- [ ] **Phase 1: Native Substrate Transition & Hierarchical Storage (Active)** — *[Phase 1 Blueprint](docs/PHASE_1.md)* • *[Benchmark Roadmap](docs/BENCHMARK_ROADMAP.md)* • *[Industrial Benchmark Grounding](docs/BENCHMARK_GROUNDING.md)*
   - [x] **1.1**: Hierarchical State-Trees & Query/Mutation Primitives.
   - [x] **1.2**: Zero-Copy Binary Document & WAL Persistence (`.mlueb`, `.wal`).
-  - [ ] **1.3**: Continuous Spatial Indexing & Narrowphase (BVH / Grid Acceleration) — *[Introduces Benchmark B11]*.
+  - [x] **1.3**: Continuous Spatial Indexing & Narrowphase (BVH / Grid Acceleration) — *[Introduced Benchmark B11]*.
   - [ ] **1.4**: Fixed-Point Deterministic Math & Cross-Architecture Parity (Q32.32) — *[Introduces Benchmark B12]*.
   - [ ] **1.5**: Native C Execution Core (`mlue_core.c` / C-FFI).
   - [ ] **1.6**: Interactive Headless Protocol, WASM Target & "Universal 12" Benchmark Verification.
