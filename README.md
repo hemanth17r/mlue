@@ -108,25 +108,50 @@ python -m unittest discover -s tests -p "test_*.py" -v
 
 ---
 
-## 🔌 Connecting to Claude Desktop & Cursor (MCP Setup)
+## 🔌 Connecting AI Agents via Model Context Protocol (MCP)
 
-MLUE provides a zero-dependency **Model Context Protocol (MCP)** server over standard I/O (`stdio`).
+MLUE supports two connection transports:
+1. **Public Cloud Gateway (Zero Setup)**: Connect directly over HTTPS without downloading code.
+2. **Local Standard I/O (Private & Sovereign)**: Run `mcp_server.py` locally with 0 dependencies.
 
-### Step 1: Test MCP Protocol Locally
+---
+
+### Option A: Public Cloud Remote MCP (Zero Local Setup)
+
+Connect any MCP client (Claude Desktop, Cursor, remote agent loops) to the live cloud endpoint:
+
+**Endpoint URL**: `https://mlue-bench.vercel.app/api/mcp`
+
+#### Claude Desktop Configuration (`claude_desktop_config.json`):
+```json
+{
+  "mcpServers": {
+    "mlue-cloud": {
+      "url": "https://mlue-bench.vercel.app/api/mcp"
+    }
+  }
+}
+```
+
+---
+
+### Option B: Local Private MCP Server (`stdio`)
+
+Run the zero-dependency Python server directly on your local machine:
+
+#### 1. Test Protocol Locally
 ```bash
 python mcp_server.py --test
 ```
 
-### Step 2: Configure Claude Desktop
-Add MLUE to your `claude_desktop_config.json`:
-
+#### 2. Configure Claude Desktop
 * **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 * **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
-    "mlue": {
+    "mlue-local": {
       "command": "python",
       "args": [
         "C:\\path\\to\\mlue\\mcp_server.py"
@@ -135,13 +160,12 @@ Add MLUE to your `claude_desktop_config.json`:
   }
 }
 ```
-*(On macOS/Linux, replace `command` with `python3` and specify the absolute POSIX path to `mcp_server.py`).*
+*(On macOS/Linux, replace `command` with `python3` and specify the absolute POSIX path).*
 
-### Step 3: Configure Cursor / VS Code MCP Extension
-Add to your Cursor / VS Code MCP settings:
+#### 3. Configure Cursor / VS Code MCP Extension
 ```json
 {
-  "name": "mlue",
+  "name": "mlue-local",
   "command": "python",
   "args": ["/absolute/path/to/mlue/mcp_server.py"]
 }
