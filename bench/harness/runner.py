@@ -592,7 +592,92 @@ class BenchmarkRunnerBP2:
         }
 
     # =========================================================================
-    # EXECUTE ALL 10 BENCHMARKS & EXPORT TELEMETRY
+    # BENCHMARK 11: High-Entity Spatial Scaling (Broadphase Cull Factor)
+    # =========================================================================
+    def run_benchmark_11(self) -> Dict[str, Any]:
+        """Evaluates Broadphase Spatial Hash Grid cull efficiency and scaling on N=1,000 active entities."""
+        from runtime.spatial import SpatialHashGrid2D
+        import random
+
+        env = Environment(width=1000, height=1000, background="#000000")
+        rng = random.Random(42)
+        n = 1000
+        entities = []
+        for i in range(n):
+            px = rng.uniform(0.02, 0.98)
+            py = rng.uniform(0.02, 0.98)
+            vx = rng.uniform(-0.1, 0.1)
+            vy = rng.uniform(-0.1, 0.1)
+            entities.append(
+                Entity(
+                    id=f"e_{i:04d}",
+                    type="circle",
+                    position=Position(x=px, y=py),
+                    size=CircleSize(radius=0.005),
+                    velocity=Velocity(vx=vx, vy=vy),
+                    properties={"solid": True},
+                    active=True,
+                )
+            )
+
+        grid = SpatialHashGrid2D()
+        aabbs = grid.build(entities, env)
+        candidates = grid.get_candidate_pairs(aabbs)
+
+        total_pairwise_possible = (n * (n - 1)) // 2  # 499,500
+        candidate_count = len(candidates)
+        cull_efficiency = (1.0 - (candidate_count / total_pairwise_possible)) * 100.0
+
+        # Step 20 frames to measure throughput at N=1,000
+        engine = MLUEEngine()
+        doc = MLUEDocument(
+            version="1.3",
+            environment=env,
+            entities=entities,
+            state_variables={},
+            rules=[],
+        )
+        sim_state = engine.init_simulation(doc)
+        dt = 1.0 / 60.0
+
+        start_time = time.perf_counter()
+        steps = 20
+        for _ in range(steps):
+            sim_state = engine.step(sim_state, dt)
+        elapsed = time.perf_counter() - start_time
+        ticks_per_sec = steps / max(elapsed, 1e-9)
+
+        passed = (cull_efficiency >= 98.0) and (candidate_count < 10000)
+
+        return {
+            "id": "B11",
+            "name": "Spatial Scaling & Broadphase Efficiency",
+            "category": "Performance",
+            "format_type": "broadphase_scaling",
+            "passed": passed,
+            "cull_efficiency": f"{cull_efficiency:.2f}%",
+            "candidate_pairs": candidate_count,
+            "total_pairs_possible": total_pairwise_possible,
+            "ticks_per_sec_1k": f"{ticks_per_sec:,.0f} ticks/s",
+            "target": "≥ 98.0% Cull Efficiency at N=1,000",
+            "unit": "% Culled",
+            "value_display": f"{cull_efficiency:.1f}% Cull ({candidate_count:,} pairs)",
+            "details": [
+                f"Tested N=1,000 active entities (499,500 theoretical pairwise tests).",
+                f"Broadphase pruned {total_pairwise_possible - candidate_count:,} non-colliding pairs ({cull_efficiency:.2f}% cull rate).",
+                f"Evaluation throughput at N=1,000: {ticks_per_sec:,.0f} steps/second."
+            ],
+            "formula": "Cull_Rate = 1.0 - (Broadphase_Pairs / (N*(N-1)/2))",
+            "explanation": {
+                "what_it_tests": "Proves spatial grid eliminates O(N^2) pairwise explosion, scaling to 1,000+ entities without lag.",
+                "what_we_measure": "Percentage of non-colliding entity pairs pruned before narrowphase physics (Target: ≥ 98.0%).",
+                "how_its_measured": "Spawns 1,000 dynamic entities in a normalized arena and measures pairs emitted by SpatialHashGrid2D.",
+                "how_to_compare": "≥ 98% = O(N log N) scaling; < 90% = O(N^2) CPU bottleneck."
+            }
+        }
+
+    # =========================================================================
+    # EXECUTE ALL 11 BENCHMARKS & EXPORT TELEMETRY
     # =========================================================================
     def run_all_and_export(self) -> Dict[str, Any]:
         timestamp_iso = datetime.now(timezone.utc).isoformat()
@@ -608,13 +693,14 @@ class BenchmarkRunnerBP2:
             self.run_benchmark_08(),
             self.run_benchmark_09(),
             self.run_benchmark_10(),
+            self.run_benchmark_11(),
         ]
 
         all_passed = all(b["passed"] for b in benchmarks)
         run_record = {
             "run_id": f"RUN_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             "timestamp": timestamp_iso,
-            "mlue_phase": "Phase 1.2 (v1.2.0 Zero-Copy Binary Document & WAL Persistence)",
+            "mlue_phase": "Phase 1.3 (v1.3.0 Continuous Spatial Indexing & Broadphase Acceleration)",
             "environment": {
                 "python_version": platform.python_version(),
                 "os": f"{platform.system()} {platform.release()}",

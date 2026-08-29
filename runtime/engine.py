@@ -26,6 +26,7 @@ from .model import (
     Action,
 )
 from .loader import parse_keypath
+from .spatial import SpatialHashGrid2D
 
 
 class MLUEEngine:
@@ -402,34 +403,44 @@ class MLUEEngine:
     def _resolve_pairwise_collisions(
         self, entities: List[Entity], env: Environment
     ) -> Tuple[List[Entity], Set[FrozenSet[str]]]:
-        """Resolves pairwise relational collisions between active solid entities and records collision events."""
+        """Resolves pairwise relational collisions using broadphase spatial indexing and narrowphase physics."""
         collision_events: Set[FrozenSet[str]] = set()
         n = len(entities)
+        if n < 2:
+            return entities, collision_events
 
-        for i in range(n):
-            for j in range(i + 1, n):
-                e1 = entities[i]
-                e2 = entities[j]
-                if not (e1.active and e2.active):
-                    continue
+        # 1. Broadphase: Generate candidate collision pairs
+        if n <= 6:
+            candidate_pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
+        else:
+            grid = SpatialHashGrid2D()
+            aabbs = grid.build(entities, env)
+            candidate_pairs = grid.get_candidate_pairs(aabbs)
 
-                if e1.properties.get("solid", False) and e2.properties.get("solid", False):
-                    has_collided = False
-                    if e1.type == "circle" and e2.type == "box":
-                        e1_res, e2_res, has_collided = self._resolve_circle_box_collision(e1, e2, env)
-                        entities[i], entities[j] = e1_res, e2_res
-                    elif e1.type == "box" and e2.type == "circle":
-                        e2_res, e1_res, has_collided = self._resolve_circle_box_collision(e2, e1, env)
-                        entities[i], entities[j] = e1_res, e2_res
-                    elif e1.type == "circle" and e2.type == "circle":
-                        e1_res, e2_res, has_collided = self._resolve_circle_circle_collision(e1, e2, env)
-                        entities[i], entities[j] = e1_res, e2_res
-                    elif e1.type == "box" and e2.type == "box":
-                        e1_res, e2_res, has_collided = self._resolve_box_box_collision(e1, e2, env)
-                        entities[i], entities[j] = e1_res, e2_res
+        # 2. Narrowphase: Exact impulse collision resolution
+        for i, j in candidate_pairs:
+            e1 = entities[i]
+            e2 = entities[j]
+            if not (e1.active and e2.active):
+                continue
 
-                    if has_collided:
-                        collision_events.add(frozenset([e1.id, e2.id]))
+            if e1.properties.get("solid", False) and e2.properties.get("solid", False):
+                has_collided = False
+                if e1.type == "circle" and e2.type == "box":
+                    e1_res, e2_res, has_collided = self._resolve_circle_box_collision(e1, e2, env)
+                    entities[i], entities[j] = e1_res, e2_res
+                elif e1.type == "box" and e2.type == "circle":
+                    e2_res, e1_res, has_collided = self._resolve_circle_box_collision(e2, e1, env)
+                    entities[i], entities[j] = e1_res, e2_res
+                elif e1.type == "circle" and e2.type == "circle":
+                    e1_res, e2_res, has_collided = self._resolve_circle_circle_collision(e1, e2, env)
+                    entities[i], entities[j] = e1_res, e2_res
+                elif e1.type == "box" and e2.type == "box":
+                    e1_res, e2_res, has_collided = self._resolve_box_box_collision(e1, e2, env)
+                    entities[i], entities[j] = e1_res, e2_res
+
+                if has_collided:
+                    collision_events.add(frozenset([e1.id, e2.id]))
 
         return entities, collision_events
 
