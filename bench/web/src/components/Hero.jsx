@@ -11,14 +11,14 @@ export default function Hero({ latestRun }) {
         <span>10-Pillar Multi-Format Architectural Audit</span>
       </div>
 
-      {/* Main Apple Headline */}
+      {/* Main Headline */}
       <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight apple-ocean-text mb-3">
-        Physics-Grounded. Declarative. Substrate.
+        First-Principles. Declarative. Universal Substrate.
       </h1>
 
       {/* Subline Axiom */}
       <p className="text-sm sm:text-base text-slate-400 font-mono max-w-2xl mx-auto mb-6">
-        "AI is the builder. Humans are users." Zero procedural boilerplate. 100% empirical telemetry.
+        "AI is the builder. Humans are users." One unified mathematical substrate for software applications, interactive UIs, simulations, and games.
       </p>
 
       {/* Hero Key Metrics Strip */}

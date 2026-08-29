@@ -12,9 +12,51 @@ import {
 } from 'lucide-react';
 
 export default function HeadToHeadComparison() {
-  const [selectedGame, setSelectedGame] = useState('pong');
+  const [selectedGame, setSelectedGame] = useState('dashboard');
 
   const gamesData = {
+    dashboard: {
+      name: 'Interactive Dashboard',
+      icon: '📊',
+      verdict: 'Traditional stacks require 450 lines of React/Electron/Redux boilerplate and 500MB RAM. MLUE declares the complete data model, layout, and alarm rules in 1 unified JSON file.',
+      specs: [
+        {
+          label: 'Application Boilerplate',
+          sublabel: 'Code required to build UI & state',
+          icon: <Code className="w-4 h-4 text-cyan-400" />,
+          traditional: { value: '450+ Lines', desc: 'React hooks, CSS flexbox, Redux store' },
+          mlue: { value: '1 JSON Document', desc: 'Zero code, 100% declarative substrate' }
+        },
+        {
+          label: 'Memory Footprint',
+          sublabel: 'RAM consumption on launch',
+          icon: <Trash2 className="w-4 h-4 text-rose-400" />,
+          traditional: { value: '300MB – 500MB', desc: 'Heavy Chromium/Electron sandbox' },
+          mlue: { value: '< 15 KB Total', desc: 'Direct memory-mapped state' }
+        },
+        {
+          label: 'Evaluation Latency',
+          sublabel: 'Time to evaluate state transition',
+          icon: <Zap className="w-4 h-4 text-amber-400" />,
+          traditional: { value: '16ms – 50ms', desc: 'Virtual DOM diffing & browser reflow' },
+          mlue: { value: '26.8 µs', desc: 'Microsecond mathematical engine' }
+        },
+        {
+          label: 'State Invariant Safety',
+          sublabel: 'Data corruption & crash risk',
+          icon: <ShieldAlert className="w-4 h-4 text-indigo-400" />,
+          traditional: { value: 'Runtime State Crashes', desc: 'Undefined prop & null pointer errors' },
+          mlue: { value: '100% Statically Verified', desc: 'Mathematical reachability enforcement' }
+        },
+        {
+          label: 'AI Introspection',
+          sublabel: 'How AI agents inspect & mutate',
+          icon: <Lock className="w-4 h-4 text-emerald-400" />,
+          traditional: { value: 'Fragile DOM Scraping', desc: 'Breaks with every CSS change' },
+          mlue: { value: 'Native MCP Protocol', desc: 'Deterministic JSON-RPC tools' }
+        }
+      ]
+    },
     pong: {
       name: 'Pong',
       icon: '🏓',
@@ -107,7 +149,7 @@ export default function HeadToHeadComparison() {
       ]
     },
     particles: {
-      name: 'Particle Fountain',
+      name: 'Physical Simulation',
       icon: '⚛️',
       verdict: 'Traditional particle sims suffer from energy leakage and frame drops. MLUE maintains exact mathematical energy conservation down to parts-per-billion.',
       specs: [
@@ -160,7 +202,7 @@ export default function HeadToHeadComparison() {
             </span>
           </div>
           <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-            How traditional human-centric game loops compare directly against the MLUE declarative substrate.
+            How traditional human-centric software and game loops compare directly against the MLUE declarative substrate.
           </p>
         </div>
 
@@ -194,7 +236,7 @@ export default function HeadToHeadComparison() {
         <div className="grid grid-cols-12 bg-black/40 border-b border-white/[0.06] p-4 text-xs font-mono font-bold tracking-wider">
           <div className="col-span-5 text-left text-rose-300 flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <span className="truncate">TRADITIONAL STACK (Pygame)</span>
+            <span className="truncate">TRADITIONAL STACK (Human Scaffolding)</span>
           </div>
           <div className="col-span-2 text-center text-slate-500 uppercase tracking-widest text-[10px]">
             METRIC

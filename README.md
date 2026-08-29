@@ -1,5 +1,5 @@
-# MLUE — Machine-Accessible Simulation & Physics Substrate
-### *Deterministic, Zero-Dependency 2D Simulation Substrate for Autonomous AI Agents*
+# MLUE — Machine-Accessible Universal Software & Simulation Substrate
+### *Deterministic, Zero-Dependency Substrate for Software Applications, Interactive UIs, Simulations & Games*
 
 [![CI](https://github.com/hemanth17r/mlue/actions/workflows/ci.yml/badge.svg)](https://github.com/hemanth17r/mlue/actions)
 [![Live Benchmarks](https://img.shields.io/badge/Live%20Telemetry-10%2F10%20Passing-success?style=for-the-badge&logo=vercel)](https://mlue-bench.vercel.app)
@@ -12,7 +12,9 @@
 
 > **"AI is the builder. Humans are users."**
 >
-> MLUE is an **MCP-native, deterministic 2D simulation substrate** engineered from first principles for autonomous AI agent evaluation, rule synthesis, and world prototyping. It provides AI agents with an ultra-lightweight, zero-dependency mathematical sandbox to construct, inspect, validate, and simulate emergent interactive environments in microseconds.
+> MLUE is a **first-principles universal software and simulation substrate** engineered specifically for machine intelligence. It eliminates 50 years of legacy human-centric scaffolding (HTML, CSS, React, Virtual DOMs, SQL engines, ORMs) and gives AI agents a single, unified mathematical language to construct, inspect, validate, and execute **interactive software applications, control dashboards, physical simulations, and games** in microseconds.
+>
+> 📜 **[Read the Master Foundational Thesis & 5-Phase Roadmap →](docs/FOUNDATIONAL_THESIS.md)**
 
 👉 **[Explore the Live Interactive Benchmark & Telemetry Dashboard →](https://mlue-bench.vercel.app)**
 
@@ -20,15 +22,15 @@
 
 ## ⚡ What is MLUE (And What It Is NOT)
 
-In an ecosystem crowded with high-level prompt wrappers and heavyweight 3D game engines, MLUE is positioned specifically as a foundational, zero-dependency computational substrate:
+In an ecosystem crowded with high-level prompt wrappers and legacy human-centric application stacks, MLUE is positioned specifically as a foundational, zero-dependency computational substrate:
 
-| Architectural Dimension | High-Level "AI Wrapper" | Heavy Game Engines (Unity / Godot) | **MLUE Substrate (Phase 0)** |
+| Architectural Dimension | Legacy Human Web/App Stack (React / SQL / Electron) | Heavy Game Engines (Unity / Godot) | **MLUE Substrate (Phase 0)** |
 | :--- | :--- | :--- | :--- |
-| **Primary Purpose** | Prompt chaining / UI skins | 3D visual rendering & player games | **Lightweight simulation sandbox for AI agent loops** |
-| **External Dependencies** | 15+ third-party `pip` / `npm` packages | Multi-gigabyte binaries & runtimes | **0 (Pure Python Standard Library)** |
-| **Simulation Latency** | 500ms – 2,000ms (Remote API roundtrips) | 16.6ms (GPU / frame-locked) | **26.8 µs – 40.0 µs per tick (25k–37k ticks/s)** |
-| **Agent Introspection** | Unstructured text scraping / regex | Complex native C++ / C# bindings | **Native Model Context Protocol (MCP) JSON-RPC** |
-| **Coordinate Space** | Non-standardized / Hallucinated | Viewport-dependent pixel drift | **Strict normalized $[0, 1]$ coordinate space (>16 decades precision)** |
+| **Primary Purpose** | Human typing & DOM component scaffolding | 3D visual rendering & player games | **Unified software, UI, and simulation substrate for AI agents** |
+| **External Dependencies** | 50+ third-party packages & 500MB runtime | Multi-gigabyte binaries & runtimes | **0 (Pure Python Standard Library)** |
+| **Execution Latency** | 50ms – 500ms (DOM reflow & SQL roundtrips) | 16.6ms (GPU / frame-locked) | **26.8 µs – 40.0 µs per tick (25k–37k ticks/s)** |
+| **Agent Introspection** | Fragile DOM scraping / CSS selector hacks | Complex native C++ / C# bindings | **Native Model Context Protocol (MCP) JSON-RPC** |
+| **Coordinate Space** | Viewport-dependent CSS / Layout drift | Viewport-dependent pixel drift | **Strict normalized $[0, 1]$ coordinate space (>16 decades precision)** |
 | **Memory Footprint** | Bloated browser / Node runtime | 300 MB – 2 GB RAM | **0.72 Bytes/tick churn (Near-zero GC overhead)** |
 | **Safety Invariants** | Unhandled runtime crashes | Scene-graph runtime exceptions | **Compile-time static spatial reachability validation** |
 | **Determinism** | Non-repeatable execution | Platform-dependent floating point | **100% Bit-exact SHA-256 state digest across 50,000 ticks** |
@@ -42,7 +44,7 @@ MLUE is continuously audited against 10 rigorous architectural, physical, and en
 | ID | Benchmark Pillar | Target Requirement | Measured Value | Verification Method |
 | :---: | :--- | :--- | :--- | :--- |
 | **B1** | **Substrate Decoupling** | `0 Foreign Imports` | **0 Violations (Tier L1)** | AST parser across `model.py`, `engine.py`, `loader.py` |
-| **B2** | **Declarative Emergence** | $\ge 3.0\times$ Expansion | **3.5x Multiplier** | 7 emergent games / 2 universal primitives (0 heuristics) |
+| **B2** | **Declarative Emergence** | $\ge 3.0\times$ Expansion | **3.5x Multiplier** | 7 emergent systems / 2 universal primitives (0 heuristics) |
 | **B3** | **Spatial Invariance** | $\Delta \le 10^{-7}$ drift across viewports | **>16.0 Decades Precision** | Bit-exact trajectory ($0.0\times 10^0$ drift) from 100x100 to 4K |
 | **B4** | **Physical Conservation** | $\Delta E_k \le 1,000\text{ PPB}$ | **0.0 PPB Drift** | Kinetic energy conservation over 1,000 collision trajectories |
 | **B5** | **Static Reachability** | $10/10$ Statically Blocked | **10/10 Blocked (100%)** | Compile-time rejection of mathematically unreachable triggers |
@@ -84,21 +86,24 @@ Requires only Python 3.10+ (no `pip install` required):
 git clone https://github.com/hemanth17r/mlue.git
 cd mlue
 
-# Play Emergent Breakout (Paddle: A/D or Left/Right arrows)
+# 1. Run Interactive System & Monitoring Dashboard Application (Controls: A/D or Left/Right)
+python mlue.py run examples/dashboard_app.mlue
+
+# 2. Play Emergent Breakout (Paddle: A/D or Left/Right arrows)
 python mlue.py run examples/breakout.mlue
 
-# Play Emergent Pong (Left Paddle: W/S, Right Paddle: Up/Down)
+# 3. Play Emergent Pong (Left Paddle: W/S, Right Paddle: Up/Down)
 python mlue.py run examples/pong.mlue
 
-# Run Bumper Arena simulation
+# 4. Run Bumper Arena Physical Simulation
 python mlue.py run examples/bumper_arena.mlue
 ```
 
-### 2. High-Speed Headless Simulation
-Evaluate 1,000 deterministic physics and rule steps in milliseconds without opening a window:
+### 2. High-Speed Headless Evaluation (For AI Agents)
+Evaluate 1,000 deterministic state and rule steps in milliseconds without opening a window:
 
 ```bash
-python mlue.py run examples/breakout.mlue --headless --ticks 1000
+python mlue.py run examples/dashboard_app.mlue --headless --ticks 1000
 ```
 
 ### 3. Run Unit Tests (19/19 Tests Passing)
