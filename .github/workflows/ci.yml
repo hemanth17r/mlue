@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    name: Test & Invariant Verification
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        python-version: [ '3.10', '3.11', '3.12', '3.13' ]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run Runtime Unit Tests (19/19)
+        run: |
+          python -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Run MCP Server Protocol Self-Test
+        run: |
+          python mcp_server.py --test
+
+      - name: Run 10-Pillar Benchmark & Invariant Harness
+        run: |
+          python bench/harness/runner.py
