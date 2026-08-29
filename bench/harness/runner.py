@@ -9,6 +9,7 @@ import ast
 import hashlib
 import json
 import math
+import platform
 import sys
 import time
 import tracemalloc
@@ -613,7 +614,12 @@ class BenchmarkRunnerBP2:
         run_record = {
             "run_id": f"RUN_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             "timestamp": timestamp_iso,
-            "mlue_phase": "Phase 0.6 (Emergent Breakout)",
+            "mlue_phase": "Phase 0.7 (v0.7.0 Machine-Accessible AI Interface)",
+            "environment": {
+                "python_version": platform.python_version(),
+                "os": f"{platform.system()} {platform.release()}",
+                "architecture": platform.machine(),
+            },
             "overall_status": "PASS" if all_passed else "FAIL",
             "passed_count": sum(1 for b in benchmarks if b["passed"]),
             "total_count": len(benchmarks),

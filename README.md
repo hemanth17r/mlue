@@ -1,16 +1,18 @@
 # MLUE — Machine-Accessible Simulation & Physics Substrate
-### *Deterministic, Zero-Dependency Execution Substrate for Autonomous AI Agents*
+### *Deterministic, Zero-Dependency 2D Simulation Substrate for Autonomous AI Agents*
 
+[![CI](https://github.com/hemanth17r/mlue/actions/workflows/ci.yml/badge.svg)](https://github.com/hemanth17r/mlue/actions)
 [![Live Benchmarks](https://img.shields.io/badge/Live%20Telemetry-10%2F10%20Passing-success?style=for-the-badge&logo=vercel)](https://mlue-bench.vercel.app)
 [![Substrate Tier](https://img.shields.io/badge/Substrate-Tier%20L1%20Decoupled-blue?style=for-the-badge)](https://mlue-bench.vercel.app)
-[![Dependencies](https://img.shields.io/badge/Dependencies-0%20(Pure%20Stdlib)-brightgreen?style=for-the-badge)](file:///c:/Users/AKKALA%20HEMANTH%20REDDY/OneDrive/Desktop/mlue/README.md)
-[![Tests](https://img.shields.io/badge/Tests-19%2F19%20Passing%20(100%25)-brightgreen?style=for-the-badge)](file:///c:/Users/AKKALA%20HEMANTH%20REDDY/OneDrive/Desktop/mlue/tests/test_runtime.py)
-[![Throughput](https://img.shields.io/badge/Throughput-37.4k%20ticks%2Fs-orange?style=for-the-badge)](https://mlue-bench.vercel.app)
+[![Dependencies](https://img.shields.io/badge/Dependencies-0%20(Pure%20Stdlib)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
+[![Tests](https://img.shields.io/badge/Tests-19%2F19%20Passing%20(100%25)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
+[![Throughput](https://img.shields.io/badge/Throughput-25k--37k%20ticks%2Fs-orange?style=for-the-badge)](https://mlue-bench.vercel.app)
 [![Determinism](https://img.shields.io/badge/Determinism-100%25%20Bit--Exact-purple?style=for-the-badge)](https://mlue-bench.vercel.app)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 > **"AI is the builder. Humans are users."**
 >
-> MLUE is an AI-first, mathematically verified simulation substrate built from physics and computational geometry upward. It provides autonomous AI agents with an ultra-lightweight, zero-latency execution layer to programmatically construct, inspect, validate, and simulate emergent interactive environments.
+> MLUE is an **MCP-native, deterministic 2D simulation substrate** engineered from first principles for autonomous AI agent evaluation, rule synthesis, and world prototyping. It provides AI agents with an ultra-lightweight, zero-dependency mathematical sandbox to construct, inspect, validate, and simulate emergent interactive environments in microseconds.
 
 👉 **[Explore the Live Interactive Benchmark & Telemetry Dashboard →](https://mlue-bench.vercel.app)**
 
@@ -18,14 +20,15 @@
 
 ## ⚡ What is MLUE (And What It Is NOT)
 
-In an ecosystem crowded with superficial LLM wrappers and heavyweight game engines, MLUE is engineered as a foundational, zero-dependency computational substrate:
+In an ecosystem crowded with high-level prompt wrappers and heavyweight 3D game engines, MLUE is positioned specifically as a foundational, zero-dependency computational substrate:
 
-| Architectural Dimension | Superficial "AI Wrapper" | Heavy Game Engines (Unity / Godot) | **MLUE Substrate (Phase 0)** |
+| Architectural Dimension | High-Level "AI Wrapper" | Heavy Game Engines (Unity / Godot) | **MLUE Substrate (Phase 0)** |
 | :--- | :--- | :--- | :--- |
+| **Primary Purpose** | Prompt chaining / UI skins | 3D visual rendering & player games | **Lightweight simulation sandbox for AI agent loops** |
 | **External Dependencies** | 15+ third-party `pip` / `npm` packages | Multi-gigabyte binaries & runtimes | **0 (Pure Python Standard Library)** |
-| **Simulation Latency** | 500ms – 2,000ms (Remote API roundtrips) | 16.6ms (GPU / frame-locked) | **26.77 µs per tick (37,359 ticks/s)** |
+| **Simulation Latency** | 500ms – 2,000ms (Remote API roundtrips) | 16.6ms (GPU / frame-locked) | **26.8 µs – 40.0 µs per tick (25k–37k ticks/s)** |
 | **Agent Introspection** | Unstructured text scraping / regex | Complex native C++ / C# bindings | **Native Model Context Protocol (MCP) JSON-RPC** |
-| **Mathematical Space** | Hallucinated / Non-deterministic | Viewport-dependent float drift | **Strict normalized $[0, 1]$ coordinate space (>16 decades precision)** |
+| **Coordinate Space** | Non-standardized / Hallucinated | Viewport-dependent pixel drift | **Strict normalized $[0, 1]$ coordinate space (>16 decades precision)** |
 | **Memory Footprint** | Bloated browser / Node runtime | 300 MB – 2 GB RAM | **0.72 Bytes/tick churn (Near-zero GC overhead)** |
 | **Safety Invariants** | Unhandled runtime crashes | Scene-graph runtime exceptions | **Compile-time static spatial reachability validation** |
 | **Determinism** | Non-repeatable execution | Platform-dependent floating point | **100% Bit-exact SHA-256 state digest across 50,000 ticks** |
@@ -43,13 +46,32 @@ MLUE is continuously audited against 10 rigorous architectural, physical, and en
 | **B3** | **Spatial Invariance** | $\Delta \le 10^{-7}$ drift across viewports | **>16.0 Decades Precision** | Bit-exact trajectory ($0.0\times 10^0$ drift) from 100x100 to 4K |
 | **B4** | **Physical Conservation** | $\Delta E_k \le 1,000\text{ PPB}$ | **0.0 PPB Drift** | Kinetic energy conservation over 1,000 collision trajectories |
 | **B5** | **Static Reachability** | $10/10$ Statically Blocked | **10/10 Blocked (100%)** | Compile-time rejection of mathematically unreachable triggers |
-| **B6** | **Step Latency & Speed** | $> 10,000\text{ ticks/s}$ | **37,359 ticks/s (26.8 µs)** | 10,000 continuous collision steps (10.7x faster than baseline) |
+| **B6** | **Step Latency & Speed** | $> 10,000\text{ ticks/s}$ | **25.0k–37.4k ticks/s (26.8–40.0 µs)** | 10,000 continuous collision steps (10.7x faster than baseline) |
 | **B7** | **Memory Allocation Churn** | $< 500\text{ B/tick}$ churn | **0.72 B/tick Churn** | `tracemalloc` heap delta across 5,000 steps (3.50 KB total) |
 | **B8** | **Structural Complexity** | Peak McCabe $CC \le 30$ | **Max CC = 21 (Bounded)** | AST branching complexity audit across all 13 core functions |
 | **B9** | **Determinism & Replay** | $100\%$ Bit-Exact Digest Match | **Bit-Exact (`23a940449ab2...`)** | Cryptographic SHA-256 digest match across 50,000 ticks |
 | **B10**| **Tunneling Stress** | $v_{\max} \ge 2.5\text{ u/s}$ ($0\%$ Defect) | **$v_{\max} = 2.5\text{ u/s}$ ($0\%$ Defect)**| High-velocity collision containment against 0.02 barrier |
 
-> Live charts, formulas, and telemetry breakdown available at **[mlue-bench.vercel.app](https://mlue-bench.vercel.app)**.
+---
+
+## 🔬 Benchmark Methodology & Reproducibility
+
+To ensure scientific integrity and independent reproduction:
+
+1. **Hardware & Environment Specification**:
+   - **Host CPU**: AMD / Intel x86_64 or Apple Silicon (evaluated via `platform.processor()`).
+   - **Runtime**: Python 3.10+ standard library (evaluated across 3.10, 3.11, 3.12, 3.13 in CI).
+   - **Timers**: High-resolution monotonic hardware clocks (`time.perf_counter_ns`).
+2. **Workload Scope**:
+   - All latency and throughput benchmarks measure **pure headless state integration** (excluding OS windowing, event pump, and rendering overhead).
+   - The Pygame baseline comparison is an illustrative CPU baseline comparing equivalent headless discrete collision steps.
+3. **Artifact Transparency**:
+   - Raw benchmark outputs, timestamps, and commit digests are committed in `bench/telemetry/runs.json` and visualized live at **[mlue-bench.vercel.app](https://mlue-bench.vercel.app)**.
+
+To re-run the benchmark suite locally:
+```bash
+python bench/harness/runner.py
+```
 
 ---
 
@@ -79,57 +101,94 @@ Evaluate 1,000 deterministic physics and rule steps in milliseconds without open
 python mlue.py run examples/breakout.mlue --headless --ticks 1000
 ```
 
-### 3. Connect AI Agents via Model Context Protocol (MCP)
-MLUE includes a native zero-dependency MCP JSON-RPC server (`mcp_server.py`) compatible with **Claude Desktop, Antigravity, Cursor, and custom agent runtimes**:
-
+### 3. Run Unit Tests (19/19 Tests Passing)
 ```bash
-# Run standalone MCP protocol self-test
-python mcp_server.py --test
-
-# Launch MCP server over stdio
-python mcp_server.py
+python -m unittest discover -s tests -p "test_*.py" -v
 ```
 
 ---
 
-## 🤖 Machine-Accessible AI Agent Tool Suite
+## 🔌 Connecting to Claude Desktop & Cursor (MCP Setup)
 
-AI agents do not write fragile code—they interact with MLUE through a declarative mathematical representation and standard MCP tool calls:
+MLUE provides a zero-dependency **Model Context Protocol (MCP)** server over standard I/O (`stdio`).
+
+### Step 1: Test MCP Protocol Locally
+```bash
+python mcp_server.py --test
+```
+
+### Step 2: Configure Claude Desktop
+Add MLUE to your `claude_desktop_config.json`:
+
+* **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+* **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
 ```json
 {
-  "canvas": { "width": 800, "height": 600 },
-  "entities": [
-    {
-      "id": "ball",
-      "shape": "circle",
-      "position": { "x": 0.5, "y": 0.7 },
-      "radius": 0.025,
-      "velocity": { "vx": 0.25, "vy": -0.45 },
-      "properties": { "solid": true }
-    }
-  ],
-  "rules": [
-    {
-      "trigger": "collision_with_brick",
-      "condition": { "type": "collision", "entity_a": "ball", "entity_b": "brick_01" },
-      "actions": [
-        { "type": "destroy_entity", "target": "brick_01" },
-        { "type": "increment", "variable": "score", "value": 10 }
+  "mcpServers": {
+    "mlue": {
+      "command": "python",
+      "args": [
+        "C:\\path\\to\\mlue\\mcp_server.py"
       ]
     }
-  ]
+  }
+}
+```
+*(On macOS/Linux, replace `command` with `python3` and specify the absolute POSIX path to `mcp_server.py`).*
+
+### Step 3: Configure Cursor / VS Code MCP Extension
+Add to your Cursor / VS Code MCP settings:
+```json
+{
+  "name": "mlue",
+  "command": "python",
+  "args": ["/absolute/path/to/mlue/mcp_server.py"]
 }
 ```
 
-### Available MCP Tools for Autonomous Agents:
-* `mlue_get_schema`: Returns the declarative MLUE schema specification and spatial invariant rules.
-* `mlue_validate_scene`: Performs static reachability and geometric invariant validation on an MLUE document.
-* `mlue_start_simulation`: Spawns a deterministic in-memory simulation session.
-* `mlue_step_simulation`: Advances simulation by $N$ steps with optional input signal vectors.
-* `mlue_inspect_state`: Returns entity positions, velocities, state variables, and active collisions.
-* `mlue_mutate_entity`: Modifies entity properties or velocities dynamically during runtime.
-* `mlue_close_simulation`: Cleanly terminates and frees the session.
+---
+
+## 🤖 Available MCP AI Agent Tools
+
+AI agents interact with MLUE through declarative mathematical representations and standard JSON-RPC tool calls:
+
+| Tool Name | Description | Key Parameters |
+| :--- | :--- | :--- |
+| `mlue_get_schema` | Returns the declarative schema specification and spatial invariant rules. | None |
+| `mlue_validate_scene` | Statically verifies geometric invariants and reachability conditions. | `file_path` or `scene_dict` |
+| `mlue_start_simulation` | Spawns an isolated in-memory deterministic simulation session. | `file_path` or `scene_dict` |
+| `mlue_step_simulation` | Advances physics by $N$ steps with optional control signal vectors. | `session_id`, `dt`, `ticks`, `inputs` |
+| `mlue_inspect_state` | Returns positions, velocities, state variables, and active collision pairs. | `session_id` |
+| `mlue_mutate_entity` | Dynamically alters entity properties or velocities during simulation. | `session_id`, `entity_id`, `mutations` |
+| `mlue_close_simulation`| Cleanly terminates and frees the session state. | `session_id` |
+
+---
+
+## 🛡️ Security & Path Sandboxing
+
+MLUE enforces strict boundary safety:
+* **Path Invariants**: `loader.py` and `ai_interface.py` canonicalize all file paths and validate document schemas prior to execution. Path traversal tokens (`..`) outside authorized workspace trees are strictly rejected.
+* **Isolated Memory Sessions**: Dynamic AI simulation sessions run in memory-isolated `SimulationState` dataclasses with zero OS subprocess execution or arbitrary code evaluation (`eval` / `exec` are 100% prohibited across the codebase).
+* **Least Privilege**: When running MLUE in multi-tenant or untrusted cloud environments, running inside a lightweight container or sandbox is recommended.
+
+---
+
+## 📐 Current Capabilities & Explicit Limitations
+
+To maintain architectural rigor, MLUE documents its exact operational boundaries:
+
+### Supported in Phase 0 (Current):
+* **Geometry**: Continuous 2D circles (`CircleSize`) and axis-aligned bounding boxes (`BoxSize`) in normalized coordinate space $[0.0, 1.0]$.
+* **Physics**: First-order deterministic discrete time integration ($\Delta t$), exact normal impulse reflections, and spatial containment clamping.
+* **State & Rules**: Declarative document-level state variables, collision event triggers, spatial threshold triggers, and entity lifecycles (`destroy_entity`, `reset_entity`, `set_property`, `increment`, `set`).
+* **Determinism**: 100% bit-exact SHA-256 reproducibility on IEEE 754 floating-point runtimes.
+
+### Current Limitations (Roadmap for Phase 1 & Phase 2):
+* **No Angular Momentum / Rotation**: Entities currently translate linearly without rotational torque.
+* **No Arbitrary Polygons**: Non-axis-aligned polygons and concave geometry are scheduled for Phase 2.
+* **No Continuous Friction Manifolds**: Collisions are currently modeled as ideal elastic normal impulses.
+* **Single-Threaded Reference Core**: The current Python reference core executes sequentially; multi-threaded SIMD parallel rollouts are part of the Phase 1 native Rust transition.
 
 ---
 
@@ -173,23 +232,15 @@ AI agents do not write fragile code—they interact with MLUE through a declarat
 
 ---
 
-## 🧪 Verification & Unit Tests
+## 🤝 Contributing & Community
 
-Run the complete 19-test automated test suite:
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting pull requests.
 
-```bash
-python -m unittest discover -s tests -p "test_*.py"
-```
-
-```text
-...................
-----------------------------------------------------------------------
-Ran 19 tests in 0.064s
-
-OK
-```
+* **Bug Reports**: Use the [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md).
+* **Feature Requests & RFCs**: Use the [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md).
 
 ---
 
 ## 📄 License
-MIT License. Built from first principles.
+MIT License. Copyright (c) 2026 Akkala Hemanth Reddy. Built from first principles.
+
