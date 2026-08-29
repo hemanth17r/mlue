@@ -251,16 +251,16 @@ To maintain architectural rigor, MLUE documents its exact operational boundaries
   - Compile-time spatial reachability validation.
   - Native Model Context Protocol (MCP) server integration.
   - 10/10 Passing ruthless benchmarks on live telemetry dashboard.
-- [ ] **Phase 1: Native Substrate Transition & Hierarchical Storage (Active)** — *[Read Full Phase 1 Blueprint (Subphases 1.1–1.6)](docs/PHASE_1.md)*
-  - **1.1**: Hierarchical State-Trees & Query/Mutation Primitives.
-  - **1.2**: Zero-Copy Binary Document & WAL Persistence (`.mlueb`).
-  - **1.3**: Pure C-ABI Specification & Decoupled FFI Bridge.
-  - **1.4**: Native Compiled Integrator & Spatial Collision Core ($> 1\text{M}\text{ ticks/s}$).
-  - **1.5**: Native Rule Evaluator, Lifecycle & CLI/MCP Cutover.
-  - **1.6**: SIMD Multi-Agent Vectorized Rollout Engine ($> 10\text{M}\text{ ticks/s}$).
-- [ ] **Phase 2: Multi-Agent Continuous Constraint Manifolds**
-  - Arbitrary polygon collision manifolds & spatial partitioning mesh.
-  - Distributed multi-agent RL simulation environment.
+- [ ] **Phase 1: Native Substrate Transition & Hierarchical Storage (Active)** — *[Read Full Phase 1 Blueprint](docs/PHASE_1.md)* • *[Benchmark Roadmap](docs/BENCHMARK_ROADMAP.md)*
+  - [x] **1.1**: Hierarchical State-Trees & Query/Mutation Primitives.
+  - [x] **1.2**: Zero-Copy Binary Document & WAL Persistence (`.mlueb`, `.wal`).
+  - [ ] **1.3**: Continuous Spatial Indexing & Narrowphase (BVH / Grid Acceleration) — *[Introduces Benchmark B11]*.
+  - [ ] **1.4**: Fixed-Point Deterministic Math & Cross-Architecture Parity (Q32.32) — *[Introduces Benchmark B12]*.
+  - [ ] **1.5**: Native C Execution Core (`mlue_core.c` / C-FFI).
+  - [ ] **1.6**: Interactive Headless Protocol, WASM Target & "Universal 12" Benchmark Verification.
+- [ ] **Phase 2: Multi-Agent Continuous Constraint Manifolds & Rich Primitives**
+  - Continuous raycasting (`segment`), rounded caps (`capsule`), and vector typography (`text`).
+  - Multi-agent reinforcement learning simulation manifolds.
 
 ---
 
