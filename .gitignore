@@ -7,9 +7,17 @@ __pycache__/
 # Temporary / Scratch
 .tmp/
 *.tmp
+scratch/
+
+# Environment & Secrets
+.env
+.env.*
+.DS_Store
 
 # Benchmark Web App Artifacts (Zone 4)
 bench/web/node_modules/
 bench/web/dist/
 bench/web/.vite/
+.vercel/
+bench/web/.vercel/
 
