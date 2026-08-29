@@ -30,10 +30,10 @@ class MLUEAIInterface:
     def get_schema(self) -> Dict[str, Any]:
         """Returns the machine-readable schema definition and spatial invariant constraints."""
         return {
-            "mlue_version": "0.6",
+            "mlue_version": "0.7",
             "description": "MLUE Native AI Computational & Spatial Simulation Substrate",
             "root_fields": {
-                "mlue_version": {"type": "string", "enum": ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6"]},
+                "mlue_version": {"type": "string", "enum": ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7"]},
                 "environment": {
                     "dimensions": {"type": "array", "items": "integer", "minItems": 2, "maxItems": 2, "description": "[width, height]"},
                     "background": {"type": "string", "description": "Hex color code e.g. #0F172A"}

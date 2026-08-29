@@ -118,6 +118,8 @@ class handler(BaseHTTPRequestHandler):
                                 },
                                 'ticks': {
                                     'type': 'integer',
+                                    'minimum': 1,
+                                    'maximum': MAX_TICKS,
                                     'description': f'Number of simulation steps to evaluate (1 to {MAX_TICKS})'
                                 },
                                 'dt': {
@@ -129,7 +131,8 @@ class handler(BaseHTTPRequestHandler):
                                     'description': 'Optional input signal vector mapping channel names to float values [-1.0, 1.0]'
                                 }
                             },
-                            'required': ['scene']
+                            'required': ['scene'],
+                            'additionalProperties': False
                         }
                     }
                 ]
@@ -173,7 +176,26 @@ class handler(BaseHTTPRequestHandler):
                     self._send_error(rpc_id, -32602, "Invalid arguments: 'scene' must be a JSON object dictionary.")
                     return
 
-                ticks = min(max(int(args.get('ticks', 60)), 1), MAX_TICKS)
+                raw_ticks = args.get('ticks', 60)
+                try:
+                    requested_ticks = int(raw_ticks)
+                except (ValueError, TypeError):
+                    self._send_error(rpc_id, -32602, "Invalid arguments: 'ticks' must be an integer.")
+                    return
+
+                clamped = False
+                warning_msg = None
+                if requested_ticks > MAX_TICKS:
+                    ticks = MAX_TICKS
+                    clamped = True
+                    warning_msg = f"Requested ticks ({requested_ticks}) exceeded maximum cloud limit ({MAX_TICKS}). Clamped execution to {MAX_TICKS} ticks."
+                elif requested_ticks < 1:
+                    ticks = 1
+                    clamped = True
+                    warning_msg = "Requested ticks (<1) clamped to minimum 1 tick."
+                else:
+                    ticks = requested_ticks
+
                 dt = float(args.get('dt', 1.0 / 60.0))
                 inputs = args.get('inputs', {})
 
@@ -200,10 +222,16 @@ class handler(BaseHTTPRequestHandler):
 
                     res = {
                         'simulation_ticks': ticks,
+                        'requested_ticks': requested_ticks,
+                        'clamped': clamped,
+                        'max_ticks_limit': MAX_TICKS,
                         'total_time': round(state.time, 6),
                         'state_variables': state.state_variables,
                         'entities': output_entities
                     }
+                    if warning_msg:
+                        res['warning'] = warning_msg
+
                     self._send_tool_text(rpc_id, json.dumps(res, indent=2))
                 except Exception as e:
                     self._send_tool_text(rpc_id, json.dumps({'success': False, 'error': str(e)}, indent=2))

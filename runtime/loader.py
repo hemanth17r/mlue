@@ -75,9 +75,9 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         raise MLUEValidationError("MLUE document root must be a dictionary/object.")
 
     version = data.get("mlue_version")
-    if version not in ("0.1", "0.2", "0.3", "0.4", "0.5", "0.6"):
+    if version not in ("0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7"):
         raise MLUEValidationError(
-            f"Unsupported MLUE version '{version}'. Expected '0.1', '0.2', '0.3', '0.4', '0.5', or '0.6'."
+            f"Unsupported MLUE version '{version}'. Expected '0.1', '0.2', '0.3', '0.4', '0.5', '0.6', or '0.7'."
         )
 
     # Environment
