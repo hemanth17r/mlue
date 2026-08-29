@@ -1,0 +1,301 @@
+{
+  "mlue_version": "0.7",
+  "environment": {
+    "dimensions": [
+      800,
+      520
+    ],
+    "background": "#0B0F19"
+  },
+  "state_variables": {
+    "system_mode": 1,
+    "alarm_state": 0
+  },
+  "entities": [
+    {
+      "id": "header_bar",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.05
+      },
+      "size": {
+        "width": 1.0,
+        "height": 0.08
+      },
+      "properties": {
+        "color": "#1E293B",
+        "solid": false
+      }
+    },
+    {
+      "id": "app_logo_icon",
+      "type": "circle",
+      "position": {
+        "x": 0.04,
+        "y": 0.05
+      },
+      "size": {
+        "radius": 0.02
+      },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": false
+      }
+    },
+    {
+      "id": "sidebar_panel",
+      "type": "box",
+      "position": {
+        "x": 0.11,
+        "y": 0.55
+      },
+      "size": {
+        "width": 0.2,
+        "height": 0.88
+      },
+      "properties": {
+        "color": "#0F172A",
+        "solid": false
+      }
+    },
+    {
+      "id": "nav_tab_active",
+      "type": "box",
+      "position": {
+        "x": 0.11,
+        "y": 0.22
+      },
+      "size": {
+        "width": 0.16,
+        "height": 0.07
+      },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": false
+      }
+    },
+    {
+      "id": "nav_tab_metrics",
+      "type": "box",
+      "position": {
+        "x": 0.11,
+        "y": 0.32
+      },
+      "size": {
+        "width": 0.16,
+        "height": 0.07
+      },
+      "properties": {
+        "color": "#1E293B",
+        "solid": false
+      }
+    },
+    {
+      "id": "nav_tab_settings",
+      "type": "box",
+      "position": {
+        "x": 0.11,
+        "y": 0.42
+      },
+      "size": {
+        "width": 0.16,
+        "height": 0.07
+      },
+      "properties": {
+        "color": "#1E293B",
+        "solid": false
+      }
+    },
+    {
+      "id": "main_content_card",
+      "type": "box",
+      "position": {
+        "x": 0.6,
+        "y": 0.55
+      },
+      "size": {
+        "width": 0.74,
+        "height": 0.88
+      },
+      "properties": {
+        "color": "#1E293B",
+        "solid": false
+      }
+    },
+    {
+      "id": "meter_track_bg",
+      "type": "box",
+      "position": {
+        "x": 0.6,
+        "y": 0.26
+      },
+      "size": {
+        "width": 0.66,
+        "height": 0.06
+      },
+      "properties": {
+        "color": "#0F172A",
+        "solid": false
+      }
+    },
+    {
+      "id": "meter_fill_bar",
+      "type": "box",
+      "position": {
+        "x": 0.45,
+        "y": 0.26
+      },
+      "size": {
+        "width": 0.34,
+        "height": 0.04
+      },
+      "properties": {
+        "color": "#10B981",
+        "solid": false
+      }
+    },
+    {
+      "id": "slider_track",
+      "type": "box",
+      "position": {
+        "x": 0.6,
+        "y": 0.48
+      },
+      "size": {
+        "width": 0.66,
+        "height": 0.02
+      },
+      "properties": {
+        "color": "#334155",
+        "solid": false
+      }
+    },
+    {
+      "id": "slider_knob",
+      "type": "box",
+      "position": {
+        "x": 0.5,
+        "y": 0.48
+      },
+      "size": {
+        "width": 0.06,
+        "height": 0.1
+      },
+      "properties": {
+        "color": "#F59E0B",
+        "solid": false,
+        "control": {
+          "channel": "player_bottom",
+          "axis": "x",
+          "speed": 0.5
+        }
+      }
+    },
+    {
+      "id": "status_badge_bg",
+      "type": "box",
+      "position": {
+        "x": 0.6,
+        "y": 0.75
+      },
+      "size": {
+        "width": 0.66,
+        "height": 0.18
+      },
+      "properties": {
+        "color": "#0F172A",
+        "solid": false
+      }
+    },
+    {
+      "id": "status_indicator_led",
+      "type": "circle",
+      "position": {
+        "x": 0.32,
+        "y": 0.75
+      },
+      "size": {
+        "radius": 0.035
+      },
+      "properties": {
+        "color": "#10B981",
+        "solid": false
+      }
+    },
+    {
+      "id": "status_detail_bar",
+      "type": "box",
+      "position": {
+        "x": 0.64,
+        "y": 0.75
+      },
+      "size": {
+        "width": 0.5,
+        "height": 0.06
+      },
+      "properties": {
+        "color": "#334155",
+        "solid": false
+      }
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "threshold_exceeded",
+      "condition": {
+        "entity": "slider_knob",
+        "property": "position.x",
+        "op": ">=",
+        "value": 0.78
+      },
+      "actions": [
+        {
+          "type": "set_property",
+          "target": "status_indicator_led",
+          "property": "color",
+          "value": "#EF4444"
+        },
+        {
+          "type": "set_property",
+          "target": "meter_fill_bar",
+          "property": "color",
+          "value": "#EF4444"
+        },
+        {
+          "type": "set",
+          "target": "alarm_state",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "trigger": "threshold_normal",
+      "condition": {
+        "entity": "slider_knob",
+        "property": "position.x",
+        "op": "<=",
+        "value": 0.6
+      },
+      "actions": [
+        {
+          "type": "set_property",
+          "target": "status_indicator_led",
+          "property": "color",
+          "value": "#10B981"
+        },
+        {
+          "type": "set_property",
+          "target": "meter_fill_bar",
+          "property": "color",
+          "value": "#10B981"
+        },
+        {
+          "type": "set",
+          "target": "alarm_state",
+          "value": 0
+        }
+      ]
+    }
+  ]
+}

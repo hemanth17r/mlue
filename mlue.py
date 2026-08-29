@@ -47,12 +47,14 @@ def main() -> int:
         doc = load_mlue(file_path)
         engine = MLUEEngine()
 
-        has_motion = any(e.velocity.vx != 0.0 or e.velocity.vy != 0.0 for e in doc.entities)
+        has_interactive = any(
+            e.velocity.vx != 0.0 or e.velocity.vy != 0.0 or "control" in e.properties for e in doc.entities
+        ) or bool(doc.rules)
 
         print(f"[MLUE Engine] Successfully loaded '{file_path.name}' (schema version: {doc.version})")
         print(f"[MLUE Engine] Viewport: {doc.environment.width}x{doc.environment.height}, Entities: {len(doc.entities)}")
 
-        if not has_motion:
+        if not has_interactive:
             # Static snapshot evaluation
             result = engine.evaluate(doc)
             print(f"[MLUE Engine] Evaluated {len(result.shapes)} static shape(s):")
