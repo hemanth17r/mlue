@@ -143,13 +143,26 @@ class handler(BaseHTTPRequestHandler):
         if method == 'tools/call':
             tool_name = params.get('name')
             args = params.get('arguments', {})
+            if not isinstance(args, dict):
+                self._send_error(rpc_id, -32602, "Invalid arguments: Tool arguments must be a JSON object dictionary.")
+                return
 
             if tool_name == 'mlue_get_schema':
+                if args:
+                    unexpected = next(iter(args.keys()))
+                    self._send_error(rpc_id, -32602, f"Unexpected argument '{unexpected}'. 'mlue_get_schema' accepts no arguments.")
+                    return
                 schema = ai_interface.get_schema()
                 self._send_tool_text(rpc_id, json.dumps(schema, indent=2))
                 return
 
             if tool_name == 'mlue_validate_scene':
+                allowed = {'scene'}
+                unexpected = set(args.keys()) - allowed
+                if unexpected:
+                    self._send_error(rpc_id, -32602, f"Unexpected argument '{next(iter(unexpected))}'. Allowed arguments: ['scene'].")
+                    return
+
                 scene = args.get('scene')
                 if not isinstance(scene, dict):
                     self._send_error(rpc_id, -32602, "Invalid arguments: 'scene' must be a JSON object dictionary.")
@@ -171,6 +184,12 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             if tool_name == 'mlue_simulate_scene':
+                allowed = {'scene', 'ticks', 'dt', 'inputs'}
+                unexpected = set(args.keys()) - allowed
+                if unexpected:
+                    self._send_error(rpc_id, -32602, f"Unexpected argument '{next(iter(unexpected))}'. Allowed arguments: ['scene', 'ticks', 'dt', 'inputs'].")
+                    return
+
                 scene = args.get('scene')
                 if not isinstance(scene, dict):
                     self._send_error(rpc_id, -32602, "Invalid arguments: 'scene' must be a JSON object dictionary.")
@@ -183,21 +202,24 @@ class handler(BaseHTTPRequestHandler):
                     self._send_error(rpc_id, -32602, "Invalid arguments: 'ticks' must be an integer.")
                     return
 
+                if requested_ticks < 1:
+                    self._send_error(rpc_id, -32602, f"Invalid argument: 'ticks' must be >= 1 (got {requested_ticks}).")
+                    return
+
                 clamped = False
                 warning_msg = None
                 if requested_ticks > MAX_TICKS:
                     ticks = MAX_TICKS
                     clamped = True
                     warning_msg = f"Requested ticks ({requested_ticks}) exceeded maximum cloud limit ({MAX_TICKS}). Clamped execution to {MAX_TICKS} ticks."
-                elif requested_ticks < 1:
-                    ticks = 1
-                    clamped = True
-                    warning_msg = "Requested ticks (<1) clamped to minimum 1 tick."
                 else:
                     ticks = requested_ticks
 
                 dt = float(args.get('dt', 1.0 / 60.0))
                 inputs = args.get('inputs', {})
+                if not isinstance(inputs, dict):
+                    self._send_error(rpc_id, -32602, "Invalid arguments: 'inputs' must be a dictionary mapping channel names to values.")
+                    return
 
                 try:
                     doc = validate_and_parse(scene)
@@ -223,7 +245,9 @@ class handler(BaseHTTPRequestHandler):
                     res = {
                         'simulation_ticks': ticks,
                         'requested_ticks': requested_ticks,
+                        'applied_ticks': ticks,
                         'clamped': clamped,
+                        'min_ticks_limit': 1,
                         'max_ticks_limit': MAX_TICKS,
                         'total_time': round(state.time, 6),
                         'state_variables': state.state_variables,
