@@ -1,0 +1,30 @@
+{
+  "mlue_version": "1.4",
+  "environment": {
+    "dimensions": [800, 600],
+    "background": "#020617"
+  },
+  "state_variables": {
+    "chaos": {
+      "bounces": 0,
+      "energy_state": "STABLE"
+    }
+  },
+  "entities": [
+    { "id": "atom_01", "type": "circle", "position": { "x": 0.20, "y": 0.20 }, "size": { "radius": 0.03 }, "velocity": { "vx": 0.31415, "vy": 0.27182 }, "properties": { "color": "#F43F5E", "solid": true } },
+    { "id": "atom_02", "type": "circle", "position": { "x": 0.80, "y": 0.20 }, "size": { "radius": 0.03 }, "velocity": { "vx": -0.27182, "vy": 0.31415 }, "properties": { "color": "#3B82F6", "solid": true } },
+    { "id": "atom_03", "type": "circle", "position": { "x": 0.20, "y": 0.80 }, "size": { "radius": 0.03 }, "velocity": { "vx": 0.31415, "vy": -0.27182 }, "properties": { "color": "#10B981", "solid": true } },
+    { "id": "atom_04", "type": "circle", "position": { "x": 0.80, "y": 0.80 }, "size": { "radius": 0.03 }, "velocity": { "vx": -0.27182, "vy": -0.31415 }, "properties": { "color": "#F59E0B", "solid": true } },
+    { "id": "center_core", "type": "circle", "position": { "x": 0.50, "y": 0.50 }, "size": { "radius": 0.05 }, "velocity": { "vx": 0.0, "vy": 0.0 }, "properties": { "color": "#A855F7", "solid": true } }
+  ],
+  "rules": [
+    {
+      "trigger": "core_bounce",
+      "event": "collision",
+      "entities": ["center_core", "atom_01"],
+      "actions": [
+        { "type": "increment_path", "target": "chaos.bounces", "amount": 1 }
+      ]
+    }
+  ]
+}
