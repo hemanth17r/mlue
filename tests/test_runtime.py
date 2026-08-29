@@ -512,7 +512,7 @@ class TestMLUERuntime(unittest.TestCase):
         """Verify programmatic AI interface schema discovery and scene validation."""
         ai = MLUEAIInterface()
         schema = ai.get_schema()
-        self.assertEqual(schema["mlue_version"], "0.7")
+        self.assertEqual(schema["mlue_version"], "1.1")
         self.assertIn("entities", schema["root_fields"])
         self.assertIn("rules", schema["root_fields"])
         self.assertIn("spatial_invariants", schema)

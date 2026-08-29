@@ -1218,5 +1218,1235 @@
         }
       }
     ]
+  },
+  {
+    "run_id": "RUN_20260829_100210",
+    "timestamp": "2026-08-29T10:01:58.621904+00:00",
+    "mlue_phase": "Phase 0.7 (v0.7.0 Machine-Accessible AI Interface)",
+    "environment": {
+      "python_version": "3.13.0",
+      "os": "Windows 11",
+      "architecture": "AMD64"
+    },
+    "overall_status": "FAIL",
+    "passed_count": 9,
+    "total_count": 10,
+    "substrate_tier": "Tier L1 (Scaffolding-Decoupled)",
+    "benchmarks": [
+      {
+        "id": "B1",
+        "name": "Substrate Decoupling",
+        "category": "Architecture",
+        "format_type": "tier_and_count",
+        "passed": true,
+        "tier": "Tier L1 (Scaffolding-Decoupled)",
+        "tier_description": "Pure mathematical core; OS windowing driver isolated in disposable adapter.",
+        "import_violations": 0,
+        "target": "0 Foreign Imports (L1 Substrate)",
+        "unit": "Imports",
+        "value_display": "0 Violations (Tier L1)",
+        "details": [
+          "Zero foreign OS/GUI imports detected in core runtime AST."
+        ],
+        "formula": "AST(Core) \u2229 {OS, GUI, ForeignLibs} = \u2205",
+        "explanation": {
+          "what_it_tests": "Verifies the core math engine is 100% decoupled from host OS windowing & GUI frameworks.",
+          "what_we_measure": "Foreign GUI/OS imports in core AST (Target: 0 Violations | Tier L1 Substrate).",
+          "how_its_measured": "AST parser walks model.py, engine.py, loader.py checking against forbidden OS libraries.",
+          "how_to_compare": "0 Violations = portable to C/Rust/Silicon; >0 Violations = trapped in host OS."
+        }
+      },
+      {
+        "id": "B2",
+        "name": "Declarative Emergence",
+        "category": "Architecture",
+        "format_type": "multiplier",
+        "passed": true,
+        "multiplier": "3.5x",
+        "heuristic_violations": 0,
+        "target": "\u2265 3.0x Multiplier (0 Heuristics)",
+        "unit": "Multiplier",
+        "value_display": "3.5x Expansion Ratio",
+        "details": [
+          "7 distinct games/simulations generated from 2 universal primitives.",
+          "0 bespoke game loops or hardcoded heuristics in core engine."
+        ],
+        "formula": "E = N_apps / N_primitives (where Heuristics = 0)",
+        "explanation": {
+          "what_it_tests": "Measures combinatorial application emergence from universal primitives without bespoke code.",
+          "what_we_measure": "Application-to-primitive expansion ratio (Target: \u2265 3.0x Multiplier | 0 Heuristics).",
+          "how_its_measured": "Divides working application documents (7) by core spatial primitives (2).",
+          "how_to_compare": "Higher multiplier = greater emergence; bespoke game strings = automatic failure."
+        }
+      },
+      {
+        "id": "B3",
+        "name": "Spatial & Universal Invariance",
+        "category": "Architecture",
+        "format_type": "log_precision",
+        "passed": true,
+        "raw_drift": 0.0,
+        "log_precision_decades": ">16.0 Decades",
+        "target": "\u0394 \u2264 1e-7 (> 7.0 Decades)",
+        "unit": "-log10(\u0394)",
+        "value_display": "16.0 Decades Precision",
+        "details": [
+          "Evaluated across 5 extreme viewport resolutions (100x100 to 4K).",
+          "Maximum floating-point trajectory variance: 0.00000000e+00 units."
+        ],
+        "formula": "Precision = -log10(||x_R1(t) - x_R2(t)||)",
+        "explanation": {
+          "what_it_tests": "Ensures simulation physics behave identically across all viewport resolutions (Watch to 4K).",
+          "what_we_measure": "Normalized Euclidean trajectory drift across resolutions (Target: \u0394 \u2264 1e-7 | >16 Decades).",
+          "how_its_measured": "Runs identical 60-step simulations across 5 viewport sizes and computes max coordinate variance.",
+          "how_to_compare": "\u0394 = 0.0 = bit-exact resolution invariance; \u0394 > 0 = viewport distortion."
+        }
+      },
+      {
+        "id": "B4",
+        "name": "Physical & Conservation Fidelity",
+        "category": "Physics",
+        "format_type": "ppb_drift",
+        "passed": true,
+        "drift_ppb": "0.0 PPB",
+        "target": "\u0394Ek \u2264 1000 PPB (< 1e-6)",
+        "unit": "PPB",
+        "value_display": "0.0 PPB Drift",
+        "details": [
+          "Tested over 1,000 distinct collision trajectories and impact angles.",
+          "Total kinetic energy conservation drift: 0.00000000e+00 units."
+        ],
+        "formula": "\u0394Ek = |Ek_after - Ek_before| (scaled in 10^-9 PPB)",
+        "explanation": {
+          "what_it_tests": "Verifies collisions strictly conserve kinetic energy without numerical loss or gain.",
+          "what_we_measure": "Kinetic energy variance in Parts-Per-Billion (Target: < 1,000 PPB).",
+          "how_its_measured": "Simulates 1,000 elastic collisions across 360-degree impact angles and compares energy before vs. after.",
+          "how_to_compare": "0.0 PPB = exact physical conservation; High PPB = artificial energy damping or explosion."
+        }
+      },
+      {
+        "id": "B5",
+        "name": "Static Provability & Reachability",
+        "category": "Verification",
+        "format_type": "fraction_gate",
+        "passed": true,
+        "blocked_cases": "10/10",
+        "rejection_rate": "100.0%",
+        "target": "10/10 Statically Blocked (100%)",
+        "unit": "Cases",
+        "value_display": "10/10 Blocked (100%)",
+        "details": [
+          "Fuzzed 10 mathematically impossible boundary, coordinate, and state conditions.",
+          "100% compile-time defect interception before execution."
+        ],
+        "formula": "Gate = (Rejected_Impossible_Cases == Total_Fuzz_Cases)",
+        "explanation": {
+          "what_it_tests": "Catches mathematically invalid states, boundary breaches, and corrupt rules at compile time.",
+          "what_we_measure": "Defect interception rate (Target: 100% Statically Blocked).",
+          "how_its_measured": "Feeds 10 impossible boundary and state mutation fuzz cases into loader.py before execution.",
+          "how_to_compare": "100% = zero unhandled runtime crashes; <100% = unhandled fatal execution flaws."
+        }
+      },
+      {
+        "id": "B6",
+        "name": "Speed & Step Latency",
+        "category": "Performance",
+        "format_type": "speed_and_latency",
+        "passed": false,
+        "ticks_per_sec": "9,802 ticks/s",
+        "raw_ticks_per_sec": 9801.980392121313,
+        "latency_us": "102.02 us/step",
+        "speedup": "2.8x vs Pygame",
+        "target": "> 10,000 ticks/s (< 100 us)",
+        "unit": "k-ticks/s",
+        "value_display": "9.8k t/s (102.0 us)",
+        "details": [
+          "Evaluated 10,000 full collision simulation steps.",
+          "Peak throughput: 9,802 steps/second (2.8x faster than traditional baseline)."
+        ],
+        "formula": "Throughput = N_steps / elapsed_time (Latency = 1e6 / Throughput)",
+        "explanation": {
+          "what_it_tests": "Measures physics simulation throughput and hardware step latency.",
+          "what_we_measure": "Simulation ticks per second and microsecond step latency (Target: > 10,000 ticks/s | < 100 \u03bcs).",
+          "how_its_measured": "Executes 10,000 continuous collision steps using high-resolution hardware timers.",
+          "how_to_compare": "Higher ticks/s = faster execution; lower \u03bcs = ultra-low input latency."
+        }
+      },
+      {
+        "id": "B7",
+        "name": "Resource & Memory Churn",
+        "category": "Performance",
+        "format_type": "memory_churn",
+        "passed": true,
+        "bytes_per_step": "0.77 B/tick",
+        "total_churn_kb": "3.74 KB",
+        "target": "Minimal Churn (< 500 B/tick)",
+        "unit": "Bytes/Tick",
+        "value_display": "0.77 B/step Churn",
+        "details": [
+          "Tracked heap allocation delta across 5,000 consecutive simulation steps.",
+          "Total memory churn: 3.74 KB (Near-zero GC pause overhead)."
+        ],
+        "formula": "Churn = \u0394Heap_Allocated_Bytes / N_steps",
+        "explanation": {
+          "what_it_tests": "Measures steady-state memory allocation waste per step to prevent GC lag and frame stutters.",
+          "what_we_measure": "Heap memory allocation delta per simulation step (Target: Minimal Churn < 500 B/tick).",
+          "how_its_measured": "Snapshots heap memory before and after 5,000 steps via tracemalloc profiler.",
+          "how_to_compare": "Near-zero bytes = smooth frame pacing with zero garbage collection pauses."
+        }
+      },
+      {
+        "id": "B8",
+        "name": "Structural Complexity",
+        "category": "Engineering",
+        "format_type": "cyclomatic_score",
+        "passed": true,
+        "max_cyclomatic_score": 27,
+        "target": "Peak McCabe Score \u2264 30",
+        "unit": "McCabe CC",
+        "value_display": "CC = 27 (Bounded)",
+        "details": [
+          "Audited AST branching complexity across 20 engine functions.",
+          "Peak function complexity: 27 (Zero unbounded spaghetti branching)."
+        ],
+        "formula": "v(G) = E - N + 2P (McCabe Graph Cyclomatic Complexity)",
+        "explanation": {
+          "what_it_tests": "Guarantees engine logic remains modular, simple, and mathematically bounded.",
+          "what_we_measure": "Peak McCabe Cyclomatic Complexity score across all functions (Target: CC \u2264 30).",
+          "how_its_measured": "Parses AST decision branches (if, while, for, bool operators) for every runtime function.",
+          "how_to_compare": "CC \u2264 30 = provable, modular code; CC > 30 = tangled spaghetti logic."
+        }
+      },
+      {
+        "id": "B9",
+        "name": "Determinism & Reliability",
+        "category": "Engineering",
+        "format_type": "cryptographic_hash",
+        "passed": true,
+        "sha256_prefix": "23a940449ab23ae3...",
+        "full_hash": "23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c",
+        "target": "100% Bit-Exact SHA-256 Match",
+        "unit": "Hash Match",
+        "value_display": "EXACT (23a940449ab2...)",
+        "details": [
+          "Evaluated 50,000 continuous simulation steps in two independent execution runs.",
+          "Full Cryptographic Digest: 23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c (Bit-exact match across runs)."
+        ],
+        "formula": "SHA256(Run_A(50k_ticks)) == SHA256(Run_B(50k_ticks))",
+        "explanation": {
+          "what_it_tests": "Guarantees 100% bit-exact simulation reproducibility across independent runs and platforms.",
+          "what_we_measure": "Cryptographic SHA-256 state digest match after 50,000 continuous simulation steps.",
+          "how_its_measured": "Runs two independent 50,000-step simulations and hashes all positions, velocities, and state variables.",
+          "how_to_compare": "Bit-Exact Match = perfect replay fidelity; Any hash mismatch = non-deterministic divergence."
+        }
+      },
+      {
+        "id": "B10",
+        "name": "Bug & Tunneling Stress",
+        "category": "Physics",
+        "format_type": "containment_speed",
+        "passed": true,
+        "max_containment_speed": "2.5 units/s",
+        "defect_rate": "0.00%",
+        "target": "v_max \u2265 2.5 units/s (0.00% Defect)",
+        "unit": "units/s",
+        "value_display": "v_max = 2.5 units/s (0% Defect)",
+        "details": [
+          "Stress-tested collision containment under extreme velocity (2.5 norm units/s).",
+          "Zero tunneling or spatial penetration through thin physical barriers."
+        ],
+        "formula": "v_containment = max(v | Tunneling_Defects(v) == 0)",
+        "explanation": {
+          "what_it_tests": "Stress-tests collision containment to eliminate high-velocity barrier penetration bugs.",
+          "what_we_measure": "Maximum containment velocity under extreme acceleration (Target: v_max \u2265 2.5 units/s | 0% Defect).",
+          "how_its_measured": "Fires a 10x-speed entity directly against an ultra-thin 0.02 barrier over 60 steps.",
+          "how_to_compare": "0% Defect = bulletproof collision math; >0% Defect = object glitched through wall."
+        }
+      }
+    ]
+  },
+  {
+    "run_id": "RUN_20260829_100240",
+    "timestamp": "2026-08-29T10:02:31.956694+00:00",
+    "mlue_phase": "Phase 0.7 (v0.7.0 Machine-Accessible AI Interface)",
+    "environment": {
+      "python_version": "3.13.0",
+      "os": "Windows 11",
+      "architecture": "AMD64"
+    },
+    "overall_status": "PASS",
+    "passed_count": 10,
+    "total_count": 10,
+    "substrate_tier": "Tier L1 (Scaffolding-Decoupled)",
+    "benchmarks": [
+      {
+        "id": "B1",
+        "name": "Substrate Decoupling",
+        "category": "Architecture",
+        "format_type": "tier_and_count",
+        "passed": true,
+        "tier": "Tier L1 (Scaffolding-Decoupled)",
+        "tier_description": "Pure mathematical core; OS windowing driver isolated in disposable adapter.",
+        "import_violations": 0,
+        "target": "0 Foreign Imports (L1 Substrate)",
+        "unit": "Imports",
+        "value_display": "0 Violations (Tier L1)",
+        "details": [
+          "Zero foreign OS/GUI imports detected in core runtime AST."
+        ],
+        "formula": "AST(Core) \u2229 {OS, GUI, ForeignLibs} = \u2205",
+        "explanation": {
+          "what_it_tests": "Verifies the core math engine is 100% decoupled from host OS windowing & GUI frameworks.",
+          "what_we_measure": "Foreign GUI/OS imports in core AST (Target: 0 Violations | Tier L1 Substrate).",
+          "how_its_measured": "AST parser walks model.py, engine.py, loader.py checking against forbidden OS libraries.",
+          "how_to_compare": "0 Violations = portable to C/Rust/Silicon; >0 Violations = trapped in host OS."
+        }
+      },
+      {
+        "id": "B2",
+        "name": "Declarative Emergence",
+        "category": "Architecture",
+        "format_type": "multiplier",
+        "passed": true,
+        "multiplier": "3.5x",
+        "heuristic_violations": 0,
+        "target": "\u2265 3.0x Multiplier (0 Heuristics)",
+        "unit": "Multiplier",
+        "value_display": "3.5x Expansion Ratio",
+        "details": [
+          "7 distinct games/simulations generated from 2 universal primitives.",
+          "0 bespoke game loops or hardcoded heuristics in core engine."
+        ],
+        "formula": "E = N_apps / N_primitives (where Heuristics = 0)",
+        "explanation": {
+          "what_it_tests": "Measures combinatorial application emergence from universal primitives without bespoke code.",
+          "what_we_measure": "Application-to-primitive expansion ratio (Target: \u2265 3.0x Multiplier | 0 Heuristics).",
+          "how_its_measured": "Divides working application documents (7) by core spatial primitives (2).",
+          "how_to_compare": "Higher multiplier = greater emergence; bespoke game strings = automatic failure."
+        }
+      },
+      {
+        "id": "B3",
+        "name": "Spatial & Universal Invariance",
+        "category": "Architecture",
+        "format_type": "log_precision",
+        "passed": true,
+        "raw_drift": 0.0,
+        "log_precision_decades": ">16.0 Decades",
+        "target": "\u0394 \u2264 1e-7 (> 7.0 Decades)",
+        "unit": "-log10(\u0394)",
+        "value_display": "16.0 Decades Precision",
+        "details": [
+          "Evaluated across 5 extreme viewport resolutions (100x100 to 4K).",
+          "Maximum floating-point trajectory variance: 0.00000000e+00 units."
+        ],
+        "formula": "Precision = -log10(||x_R1(t) - x_R2(t)||)",
+        "explanation": {
+          "what_it_tests": "Ensures simulation physics behave identically across all viewport resolutions (Watch to 4K).",
+          "what_we_measure": "Normalized Euclidean trajectory drift across resolutions (Target: \u0394 \u2264 1e-7 | >16 Decades).",
+          "how_its_measured": "Runs identical 60-step simulations across 5 viewport sizes and computes max coordinate variance.",
+          "how_to_compare": "\u0394 = 0.0 = bit-exact resolution invariance; \u0394 > 0 = viewport distortion."
+        }
+      },
+      {
+        "id": "B4",
+        "name": "Physical & Conservation Fidelity",
+        "category": "Physics",
+        "format_type": "ppb_drift",
+        "passed": true,
+        "drift_ppb": "0.0 PPB",
+        "target": "\u0394Ek \u2264 1000 PPB (< 1e-6)",
+        "unit": "PPB",
+        "value_display": "0.0 PPB Drift",
+        "details": [
+          "Tested over 1,000 distinct collision trajectories and impact angles.",
+          "Total kinetic energy conservation drift: 0.00000000e+00 units."
+        ],
+        "formula": "\u0394Ek = |Ek_after - Ek_before| (scaled in 10^-9 PPB)",
+        "explanation": {
+          "what_it_tests": "Verifies collisions strictly conserve kinetic energy without numerical loss or gain.",
+          "what_we_measure": "Kinetic energy variance in Parts-Per-Billion (Target: < 1,000 PPB).",
+          "how_its_measured": "Simulates 1,000 elastic collisions across 360-degree impact angles and compares energy before vs. after.",
+          "how_to_compare": "0.0 PPB = exact physical conservation; High PPB = artificial energy damping or explosion."
+        }
+      },
+      {
+        "id": "B5",
+        "name": "Static Provability & Reachability",
+        "category": "Verification",
+        "format_type": "fraction_gate",
+        "passed": true,
+        "blocked_cases": "10/10",
+        "rejection_rate": "100.0%",
+        "target": "10/10 Statically Blocked (100%)",
+        "unit": "Cases",
+        "value_display": "10/10 Blocked (100%)",
+        "details": [
+          "Fuzzed 10 mathematically impossible boundary, coordinate, and state conditions.",
+          "100% compile-time defect interception before execution."
+        ],
+        "formula": "Gate = (Rejected_Impossible_Cases == Total_Fuzz_Cases)",
+        "explanation": {
+          "what_it_tests": "Catches mathematically invalid states, boundary breaches, and corrupt rules at compile time.",
+          "what_we_measure": "Defect interception rate (Target: 100% Statically Blocked).",
+          "how_its_measured": "Feeds 10 impossible boundary and state mutation fuzz cases into loader.py before execution.",
+          "how_to_compare": "100% = zero unhandled runtime crashes; <100% = unhandled fatal execution flaws."
+        }
+      },
+      {
+        "id": "B6",
+        "name": "Speed & Step Latency",
+        "category": "Performance",
+        "format_type": "speed_and_latency",
+        "passed": true,
+        "ticks_per_sec": "14,153 ticks/s",
+        "raw_ticks_per_sec": 14152.631030753251,
+        "latency_us": "70.66 us/step",
+        "speedup": "4.0x vs Pygame",
+        "target": "> 10,000 ticks/s (< 100 us)",
+        "unit": "k-ticks/s",
+        "value_display": "14.2k t/s (70.7 us)",
+        "details": [
+          "Evaluated 10,000 full collision simulation steps.",
+          "Peak throughput: 14,153 steps/second (4.0x faster than traditional baseline)."
+        ],
+        "formula": "Throughput = N_steps / elapsed_time (Latency = 1e6 / Throughput)",
+        "explanation": {
+          "what_it_tests": "Measures physics simulation throughput and hardware step latency.",
+          "what_we_measure": "Simulation ticks per second and microsecond step latency (Target: > 10,000 ticks/s | < 100 \u03bcs).",
+          "how_its_measured": "Executes 10,000 continuous collision steps using high-resolution hardware timers.",
+          "how_to_compare": "Higher ticks/s = faster execution; lower \u03bcs = ultra-low input latency."
+        }
+      },
+      {
+        "id": "B7",
+        "name": "Resource & Memory Churn",
+        "category": "Performance",
+        "format_type": "memory_churn",
+        "passed": true,
+        "bytes_per_step": "0.78 B/tick",
+        "total_churn_kb": "3.80 KB",
+        "target": "Minimal Churn (< 500 B/tick)",
+        "unit": "Bytes/Tick",
+        "value_display": "0.78 B/step Churn",
+        "details": [
+          "Tracked heap allocation delta across 5,000 consecutive simulation steps.",
+          "Total memory churn: 3.80 KB (Near-zero GC pause overhead)."
+        ],
+        "formula": "Churn = \u0394Heap_Allocated_Bytes / N_steps",
+        "explanation": {
+          "what_it_tests": "Measures steady-state memory allocation waste per step to prevent GC lag and frame stutters.",
+          "what_we_measure": "Heap memory allocation delta per simulation step (Target: Minimal Churn < 500 B/tick).",
+          "how_its_measured": "Snapshots heap memory before and after 5,000 steps via tracemalloc profiler.",
+          "how_to_compare": "Near-zero bytes = smooth frame pacing with zero garbage collection pauses."
+        }
+      },
+      {
+        "id": "B8",
+        "name": "Structural Complexity",
+        "category": "Engineering",
+        "format_type": "cyclomatic_score",
+        "passed": true,
+        "max_cyclomatic_score": 27,
+        "target": "Peak McCabe Score \u2264 30",
+        "unit": "McCabe CC",
+        "value_display": "CC = 27 (Bounded)",
+        "details": [
+          "Audited AST branching complexity across 21 engine functions.",
+          "Peak function complexity: 27 (Zero unbounded spaghetti branching)."
+        ],
+        "formula": "v(G) = E - N + 2P (McCabe Graph Cyclomatic Complexity)",
+        "explanation": {
+          "what_it_tests": "Guarantees engine logic remains modular, simple, and mathematically bounded.",
+          "what_we_measure": "Peak McCabe Cyclomatic Complexity score across all functions (Target: CC \u2264 30).",
+          "how_its_measured": "Parses AST decision branches (if, while, for, bool operators) for every runtime function.",
+          "how_to_compare": "CC \u2264 30 = provable, modular code; CC > 30 = tangled spaghetti logic."
+        }
+      },
+      {
+        "id": "B9",
+        "name": "Determinism & Reliability",
+        "category": "Engineering",
+        "format_type": "cryptographic_hash",
+        "passed": true,
+        "sha256_prefix": "23a940449ab23ae3...",
+        "full_hash": "23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c",
+        "target": "100% Bit-Exact SHA-256 Match",
+        "unit": "Hash Match",
+        "value_display": "EXACT (23a940449ab2...)",
+        "details": [
+          "Evaluated 50,000 continuous simulation steps in two independent execution runs.",
+          "Full Cryptographic Digest: 23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c (Bit-exact match across runs)."
+        ],
+        "formula": "SHA256(Run_A(50k_ticks)) == SHA256(Run_B(50k_ticks))",
+        "explanation": {
+          "what_it_tests": "Guarantees 100% bit-exact simulation reproducibility across independent runs and platforms.",
+          "what_we_measure": "Cryptographic SHA-256 state digest match after 50,000 continuous simulation steps.",
+          "how_its_measured": "Runs two independent 50,000-step simulations and hashes all positions, velocities, and state variables.",
+          "how_to_compare": "Bit-Exact Match = perfect replay fidelity; Any hash mismatch = non-deterministic divergence."
+        }
+      },
+      {
+        "id": "B10",
+        "name": "Bug & Tunneling Stress",
+        "category": "Physics",
+        "format_type": "containment_speed",
+        "passed": true,
+        "max_containment_speed": "2.5 units/s",
+        "defect_rate": "0.00%",
+        "target": "v_max \u2265 2.5 units/s (0.00% Defect)",
+        "unit": "units/s",
+        "value_display": "v_max = 2.5 units/s (0% Defect)",
+        "details": [
+          "Stress-tested collision containment under extreme velocity (2.5 norm units/s).",
+          "Zero tunneling or spatial penetration through thin physical barriers."
+        ],
+        "formula": "v_containment = max(v | Tunneling_Defects(v) == 0)",
+        "explanation": {
+          "what_it_tests": "Stress-tests collision containment to eliminate high-velocity barrier penetration bugs.",
+          "what_we_measure": "Maximum containment velocity under extreme acceleration (Target: v_max \u2265 2.5 units/s | 0% Defect).",
+          "how_its_measured": "Fires a 10x-speed entity directly against an ultra-thin 0.02 barrier over 60 steps.",
+          "how_to_compare": "0% Defect = bulletproof collision math; >0% Defect = object glitched through wall."
+        }
+      }
+    ]
+  },
+  {
+    "run_id": "RUN_20260829_100737",
+    "timestamp": "2026-08-29T10:07:28.888860+00:00",
+    "mlue_phase": "Phase 1.1 (v1.1.0 Hierarchical State Database)",
+    "environment": {
+      "python_version": "3.13.0",
+      "os": "Windows 11",
+      "architecture": "AMD64"
+    },
+    "overall_status": "PASS",
+    "passed_count": 10,
+    "total_count": 10,
+    "substrate_tier": "Tier L1 (Scaffolding-Decoupled)",
+    "benchmarks": [
+      {
+        "id": "B1",
+        "name": "Substrate Decoupling",
+        "category": "Architecture",
+        "format_type": "tier_and_count",
+        "passed": true,
+        "tier": "Tier L1 (Scaffolding-Decoupled)",
+        "tier_description": "Pure mathematical core; OS windowing driver isolated in disposable adapter.",
+        "import_violations": 0,
+        "target": "0 Foreign Imports (L1 Substrate)",
+        "unit": "Imports",
+        "value_display": "0 Violations (Tier L1)",
+        "details": [
+          "Zero foreign OS/GUI imports detected in core runtime AST."
+        ],
+        "formula": "AST(Core) \u2229 {OS, GUI, ForeignLibs} = \u2205",
+        "explanation": {
+          "what_it_tests": "Verifies the core math engine is 100% decoupled from host OS windowing & GUI frameworks.",
+          "what_we_measure": "Foreign GUI/OS imports in core AST (Target: 0 Violations | Tier L1 Substrate).",
+          "how_its_measured": "AST parser walks model.py, engine.py, loader.py checking against forbidden OS libraries.",
+          "how_to_compare": "0 Violations = portable to C/Rust/Silicon; >0 Violations = trapped in host OS."
+        }
+      },
+      {
+        "id": "B2",
+        "name": "Declarative Emergence",
+        "category": "Architecture",
+        "format_type": "multiplier",
+        "passed": true,
+        "multiplier": "5.0x",
+        "heuristic_violations": 0,
+        "target": "\u2265 3.0x Multiplier (0 Heuristics)",
+        "unit": "Multiplier",
+        "value_display": "5.0x Expansion Ratio",
+        "details": [
+          "10 distinct games/simulations generated from 2 universal primitives.",
+          "0 bespoke game loops or hardcoded heuristics in core engine."
+        ],
+        "formula": "E = N_apps / N_primitives (where Heuristics = 0)",
+        "explanation": {
+          "what_it_tests": "Measures combinatorial application emergence from universal primitives without bespoke code.",
+          "what_we_measure": "Application-to-primitive expansion ratio (Target: \u2265 3.0x Multiplier | 0 Heuristics).",
+          "how_its_measured": "Divides working application documents (7) by core spatial primitives (2).",
+          "how_to_compare": "Higher multiplier = greater emergence; bespoke game strings = automatic failure."
+        }
+      },
+      {
+        "id": "B3",
+        "name": "Spatial & Universal Invariance",
+        "category": "Architecture",
+        "format_type": "log_precision",
+        "passed": true,
+        "raw_drift": 0.0,
+        "log_precision_decades": ">16.0 Decades",
+        "target": "\u0394 \u2264 1e-7 (> 7.0 Decades)",
+        "unit": "-log10(\u0394)",
+        "value_display": "16.0 Decades Precision",
+        "details": [
+          "Evaluated across 5 extreme viewport resolutions (100x100 to 4K).",
+          "Maximum floating-point trajectory variance: 0.00000000e+00 units."
+        ],
+        "formula": "Precision = -log10(||x_R1(t) - x_R2(t)||)",
+        "explanation": {
+          "what_it_tests": "Ensures simulation physics behave identically across all viewport resolutions (Watch to 4K).",
+          "what_we_measure": "Normalized Euclidean trajectory drift across resolutions (Target: \u0394 \u2264 1e-7 | >16 Decades).",
+          "how_its_measured": "Runs identical 60-step simulations across 5 viewport sizes and computes max coordinate variance.",
+          "how_to_compare": "\u0394 = 0.0 = bit-exact resolution invariance; \u0394 > 0 = viewport distortion."
+        }
+      },
+      {
+        "id": "B4",
+        "name": "Physical & Conservation Fidelity",
+        "category": "Physics",
+        "format_type": "ppb_drift",
+        "passed": true,
+        "drift_ppb": "0.0 PPB",
+        "target": "\u0394Ek \u2264 1000 PPB (< 1e-6)",
+        "unit": "PPB",
+        "value_display": "0.0 PPB Drift",
+        "details": [
+          "Tested over 1,000 distinct collision trajectories and impact angles.",
+          "Total kinetic energy conservation drift: 0.00000000e+00 units."
+        ],
+        "formula": "\u0394Ek = |Ek_after - Ek_before| (scaled in 10^-9 PPB)",
+        "explanation": {
+          "what_it_tests": "Verifies collisions strictly conserve kinetic energy without numerical loss or gain.",
+          "what_we_measure": "Kinetic energy variance in Parts-Per-Billion (Target: < 1,000 PPB).",
+          "how_its_measured": "Simulates 1,000 elastic collisions across 360-degree impact angles and compares energy before vs. after.",
+          "how_to_compare": "0.0 PPB = exact physical conservation; High PPB = artificial energy damping or explosion."
+        }
+      },
+      {
+        "id": "B5",
+        "name": "Static Provability & Reachability",
+        "category": "Verification",
+        "format_type": "fraction_gate",
+        "passed": true,
+        "blocked_cases": "10/10",
+        "rejection_rate": "100.0%",
+        "target": "10/10 Statically Blocked (100%)",
+        "unit": "Cases",
+        "value_display": "10/10 Blocked (100%)",
+        "details": [
+          "Fuzzed 10 mathematically impossible boundary, coordinate, and state conditions.",
+          "100% compile-time defect interception before execution."
+        ],
+        "formula": "Gate = (Rejected_Impossible_Cases == Total_Fuzz_Cases)",
+        "explanation": {
+          "what_it_tests": "Catches mathematically invalid states, boundary breaches, and corrupt rules at compile time.",
+          "what_we_measure": "Defect interception rate (Target: 100% Statically Blocked).",
+          "how_its_measured": "Feeds 10 impossible boundary and state mutation fuzz cases into loader.py before execution.",
+          "how_to_compare": "100% = zero unhandled runtime crashes; <100% = unhandled fatal execution flaws."
+        }
+      },
+      {
+        "id": "B6",
+        "name": "Speed & Step Latency",
+        "category": "Performance",
+        "format_type": "speed_and_latency",
+        "passed": true,
+        "ticks_per_sec": "15,338 ticks/s",
+        "raw_ticks_per_sec": 15337.78793828981,
+        "latency_us": "65.20 us/step",
+        "speedup": "4.4x vs Pygame",
+        "target": "> 10,000 ticks/s (< 100 us)",
+        "unit": "k-ticks/s",
+        "value_display": "15.3k t/s (65.2 us)",
+        "details": [
+          "Evaluated 10,000 full collision simulation steps.",
+          "Peak throughput: 15,338 steps/second (4.4x faster than traditional baseline)."
+        ],
+        "formula": "Throughput = N_steps / elapsed_time (Latency = 1e6 / Throughput)",
+        "explanation": {
+          "what_it_tests": "Measures physics simulation throughput and hardware step latency.",
+          "what_we_measure": "Simulation ticks per second and microsecond step latency (Target: > 10,000 ticks/s | < 100 \u03bcs).",
+          "how_its_measured": "Executes 10,000 continuous collision steps using high-resolution hardware timers.",
+          "how_to_compare": "Higher ticks/s = faster execution; lower \u03bcs = ultra-low input latency."
+        }
+      },
+      {
+        "id": "B7",
+        "name": "Resource & Memory Churn",
+        "category": "Performance",
+        "format_type": "memory_churn",
+        "passed": true,
+        "bytes_per_step": "0.78 B/tick",
+        "total_churn_kb": "3.80 KB",
+        "target": "Minimal Churn (< 500 B/tick)",
+        "unit": "Bytes/Tick",
+        "value_display": "0.78 B/step Churn",
+        "details": [
+          "Tracked heap allocation delta across 5,000 consecutive simulation steps.",
+          "Total memory churn: 3.80 KB (Near-zero GC pause overhead)."
+        ],
+        "formula": "Churn = \u0394Heap_Allocated_Bytes / N_steps",
+        "explanation": {
+          "what_it_tests": "Measures steady-state memory allocation waste per step to prevent GC lag and frame stutters.",
+          "what_we_measure": "Heap memory allocation delta per simulation step (Target: Minimal Churn < 500 B/tick).",
+          "how_its_measured": "Snapshots heap memory before and after 5,000 steps via tracemalloc profiler.",
+          "how_to_compare": "Near-zero bytes = smooth frame pacing with zero garbage collection pauses."
+        }
+      },
+      {
+        "id": "B8",
+        "name": "Structural Complexity",
+        "category": "Engineering",
+        "format_type": "cyclomatic_score",
+        "passed": true,
+        "max_cyclomatic_score": 27,
+        "target": "Peak McCabe Score \u2264 30",
+        "unit": "McCabe CC",
+        "value_display": "CC = 27 (Bounded)",
+        "details": [
+          "Audited AST branching complexity across 21 engine functions.",
+          "Peak function complexity: 27 (Zero unbounded spaghetti branching)."
+        ],
+        "formula": "v(G) = E - N + 2P (McCabe Graph Cyclomatic Complexity)",
+        "explanation": {
+          "what_it_tests": "Guarantees engine logic remains modular, simple, and mathematically bounded.",
+          "what_we_measure": "Peak McCabe Cyclomatic Complexity score across all functions (Target: CC \u2264 30).",
+          "how_its_measured": "Parses AST decision branches (if, while, for, bool operators) for every runtime function.",
+          "how_to_compare": "CC \u2264 30 = provable, modular code; CC > 30 = tangled spaghetti logic."
+        }
+      },
+      {
+        "id": "B9",
+        "name": "Determinism & Reliability",
+        "category": "Engineering",
+        "format_type": "cryptographic_hash",
+        "passed": true,
+        "sha256_prefix": "23a940449ab23ae3...",
+        "full_hash": "23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c",
+        "target": "100% Bit-Exact SHA-256 Match",
+        "unit": "Hash Match",
+        "value_display": "EXACT (23a940449ab2...)",
+        "details": [
+          "Evaluated 50,000 continuous simulation steps in two independent execution runs.",
+          "Full Cryptographic Digest: 23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c (Bit-exact match across runs)."
+        ],
+        "formula": "SHA256(Run_A(50k_ticks)) == SHA256(Run_B(50k_ticks))",
+        "explanation": {
+          "what_it_tests": "Guarantees 100% bit-exact simulation reproducibility across independent runs and platforms.",
+          "what_we_measure": "Cryptographic SHA-256 state digest match after 50,000 continuous simulation steps.",
+          "how_its_measured": "Runs two independent 50,000-step simulations and hashes all positions, velocities, and state variables.",
+          "how_to_compare": "Bit-Exact Match = perfect replay fidelity; Any hash mismatch = non-deterministic divergence."
+        }
+      },
+      {
+        "id": "B10",
+        "name": "Bug & Tunneling Stress",
+        "category": "Physics",
+        "format_type": "containment_speed",
+        "passed": true,
+        "max_containment_speed": "2.5 units/s",
+        "defect_rate": "0.00%",
+        "target": "v_max \u2265 2.5 units/s (0.00% Defect)",
+        "unit": "units/s",
+        "value_display": "v_max = 2.5 units/s (0% Defect)",
+        "details": [
+          "Stress-tested collision containment under extreme velocity (2.5 norm units/s).",
+          "Zero tunneling or spatial penetration through thin physical barriers."
+        ],
+        "formula": "v_containment = max(v | Tunneling_Defects(v) == 0)",
+        "explanation": {
+          "what_it_tests": "Stress-tests collision containment to eliminate high-velocity barrier penetration bugs.",
+          "what_we_measure": "Maximum containment velocity under extreme acceleration (Target: v_max \u2265 2.5 units/s | 0% Defect).",
+          "how_its_measured": "Fires a 10x-speed entity directly against an ultra-thin 0.02 barrier over 60 steps.",
+          "how_to_compare": "0% Defect = bulletproof collision math; >0% Defect = object glitched through wall."
+        }
+      }
+    ]
+  },
+  {
+    "run_id": "RUN_20260829_122014",
+    "timestamp": "2026-08-29T12:20:07.785299+00:00",
+    "mlue_phase": "Phase 1.1 (v1.1.0 Hierarchical State Database)",
+    "environment": {
+      "python_version": "3.13.0",
+      "os": "Windows 11",
+      "architecture": "AMD64"
+    },
+    "overall_status": "PASS",
+    "passed_count": 10,
+    "total_count": 10,
+    "substrate_tier": "Tier L1 (Scaffolding-Decoupled)",
+    "benchmarks": [
+      {
+        "id": "B1",
+        "name": "Substrate Decoupling",
+        "category": "Architecture",
+        "format_type": "tier_and_count",
+        "passed": true,
+        "tier": "Tier L1 (Scaffolding-Decoupled)",
+        "tier_description": "Pure mathematical core; OS windowing driver isolated in disposable adapter.",
+        "import_violations": 0,
+        "target": "0 Foreign Imports (L1 Substrate)",
+        "unit": "Imports",
+        "value_display": "0 Violations (Tier L1)",
+        "details": [
+          "Zero foreign OS/GUI imports detected in core runtime AST."
+        ],
+        "formula": "AST(Core) \u2229 {OS, GUI, ForeignLibs} = \u2205",
+        "explanation": {
+          "what_it_tests": "Verifies the core math engine is 100% decoupled from host OS windowing & GUI frameworks.",
+          "what_we_measure": "Foreign GUI/OS imports in core AST (Target: 0 Violations | Tier L1 Substrate).",
+          "how_its_measured": "AST parser walks model.py, engine.py, loader.py checking against forbidden OS libraries.",
+          "how_to_compare": "0 Violations = portable to C/Rust/Silicon; >0 Violations = trapped in host OS."
+        }
+      },
+      {
+        "id": "B2",
+        "name": "Declarative Emergence",
+        "category": "Architecture",
+        "format_type": "multiplier",
+        "passed": true,
+        "multiplier": "5.0x",
+        "heuristic_violations": 0,
+        "target": "\u2265 3.0x Multiplier (0 Heuristics)",
+        "unit": "Multiplier",
+        "value_display": "5.0x Expansion Ratio",
+        "details": [
+          "10 distinct games/simulations generated from 2 universal primitives.",
+          "0 bespoke game loops or hardcoded heuristics in core engine."
+        ],
+        "formula": "E = N_apps / N_primitives (where Heuristics = 0)",
+        "explanation": {
+          "what_it_tests": "Measures combinatorial application emergence from universal primitives without bespoke code.",
+          "what_we_measure": "Application-to-primitive expansion ratio (Target: \u2265 3.0x Multiplier | 0 Heuristics).",
+          "how_its_measured": "Divides working application documents (7) by core spatial primitives (2).",
+          "how_to_compare": "Higher multiplier = greater emergence; bespoke game strings = automatic failure."
+        }
+      },
+      {
+        "id": "B3",
+        "name": "Spatial & Universal Invariance",
+        "category": "Architecture",
+        "format_type": "log_precision",
+        "passed": true,
+        "raw_drift": 0.0,
+        "log_precision_decades": ">16.0 Decades",
+        "target": "\u0394 \u2264 1e-7 (> 7.0 Decades)",
+        "unit": "-log10(\u0394)",
+        "value_display": "16.0 Decades Precision",
+        "details": [
+          "Evaluated across 5 extreme viewport resolutions (100x100 to 4K).",
+          "Maximum floating-point trajectory variance: 0.00000000e+00 units."
+        ],
+        "formula": "Precision = -log10(||x_R1(t) - x_R2(t)||)",
+        "explanation": {
+          "what_it_tests": "Ensures simulation physics behave identically across all viewport resolutions (Watch to 4K).",
+          "what_we_measure": "Normalized Euclidean trajectory drift across resolutions (Target: \u0394 \u2264 1e-7 | >16 Decades).",
+          "how_its_measured": "Runs identical 60-step simulations across 5 viewport sizes and computes max coordinate variance.",
+          "how_to_compare": "\u0394 = 0.0 = bit-exact resolution invariance; \u0394 > 0 = viewport distortion."
+        }
+      },
+      {
+        "id": "B4",
+        "name": "Physical & Conservation Fidelity",
+        "category": "Physics",
+        "format_type": "ppb_drift",
+        "passed": true,
+        "drift_ppb": "0.0 PPB",
+        "target": "\u0394Ek \u2264 1000 PPB (< 1e-6)",
+        "unit": "PPB",
+        "value_display": "0.0 PPB Drift",
+        "details": [
+          "Tested over 1,000 distinct collision trajectories and impact angles.",
+          "Total kinetic energy conservation drift: 0.00000000e+00 units."
+        ],
+        "formula": "\u0394Ek = |Ek_after - Ek_before| (scaled in 10^-9 PPB)",
+        "explanation": {
+          "what_it_tests": "Verifies collisions strictly conserve kinetic energy without numerical loss or gain.",
+          "what_we_measure": "Kinetic energy variance in Parts-Per-Billion (Target: < 1,000 PPB).",
+          "how_its_measured": "Simulates 1,000 elastic collisions across 360-degree impact angles and compares energy before vs. after.",
+          "how_to_compare": "0.0 PPB = exact physical conservation; High PPB = artificial energy damping or explosion."
+        }
+      },
+      {
+        "id": "B5",
+        "name": "Static Provability & Reachability",
+        "category": "Verification",
+        "format_type": "fraction_gate",
+        "passed": true,
+        "blocked_cases": "10/10",
+        "rejection_rate": "100.0%",
+        "target": "10/10 Statically Blocked (100%)",
+        "unit": "Cases",
+        "value_display": "10/10 Blocked (100%)",
+        "details": [
+          "Fuzzed 10 mathematically impossible boundary, coordinate, and state conditions.",
+          "100% compile-time defect interception before execution."
+        ],
+        "formula": "Gate = (Rejected_Impossible_Cases == Total_Fuzz_Cases)",
+        "explanation": {
+          "what_it_tests": "Catches mathematically invalid states, boundary breaches, and corrupt rules at compile time.",
+          "what_we_measure": "Defect interception rate (Target: 100% Statically Blocked).",
+          "how_its_measured": "Feeds 10 impossible boundary and state mutation fuzz cases into loader.py before execution.",
+          "how_to_compare": "100% = zero unhandled runtime crashes; <100% = unhandled fatal execution flaws."
+        }
+      },
+      {
+        "id": "B6",
+        "name": "Speed & Step Latency",
+        "category": "Performance",
+        "format_type": "speed_and_latency",
+        "passed": true,
+        "ticks_per_sec": "19,753 ticks/s",
+        "raw_ticks_per_sec": 19752.86791898951,
+        "latency_us": "50.63 us/step",
+        "speedup": "5.6x vs Pygame",
+        "target": "> 10,000 ticks/s (< 100 us)",
+        "unit": "k-ticks/s",
+        "value_display": "19.8k t/s (50.6 us)",
+        "details": [
+          "Evaluated 10,000 full collision simulation steps.",
+          "Peak throughput: 19,753 steps/second (5.6x faster than traditional baseline)."
+        ],
+        "formula": "Throughput = N_steps / elapsed_time (Latency = 1e6 / Throughput)",
+        "explanation": {
+          "what_it_tests": "Measures physics simulation throughput and hardware step latency.",
+          "what_we_measure": "Simulation ticks per second and microsecond step latency (Target: > 10,000 ticks/s | < 100 \u03bcs).",
+          "how_its_measured": "Executes 10,000 continuous collision steps using high-resolution hardware timers.",
+          "how_to_compare": "Higher ticks/s = faster execution; lower \u03bcs = ultra-low input latency."
+        }
+      },
+      {
+        "id": "B7",
+        "name": "Resource & Memory Churn",
+        "category": "Performance",
+        "format_type": "memory_churn",
+        "passed": true,
+        "bytes_per_step": "0.78 B/tick",
+        "total_churn_kb": "3.80 KB",
+        "target": "Minimal Churn (< 500 B/tick)",
+        "unit": "Bytes/Tick",
+        "value_display": "0.78 B/step Churn",
+        "details": [
+          "Tracked heap allocation delta across 5,000 consecutive simulation steps.",
+          "Total memory churn: 3.80 KB (Near-zero GC pause overhead)."
+        ],
+        "formula": "Churn = \u0394Heap_Allocated_Bytes / N_steps",
+        "explanation": {
+          "what_it_tests": "Measures steady-state memory allocation waste per step to prevent GC lag and frame stutters.",
+          "what_we_measure": "Heap memory allocation delta per simulation step (Target: Minimal Churn < 500 B/tick).",
+          "how_its_measured": "Snapshots heap memory before and after 5,000 steps via tracemalloc profiler.",
+          "how_to_compare": "Near-zero bytes = smooth frame pacing with zero garbage collection pauses."
+        }
+      },
+      {
+        "id": "B8",
+        "name": "Structural Complexity",
+        "category": "Engineering",
+        "format_type": "cyclomatic_score",
+        "passed": true,
+        "max_cyclomatic_score": 27,
+        "target": "Peak McCabe Score \u2264 30",
+        "unit": "McCabe CC",
+        "value_display": "CC = 27 (Bounded)",
+        "details": [
+          "Audited AST branching complexity across 21 engine functions.",
+          "Peak function complexity: 27 (Zero unbounded spaghetti branching)."
+        ],
+        "formula": "v(G) = E - N + 2P (McCabe Graph Cyclomatic Complexity)",
+        "explanation": {
+          "what_it_tests": "Guarantees engine logic remains modular, simple, and mathematically bounded.",
+          "what_we_measure": "Peak McCabe Cyclomatic Complexity score across all functions (Target: CC \u2264 30).",
+          "how_its_measured": "Parses AST decision branches (if, while, for, bool operators) for every runtime function.",
+          "how_to_compare": "CC \u2264 30 = provable, modular code; CC > 30 = tangled spaghetti logic."
+        }
+      },
+      {
+        "id": "B9",
+        "name": "Determinism & Reliability",
+        "category": "Engineering",
+        "format_type": "cryptographic_hash",
+        "passed": true,
+        "sha256_prefix": "23a940449ab23ae3...",
+        "full_hash": "23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c",
+        "target": "100% Bit-Exact SHA-256 Match",
+        "unit": "Hash Match",
+        "value_display": "EXACT (23a940449ab2...)",
+        "details": [
+          "Evaluated 50,000 continuous simulation steps in two independent execution runs.",
+          "Full Cryptographic Digest: 23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c (Bit-exact match across runs)."
+        ],
+        "formula": "SHA256(Run_A(50k_ticks)) == SHA256(Run_B(50k_ticks))",
+        "explanation": {
+          "what_it_tests": "Guarantees 100% bit-exact simulation reproducibility across independent runs and platforms.",
+          "what_we_measure": "Cryptographic SHA-256 state digest match after 50,000 continuous simulation steps.",
+          "how_its_measured": "Runs two independent 50,000-step simulations and hashes all positions, velocities, and state variables.",
+          "how_to_compare": "Bit-Exact Match = perfect replay fidelity; Any hash mismatch = non-deterministic divergence."
+        }
+      },
+      {
+        "id": "B10",
+        "name": "Bug & Tunneling Stress",
+        "category": "Physics",
+        "format_type": "containment_speed",
+        "passed": true,
+        "max_containment_speed": "2.5 units/s",
+        "defect_rate": "0.00%",
+        "target": "v_max \u2265 2.5 units/s (0.00% Defect)",
+        "unit": "units/s",
+        "value_display": "v_max = 2.5 units/s (0% Defect)",
+        "details": [
+          "Stress-tested collision containment under extreme velocity (2.5 norm units/s).",
+          "Zero tunneling or spatial penetration through thin physical barriers."
+        ],
+        "formula": "v_containment = max(v | Tunneling_Defects(v) == 0)",
+        "explanation": {
+          "what_it_tests": "Stress-tests collision containment to eliminate high-velocity barrier penetration bugs.",
+          "what_we_measure": "Maximum containment velocity under extreme acceleration (Target: v_max \u2265 2.5 units/s | 0% Defect).",
+          "how_its_measured": "Fires a 10x-speed entity directly against an ultra-thin 0.02 barrier over 60 steps.",
+          "how_to_compare": "0% Defect = bulletproof collision math; >0% Defect = object glitched through wall."
+        }
+      }
+    ]
+  },
+  {
+    "run_id": "RUN_20260829_122039",
+    "timestamp": "2026-08-29T12:20:30.346400+00:00",
+    "mlue_phase": "Phase 1.2 (v1.2.0 Zero-Copy Binary Document & WAL Persistence)",
+    "environment": {
+      "python_version": "3.13.0",
+      "os": "Windows 11",
+      "architecture": "AMD64"
+    },
+    "overall_status": "PASS",
+    "passed_count": 10,
+    "total_count": 10,
+    "substrate_tier": "Tier L1 (Scaffolding-Decoupled)",
+    "benchmarks": [
+      {
+        "id": "B1",
+        "name": "Substrate Decoupling",
+        "category": "Architecture",
+        "format_type": "tier_and_count",
+        "passed": true,
+        "tier": "Tier L1 (Scaffolding-Decoupled)",
+        "tier_description": "Pure mathematical core; OS windowing driver isolated in disposable adapter.",
+        "import_violations": 0,
+        "target": "0 Foreign Imports (L1 Substrate)",
+        "unit": "Imports",
+        "value_display": "0 Violations (Tier L1)",
+        "details": [
+          "Zero foreign OS/GUI imports detected in core runtime AST."
+        ],
+        "formula": "AST(Core) \u2229 {OS, GUI, ForeignLibs} = \u2205",
+        "explanation": {
+          "what_it_tests": "Verifies the core math engine is 100% decoupled from host OS windowing & GUI frameworks.",
+          "what_we_measure": "Foreign GUI/OS imports in core AST (Target: 0 Violations | Tier L1 Substrate).",
+          "how_its_measured": "AST parser walks model.py, engine.py, loader.py checking against forbidden OS libraries.",
+          "how_to_compare": "0 Violations = portable to C/Rust/Silicon; >0 Violations = trapped in host OS."
+        }
+      },
+      {
+        "id": "B2",
+        "name": "Declarative Emergence",
+        "category": "Architecture",
+        "format_type": "multiplier",
+        "passed": true,
+        "multiplier": "5.0x",
+        "heuristic_violations": 0,
+        "target": "\u2265 3.0x Multiplier (0 Heuristics)",
+        "unit": "Multiplier",
+        "value_display": "5.0x Expansion Ratio",
+        "details": [
+          "10 distinct games/simulations generated from 2 universal primitives.",
+          "0 bespoke game loops or hardcoded heuristics in core engine."
+        ],
+        "formula": "E = N_apps / N_primitives (where Heuristics = 0)",
+        "explanation": {
+          "what_it_tests": "Measures combinatorial application emergence from universal primitives without bespoke code.",
+          "what_we_measure": "Application-to-primitive expansion ratio (Target: \u2265 3.0x Multiplier | 0 Heuristics).",
+          "how_its_measured": "Divides working application documents (7) by core spatial primitives (2).",
+          "how_to_compare": "Higher multiplier = greater emergence; bespoke game strings = automatic failure."
+        }
+      },
+      {
+        "id": "B3",
+        "name": "Spatial & Universal Invariance",
+        "category": "Architecture",
+        "format_type": "log_precision",
+        "passed": true,
+        "raw_drift": 0.0,
+        "log_precision_decades": ">16.0 Decades",
+        "target": "\u0394 \u2264 1e-7 (> 7.0 Decades)",
+        "unit": "-log10(\u0394)",
+        "value_display": "16.0 Decades Precision",
+        "details": [
+          "Evaluated across 5 extreme viewport resolutions (100x100 to 4K).",
+          "Maximum floating-point trajectory variance: 0.00000000e+00 units."
+        ],
+        "formula": "Precision = -log10(||x_R1(t) - x_R2(t)||)",
+        "explanation": {
+          "what_it_tests": "Ensures simulation physics behave identically across all viewport resolutions (Watch to 4K).",
+          "what_we_measure": "Normalized Euclidean trajectory drift across resolutions (Target: \u0394 \u2264 1e-7 | >16 Decades).",
+          "how_its_measured": "Runs identical 60-step simulations across 5 viewport sizes and computes max coordinate variance.",
+          "how_to_compare": "\u0394 = 0.0 = bit-exact resolution invariance; \u0394 > 0 = viewport distortion."
+        }
+      },
+      {
+        "id": "B4",
+        "name": "Physical & Conservation Fidelity",
+        "category": "Physics",
+        "format_type": "ppb_drift",
+        "passed": true,
+        "drift_ppb": "0.0 PPB",
+        "target": "\u0394Ek \u2264 1000 PPB (< 1e-6)",
+        "unit": "PPB",
+        "value_display": "0.0 PPB Drift",
+        "details": [
+          "Tested over 1,000 distinct collision trajectories and impact angles.",
+          "Total kinetic energy conservation drift: 0.00000000e+00 units."
+        ],
+        "formula": "\u0394Ek = |Ek_after - Ek_before| (scaled in 10^-9 PPB)",
+        "explanation": {
+          "what_it_tests": "Verifies collisions strictly conserve kinetic energy without numerical loss or gain.",
+          "what_we_measure": "Kinetic energy variance in Parts-Per-Billion (Target: < 1,000 PPB).",
+          "how_its_measured": "Simulates 1,000 elastic collisions across 360-degree impact angles and compares energy before vs. after.",
+          "how_to_compare": "0.0 PPB = exact physical conservation; High PPB = artificial energy damping or explosion."
+        }
+      },
+      {
+        "id": "B5",
+        "name": "Static Provability & Reachability",
+        "category": "Verification",
+        "format_type": "fraction_gate",
+        "passed": true,
+        "blocked_cases": "10/10",
+        "rejection_rate": "100.0%",
+        "target": "10/10 Statically Blocked (100%)",
+        "unit": "Cases",
+        "value_display": "10/10 Blocked (100%)",
+        "details": [
+          "Fuzzed 10 mathematically impossible boundary, coordinate, and state conditions.",
+          "100% compile-time defect interception before execution."
+        ],
+        "formula": "Gate = (Rejected_Impossible_Cases == Total_Fuzz_Cases)",
+        "explanation": {
+          "what_it_tests": "Catches mathematically invalid states, boundary breaches, and corrupt rules at compile time.",
+          "what_we_measure": "Defect interception rate (Target: 100% Statically Blocked).",
+          "how_its_measured": "Feeds 10 impossible boundary and state mutation fuzz cases into loader.py before execution.",
+          "how_to_compare": "100% = zero unhandled runtime crashes; <100% = unhandled fatal execution flaws."
+        }
+      },
+      {
+        "id": "B6",
+        "name": "Speed & Step Latency",
+        "category": "Performance",
+        "format_type": "speed_and_latency",
+        "passed": true,
+        "ticks_per_sec": "15,144 ticks/s",
+        "raw_ticks_per_sec": 15143.518914601174,
+        "latency_us": "66.03 us/step",
+        "speedup": "4.3x vs Pygame",
+        "target": "> 10,000 ticks/s (< 100 us)",
+        "unit": "k-ticks/s",
+        "value_display": "15.1k t/s (66.0 us)",
+        "details": [
+          "Evaluated 10,000 full collision simulation steps.",
+          "Peak throughput: 15,144 steps/second (4.3x faster than traditional baseline)."
+        ],
+        "formula": "Throughput = N_steps / elapsed_time (Latency = 1e6 / Throughput)",
+        "explanation": {
+          "what_it_tests": "Measures physics simulation throughput and hardware step latency.",
+          "what_we_measure": "Simulation ticks per second and microsecond step latency (Target: > 10,000 ticks/s | < 100 \u03bcs).",
+          "how_its_measured": "Executes 10,000 continuous collision steps using high-resolution hardware timers.",
+          "how_to_compare": "Higher ticks/s = faster execution; lower \u03bcs = ultra-low input latency."
+        }
+      },
+      {
+        "id": "B7",
+        "name": "Resource & Memory Churn",
+        "category": "Performance",
+        "format_type": "memory_churn",
+        "passed": true,
+        "bytes_per_step": "0.78 B/tick",
+        "total_churn_kb": "3.80 KB",
+        "target": "Minimal Churn (< 500 B/tick)",
+        "unit": "Bytes/Tick",
+        "value_display": "0.78 B/step Churn",
+        "details": [
+          "Tracked heap allocation delta across 5,000 consecutive simulation steps.",
+          "Total memory churn: 3.80 KB (Near-zero GC pause overhead)."
+        ],
+        "formula": "Churn = \u0394Heap_Allocated_Bytes / N_steps",
+        "explanation": {
+          "what_it_tests": "Measures steady-state memory allocation waste per step to prevent GC lag and frame stutters.",
+          "what_we_measure": "Heap memory allocation delta per simulation step (Target: Minimal Churn < 500 B/tick).",
+          "how_its_measured": "Snapshots heap memory before and after 5,000 steps via tracemalloc profiler.",
+          "how_to_compare": "Near-zero bytes = smooth frame pacing with zero garbage collection pauses."
+        }
+      },
+      {
+        "id": "B8",
+        "name": "Structural Complexity",
+        "category": "Engineering",
+        "format_type": "cyclomatic_score",
+        "passed": true,
+        "max_cyclomatic_score": 27,
+        "target": "Peak McCabe Score \u2264 30",
+        "unit": "McCabe CC",
+        "value_display": "CC = 27 (Bounded)",
+        "details": [
+          "Audited AST branching complexity across 21 engine functions.",
+          "Peak function complexity: 27 (Zero unbounded spaghetti branching)."
+        ],
+        "formula": "v(G) = E - N + 2P (McCabe Graph Cyclomatic Complexity)",
+        "explanation": {
+          "what_it_tests": "Guarantees engine logic remains modular, simple, and mathematically bounded.",
+          "what_we_measure": "Peak McCabe Cyclomatic Complexity score across all functions (Target: CC \u2264 30).",
+          "how_its_measured": "Parses AST decision branches (if, while, for, bool operators) for every runtime function.",
+          "how_to_compare": "CC \u2264 30 = provable, modular code; CC > 30 = tangled spaghetti logic."
+        }
+      },
+      {
+        "id": "B9",
+        "name": "Determinism & Reliability",
+        "category": "Engineering",
+        "format_type": "cryptographic_hash",
+        "passed": true,
+        "sha256_prefix": "23a940449ab23ae3...",
+        "full_hash": "23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c",
+        "target": "100% Bit-Exact SHA-256 Match",
+        "unit": "Hash Match",
+        "value_display": "EXACT (23a940449ab2...)",
+        "details": [
+          "Evaluated 50,000 continuous simulation steps in two independent execution runs.",
+          "Full Cryptographic Digest: 23a940449ab23ae357a8971a783b7648db68f0c6c4d50110ba57a528c34ec42c (Bit-exact match across runs)."
+        ],
+        "formula": "SHA256(Run_A(50k_ticks)) == SHA256(Run_B(50k_ticks))",
+        "explanation": {
+          "what_it_tests": "Guarantees 100% bit-exact simulation reproducibility across independent runs and platforms.",
+          "what_we_measure": "Cryptographic SHA-256 state digest match after 50,000 continuous simulation steps.",
+          "how_its_measured": "Runs two independent 50,000-step simulations and hashes all positions, velocities, and state variables.",
+          "how_to_compare": "Bit-Exact Match = perfect replay fidelity; Any hash mismatch = non-deterministic divergence."
+        }
+      },
+      {
+        "id": "B10",
+        "name": "Bug & Tunneling Stress",
+        "category": "Physics",
+        "format_type": "containment_speed",
+        "passed": true,
+        "max_containment_speed": "2.5 units/s",
+        "defect_rate": "0.00%",
+        "target": "v_max \u2265 2.5 units/s (0.00% Defect)",
+        "unit": "units/s",
+        "value_display": "v_max = 2.5 units/s (0% Defect)",
+        "details": [
+          "Stress-tested collision containment under extreme velocity (2.5 norm units/s).",
+          "Zero tunneling or spatial penetration through thin physical barriers."
+        ],
+        "formula": "v_containment = max(v | Tunneling_Defects(v) == 0)",
+        "explanation": {
+          "what_it_tests": "Stress-tests collision containment to eliminate high-velocity barrier penetration bugs.",
+          "what_we_measure": "Maximum containment velocity under extreme acceleration (Target: v_max \u2265 2.5 units/s | 0% Defect).",
+          "how_its_measured": "Fires a 10x-speed entity directly against an ultra-thin 0.02 barrier over 60 steps.",
+          "how_to_compare": "0% Defect = bulletproof collision math; >0% Defect = object glitched through wall."
+        }
+      }
+    ]
   }
 ]

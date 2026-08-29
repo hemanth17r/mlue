@@ -251,10 +251,13 @@ To maintain architectural rigor, MLUE documents its exact operational boundaries
   - Compile-time spatial reachability validation.
   - Native Model Context Protocol (MCP) server integration.
   - 10/10 Passing ruthless benchmarks on live telemetry dashboard.
-- [ ] **Phase 1: Native Substrate Transition (Next)**
-  - Bare-metal compiled Rust/C execution core (< 1 µs step latency, > 1,000,000 ticks/s).
-  - Direct memory-mapped binary representation serialization.
-  - SIMD-vectorized multi-agent rollout engine.
+- [ ] **Phase 1: Native Substrate Transition & Hierarchical Storage (Active)** — *[Read Full Phase 1 Blueprint (Subphases 1.1–1.6)](docs/PHASE_1.md)*
+  - **1.1**: Hierarchical State-Trees & Query/Mutation Primitives.
+  - **1.2**: Zero-Copy Binary Document & WAL Persistence (`.mlueb`).
+  - **1.3**: Pure C-ABI Specification & Decoupled FFI Bridge.
+  - **1.4**: Native Compiled Integrator & Spatial Collision Core ($> 1\text{M}\text{ ticks/s}$).
+  - **1.5**: Native Rule Evaluator, Lifecycle & CLI/MCP Cutover.
+  - **1.6**: SIMD Multi-Agent Vectorized Rollout Engine ($> 10\text{M}\text{ ticks/s}$).
 - [ ] **Phase 2: Multi-Agent Continuous Constraint Manifolds**
   - Arbitrary polygon collision manifolds & spatial partitioning mesh.
   - Distributed multi-agent RL simulation environment.

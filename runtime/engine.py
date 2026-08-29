@@ -7,8 +7,9 @@ property mutations, and state variable conditions.
 Completely decoupled from any rendering or platform display subsystem.
 """
 
+import copy
 import math
-from typing import List, Tuple, Dict, Any, Optional, Set, FrozenSet
+from typing import List, Tuple, Dict, Any, Optional, Set, FrozenSet, Union
 from .model import (
     MLUEDocument,
     Environment,
@@ -24,6 +25,7 @@ from .model import (
     Condition,
     Action,
 )
+from .loader import parse_keypath
 
 
 class MLUEEngine:
@@ -431,6 +433,100 @@ class MLUEEngine:
 
         return entities, collision_events
 
+    def _resolve_path_parent(
+        self, root: Dict[str, Any], path: str
+    ) -> Tuple[Optional[Any], Optional[Union[str, int]]]:
+        """Resolves keypath to its parent container (dict or list) and final token key/index."""
+        tokens = parse_keypath(path)
+        if not tokens:
+            return None, None
+        curr: Any = root
+        for tok in tokens[:-1]:
+            if isinstance(curr, dict) and isinstance(tok, str):
+                curr = curr.get(tok)
+            elif isinstance(curr, list) and isinstance(tok, int):
+                if 0 <= tok < len(curr) or (tok < 0 and abs(tok) <= len(curr)):
+                    curr = curr[tok]
+                else:
+                    return None, None
+            else:
+                return None, None
+            if curr is None:
+                return None, None
+        return curr, tokens[-1]
+
+    def _get_path_value(self, root: Dict[str, Any], path: str) -> Any:
+        """Retrieves value addressed by keypath, supporting .length on lists."""
+        tokens = parse_keypath(path)
+        if not tokens:
+            return None
+        curr: Any = root
+        for idx, tok in enumerate(tokens):
+            if tok == "length" and idx == len(tokens) - 1 and isinstance(curr, list):
+                return len(curr)
+            if isinstance(curr, dict) and isinstance(tok, str):
+                curr = curr.get(tok)
+            elif isinstance(curr, list) and isinstance(tok, int):
+                if 0 <= tok < len(curr) or (tok < 0 and abs(tok) <= len(curr)):
+                    curr = curr[tok]
+                else:
+                    return None
+            else:
+                return None
+            if curr is None:
+                return None
+        return curr
+
+    def _set_path_value(self, root: Dict[str, Any], path: str, value: Any) -> None:
+        """Assigns value to the location addressed by keypath."""
+        parent, final_tok = self._resolve_path_parent(root, path)
+        if parent is None or final_tok is None:
+            return
+        if isinstance(parent, dict) and isinstance(final_tok, str):
+            parent[final_tok] = value
+        elif isinstance(parent, list) and isinstance(final_tok, int):
+            if 0 <= final_tok < len(parent) or (final_tok < 0 and abs(final_tok) <= len(parent)):
+                parent[final_tok] = value
+
+    def _increment_path_value(self, root: Dict[str, Any], path: str, amount: float) -> None:
+        """Adds numeric delta to value addressed by keypath."""
+        parent, final_tok = self._resolve_path_parent(root, path)
+        if parent is None or final_tok is None:
+            return
+        if isinstance(parent, dict) and isinstance(final_tok, str):
+            curr_val = parent.get(final_tok)
+            if isinstance(curr_val, (int, float)):
+                parent[final_tok] = curr_val + amount
+        elif isinstance(parent, list) and isinstance(final_tok, int):
+            if 0 <= final_tok < len(parent) or (final_tok < 0 and abs(final_tok) <= len(parent)):
+                curr_val = parent[final_tok]
+                if isinstance(curr_val, (int, float)):
+                    parent[final_tok] = curr_val + amount
+
+    def _push_path_value(self, root: Dict[str, Any], path: str, value: Any) -> None:
+        """Appends value to array addressed by keypath."""
+        target = self._get_path_value(root, path)
+        if isinstance(target, list):
+            target.append(value)
+
+    def _pop_path_value(self, root: Dict[str, Any], path: str, index: int = -1) -> None:
+        """Removes element from array addressed by keypath."""
+        target = self._get_path_value(root, path)
+        if isinstance(target, list):
+            if 0 <= index < len(target) or (index < 0 and abs(index) <= len(target)):
+                target.pop(index)
+
+    def _delete_path_key(self, root: Dict[str, Any], path: str, key: Optional[str] = None) -> None:
+        """Deletes key from dictionary addressed by keypath."""
+        if key is not None:
+            target = self._get_path_value(root, path)
+            if isinstance(target, dict):
+                target.pop(key, None)
+        else:
+            parent, final_tok = self._resolve_path_parent(root, path)
+            if isinstance(parent, dict) and isinstance(final_tok, str):
+                parent.pop(final_tok, None)
+
     def _evaluate_rule_condition(
         self,
         cond: Condition,
@@ -439,7 +535,22 @@ class MLUEEngine:
         state_variables: Dict[str, Any],
     ) -> bool:
         """Evaluates whether a single rule condition is satisfied."""
-        if cond.state_variable is not None:
+        if cond.state_path is not None:
+            actual_val = self._get_path_value(state_variables, cond.state_path)
+            threshold = cond.value
+            if actual_val is None:
+                return False
+            try:
+                if cond.op == "<=": return actual_val <= threshold
+                if cond.op == ">=": return actual_val >= threshold
+                if cond.op == "<":  return actual_val < threshold
+                if cond.op == ">":  return actual_val > threshold
+                if cond.op == "==": return actual_val == threshold
+                if cond.op == "!=": return actual_val != threshold
+            except TypeError:
+                return False
+
+        elif cond.state_variable is not None:
             actual_val = state_variables.get(cond.state_variable, 0)
             threshold = cond.value
             if cond.op == "<=": return actual_val <= threshold
@@ -447,6 +558,7 @@ class MLUEEngine:
             if cond.op == "<":  return actual_val < threshold
             if cond.op == ">":  return actual_val > threshold
             if cond.op == "==": return actual_val == threshold
+            if cond.op == "!=": return actual_val != threshold
 
         elif cond.entity is not None:
             ent_idx = entity_map.get(cond.entity)
@@ -459,6 +571,7 @@ class MLUEEngine:
                 if cond.op == "<":  return actual_val < threshold
                 if cond.op == ">":  return actual_val > threshold
                 if cond.op == "==": return abs(actual_val - threshold) < 1e-6
+                if cond.op == "!=": return abs(actual_val - threshold) >= 1e-6
 
         return False
 
@@ -496,6 +609,18 @@ class MLUEEngine:
                 state_variables[action.target] = state_variables[action.target] + amt
             elif action.type == "set" and action.target in state_variables:
                 state_variables[action.target] = action.value
+            elif action.type == "set_path":
+                self._set_path_value(state_variables, action.target, action.value)
+            elif action.type == "increment_path":
+                amt = action.amount if action.amount is not None else 1.0
+                self._increment_path_value(state_variables, action.target, amt)
+            elif action.type == "push":
+                self._push_path_value(state_variables, action.target, action.value)
+            elif action.type == "pop":
+                idx = action.index if action.index is not None else -1
+                self._pop_path_value(state_variables, action.target, idx)
+            elif action.type == "delete_key":
+                self._delete_path_key(state_variables, action.target, action.key)
             elif action.type == "reset_entity":
                 reset_idx = entity_map.get(action.target)
                 if reset_idx is not None:
@@ -507,6 +632,22 @@ class MLUEEngine:
                         size=curr.size, velocity=new_vel, properties=curr.properties,
                         active=True,
                     )
+
+    def _clone_state_variables(self, state_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Ultra-fast deterministic deep cloning of hierarchical state variables without copy.deepcopy overhead."""
+        res: Dict[str, Any] = {}
+        for k, v in state_dict.items():
+            if isinstance(v, dict):
+                res[k] = self._clone_state_variables(v)
+            elif isinstance(v, list):
+                res[k] = [
+                    self._clone_state_variables(item) if isinstance(item, dict)
+                    else (list(item) if isinstance(item, list) else item)
+                    for item in v
+                ]
+            else:
+                res[k] = v
+        return res
 
     def step(
         self,
@@ -520,7 +661,7 @@ class MLUEEngine:
 
         env = state.environment
         input_map = inputs or {}
-        state_variables = dict(state.state_variables)
+        state_variables = self._clone_state_variables(state.state_variables)
 
         # 1. Integrate motion & environment boundary constraints
         moved_entities = [

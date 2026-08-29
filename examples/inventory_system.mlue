@@ -1,0 +1,105 @@
+{
+  "mlue_version": "1.1",
+  "environment": {
+    "dimensions": [750, 500],
+    "background": "#0B0F19"
+  },
+  "state_variables": {
+    "session": {
+      "mode": "SURVIVAL",
+      "stats": {
+        "crafting_level": 1,
+        "energy": 100.0,
+        "gems_collected": 0
+      }
+    },
+    "inventory": [
+      { "id": "starter_shield", "type": "shield", "durability": 50 }
+    ],
+    "crafted_items": []
+  },
+  "entities": [
+    {
+      "id": "collector",
+      "type": "circle",
+      "position": { "x": 0.5, "y": 0.5 },
+      "size": { "radius": 0.04 },
+      "velocity": { "vx": 0.35, "vy": 0.25 },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": true
+      }
+    },
+    {
+      "id": "gem_amber",
+      "type": "box",
+      "position": { "x": 0.68, "y": 0.63 },
+      "size": { "width": 0.05, "height": 0.05 },
+      "properties": { "color": "#F59E0B", "solid": true }
+    },
+    {
+      "id": "gem_sapphire",
+      "type": "box",
+      "position": { "x": 0.75, "y": 0.35 },
+      "size": { "width": 0.05, "height": 0.05 },
+      "properties": { "color": "#3B82F6", "solid": true }
+    },
+    {
+      "id": "gem_emerald",
+      "type": "box",
+      "position": { "x": 0.35, "y": 0.75 },
+      "size": { "width": 0.05, "height": 0.05 },
+      "properties": { "color": "#10B981", "solid": true }
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "collect_amber",
+      "event": "collision",
+      "entities": ["collector", "gem_amber"],
+      "actions": [
+        { "type": "destroy_entity", "target": "gem_amber" },
+        { "type": "push", "target": "inventory", "value": { "id": "amber_gem", "type": "gem", "value": 50 } },
+        { "type": "increment_path", "target": "session.stats.gems_collected", "amount": 1 },
+        { "type": "increment_path", "target": "session.stats.energy", "amount": 10.0 }
+      ]
+    },
+    {
+      "trigger": "collect_sapphire",
+      "event": "collision",
+      "entities": ["collector", "gem_sapphire"],
+      "actions": [
+        { "type": "destroy_entity", "target": "gem_sapphire" },
+        { "type": "push", "target": "inventory", "value": { "id": "sapphire_gem", "type": "gem", "value": 75 } },
+        { "type": "increment_path", "target": "session.stats.gems_collected", "amount": 1 },
+        { "type": "increment_path", "target": "session.stats.energy", "amount": 15.0 }
+      ]
+    },
+    {
+      "trigger": "collect_emerald",
+      "event": "collision",
+      "entities": ["collector", "gem_emerald"],
+      "actions": [
+        { "type": "destroy_entity", "target": "gem_emerald" },
+        { "type": "push", "target": "inventory", "value": { "id": "emerald_gem", "type": "gem", "value": 100 } },
+        { "type": "increment_path", "target": "session.stats.gems_collected", "amount": 1 },
+        { "type": "increment_path", "target": "session.stats.energy", "amount": 20.0 }
+      ]
+    },
+    {
+      "trigger": "craft_upgrade",
+      "condition": {
+        "state_path": "inventory.length",
+        "op": ">=",
+        "value": 3
+      },
+      "actions": [
+        { "type": "pop", "target": "inventory", "index": -1 },
+        { "type": "push", "target": "crafted_items", "value": { "id": "power_crystal", "type": "artifact", "tier": 2 } },
+        { "type": "increment_path", "target": "session.stats.crafting_level", "amount": 1 },
+        { "type": "increment_path", "target": "inventory[0].durability", "amount": 50 },
+        { "type": "set_path", "target": "session.stats.energy", "value": 150.0 }
+      ]
+    }
+  ]
+}

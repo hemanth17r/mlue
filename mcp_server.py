@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional
 from runtime.ai_interface import MLUEAIInterface
 
 SERVER_NAME = "mlue-mcp-server"
-SERVER_VERSION = "0.7.0"
+SERVER_VERSION = "1.1.0"
 PROTOCOL_VERSION = "2024-11-05"
 
 ai_interface = MLUEAIInterface()

@@ -182,6 +182,41 @@ export default function HeadToHeadComparison() {
           mlue: { value: '100% Substrate Decoupled', desc: 'Math runs anywhere unchanged' }
         }
       ]
+    },
+    inventory: {
+      name: 'Hierarchical State Database',
+      icon: '🎒',
+      verdict: 'Traditional stacks require SQL databases, ORMs, table schemas, and serialization layers. MLUE manages nested lists, items, and crafting rules with 0 SQL and 0 ORM overhead.',
+      specs: [
+        {
+          label: 'Database / ORM Overhead',
+          sublabel: 'Storage & query layer',
+          icon: <Code className="w-4 h-4 text-cyan-400" />,
+          traditional: { value: 'SQL + Prisma / SQLAlchemy', desc: 'Complex migrations & table joins' },
+          mlue: { value: '0 SQL / 0 ORM', desc: 'Hierarchical in-memory state tree' }
+        },
+        {
+          label: 'Mutation Latency',
+          sublabel: 'Time to push/pop/update state',
+          icon: <Zap className="w-4 h-4 text-amber-400" />,
+          traditional: { value: '2ms – 15ms (DB Query)', desc: 'Network & SQL parsing latency' },
+          mlue: { value: '< 1 µs (Direct)', desc: 'Zero-overhead keypath mutation' }
+        },
+        {
+          label: 'Data Integrity',
+          sublabel: 'Static path & type verification',
+          icon: <ShieldAlert className="w-4 h-4 text-indigo-400" />,
+          traditional: { value: 'Runtime Schema Mismatches', desc: 'Broken foreign keys & nulls' },
+          mlue: { value: '100% Statically Verified', desc: 'Compile-time path reachability' }
+        },
+        {
+          label: 'Deterministic Rollouts',
+          sublabel: 'State replay & rollback fidelity',
+          icon: <Lock className="w-4 h-4 text-emerald-400" />,
+          traditional: { value: 'Complex DB Snapshots', desc: 'Non-deterministic rollbacks' },
+          mlue: { value: 'Bit-Exact SHA-256', desc: 'Cryptographic match on 50k steps' }
+        }
+      ]
     }
   };
 

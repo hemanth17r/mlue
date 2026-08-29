@@ -1,49 +1,80 @@
 #!/usr/bin/env python3
-"""MLUE CLI Runner — Phase 0.2 Bootstrap
+"""MLUE CLI Runner & Toolchain — Subphase 1.2
 
-Executes an MLUE document representation or simulation through the MLUE runtime engine.
+Executes MLUE representations (.mlue, .mlueb), compiles binary containers,
+and manages Write-Ahead Log (.wal) recording and deterministic replay.
 """
 
 import sys
 import argparse
 from pathlib import Path
 from runtime import load_mlue, MLUEEngine, TkinterAdapter, MLUEValidationError
+from runtime.binary import save_mlueb, load_mlueb
+from runtime.wal import WALWriter, WALReader, WALReplayer
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="MLUE Runtime Engine Runner (Phase 0.2)",
-        usage="python mlue.py [run] <path_to_file.mlue> [options]"
-    )
-    parser.add_argument("command_or_file", nargs="*", help="File path, or 'run <path>'")
-    parser.add_argument("--headless", action="store_true", help="Evaluate simulation without launching GUI window")
-    parser.add_argument("--ticks", type=int, default=None, help="Number of simulation steps to evaluate in headless mode")
-    parser.add_argument("--dt", type=float, default=1.0 / 60.0, help="Delta time per simulation step (default: 1/60 s)")
-    parser.add_argument("--fps", type=int, default=60, help="Presentation frame rate (default: 60)")
-    parser.add_argument("--duration", type=float, default=None, help="Simulation duration in seconds")
+def handle_compile(args: argparse.Namespace) -> int:
+    """Compiles a .mlue JSON document into a zero-copy .mlueb binary document."""
+    input_path = Path(args.input_file)
+    if not input_path.exists():
+        print(f"Error: Input file not found: {input_path}", file=sys.stderr)
+        return 1
 
-    args = parser.parse_args()
+    out_path = Path(args.output) if args.output else input_path.with_suffix(".mlueb")
 
-    pos_args = args.command_or_file
-    if not pos_args:
-        parser.print_help()
+    try:
+        doc = load_mlue(input_path)
+        bytes_written = save_mlueb(doc, out_path)
+        orig_size = input_path.stat().st_size
+        ratio = (1.0 - (bytes_written / max(orig_size, 1))) * 100.0
+        print(f"[MLUE Binary Compiler] Successfully compiled '{input_path.name}' -> '{out_path.name}'")
+        print(f"  - Original JSON Size: {orig_size} bytes")
+        print(f"  - Binary .mlueb Size: {bytes_written} bytes ({ratio:.1f}% reduction)")
         return 0
+    except Exception as e:
+        print(f"[MLUE Compiler Error] {e}", file=sys.stderr)
+        return 1
 
-    if pos_args[0] == "run":
-        if len(pos_args) < 2:
-            print("Error: Missing target .mlue file after 'run'.", file=sys.stderr)
-            return 1
-        target_file = pos_args[1]
-    else:
-        target_file = pos_args[0]
 
-    file_path = Path(target_file)
-    if not file_path.exists():
-        print(f"Error: MLUE file not found at '{target_file}'", file=sys.stderr)
+def handle_replay(args: argparse.Namespace) -> int:
+    """Replays a simulation from a .wal log file deterministically."""
+    scene_path = Path(args.scene_file)
+    wal_path = Path(args.wal_file)
+
+    if not scene_path.exists():
+        print(f"Error: Scene file not found: {scene_path}", file=sys.stderr)
+        return 1
+    if not wal_path.exists():
+        print(f"Error: WAL file not found: {wal_path}", file=sys.stderr)
         return 1
 
     try:
-        # 1. Load and validate MLUE representation
+        doc = load_mlue(scene_path)
+        scene_hash, frames, warning = WALReader.read_frames(wal_path)
+        if warning:
+            print(f"[MLUE WAL Warning] {warning}")
+
+        print(f"[MLUE WAL Replayer] Loaded {len(frames)} frames from '{wal_path.name}' for scene '{scene_path.name}'.")
+        replayer = WALReplayer()
+        final_state = replayer.replay(doc, frames, dt=args.dt, total_ticks=args.ticks)
+
+        print(f"[MLUE WAL Replayer] Replay complete. Final sim time: {final_state.time:.4f}s.")
+        print(f"  Active entities: {sum(1 for e in final_state.entities if e.active)}/{len(final_state.entities)}")
+        print(f"  State Variables: {final_state.state_variables}")
+        return 0
+    except Exception as e:
+        print(f"[MLUE Replay Error] {e}", file=sys.stderr)
+        return 1
+
+
+def handle_run(args: argparse.Namespace) -> int:
+    """Runs simulation with optional WAL logging."""
+    file_path = Path(args.target_file)
+    if not file_path.exists():
+        print(f"Error: MLUE file not found at '{file_path}'", file=sys.stderr)
+        return 1
+
+    try:
         doc = load_mlue(file_path)
         engine = MLUEEngine()
 
@@ -54,8 +85,9 @@ def main() -> int:
         print(f"[MLUE Engine] Successfully loaded '{file_path.name}' (schema version: {doc.version})")
         print(f"[MLUE Engine] Viewport: {doc.environment.width}x{doc.environment.height}, Entities: {len(doc.entities)}")
 
+        wal_writer = WALWriter(args.wal) if args.wal else None
+
         if not has_interactive:
-            # Static snapshot evaluation
             result = engine.evaluate(doc)
             print(f"[MLUE Engine] Evaluated {len(result.shapes)} static shape(s):")
             for shape in result.shapes:
@@ -67,7 +99,6 @@ def main() -> int:
                 adapter.present(result, block=True)
                 print("[MLUE Adapter] Presentation closed.")
         else:
-            # Dynamic simulation
             state = engine.init_simulation(doc)
             print(f"[MLUE Engine] Dynamic simulation initialized with {len(state.entities)} entity(ies).")
 
@@ -80,12 +111,18 @@ def main() -> int:
 
                 for step_idx in range(1, ticks + 1):
                     state = engine.step(state, dt)
+                    if wal_writer:
+                        wal_writer.log_checkpoint(step_idx, state.time, state)
+
                     for e in state.entities:
                         pos_str = f"({e.position.x:.4f}, {e.position.y:.4f})"
                         vel_str = f"({e.velocity.vx:.4f}, {e.velocity.vy:.4f})"
                         print(f"  {step_idx:<6} {state.time:<10.4f} {e.id:<16} {pos_str:<26} {vel_str:<24}")
 
                 print(f"[MLUE Engine] Simulation completed {ticks} steps deterministically. Final sim time: {state.time:.4f}s")
+                if wal_writer:
+                    wal_writer.close()
+                    print(f"[MLUE WAL] Recorded {wal_writer.frames_written} frames to '{args.wal}'")
             else:
                 print(f"[MLUE Adapter] Launching interactive simulation at {args.fps} FPS...")
                 adapter = TkinterAdapter()
@@ -98,8 +135,54 @@ def main() -> int:
         print(f"[MLUE Validation Error] {e}", file=sys.stderr)
         return 1
     except Exception as e:
-        print(f"[MLUE Runtime Error] Unexpected error: {e}", file=sys.stderr)
+        print(f"[MLUE Execution Error] {e}", file=sys.stderr)
         return 1
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="MLUE CLI Toolchain — Binary Compiler, Engine & WAL Persistence (Phase 1.2)",
+    )
+    subparsers = parser.add_subparsers(dest="subcommand")
+
+    # 1. Compile subcommand
+    compile_parser = subparsers.add_parser("compile", help="Compile .mlue JSON scene to .mlueb binary document")
+    compile_parser.add_argument("input_file", help="Path to input .mlue file")
+    compile_parser.add_argument("-o", "--output", help="Path to output .mlueb file (default: same name with .mlueb)")
+
+    # 2. Replay subcommand
+    replay_parser = subparsers.add_parser("replay", help="Replay simulation deterministically from .wal log")
+    replay_parser.add_argument("scene_file", help="Path to .mlue or .mlueb scene file")
+    replay_parser.add_argument("wal_file", help="Path to .wal log file")
+    replay_parser.add_argument("--ticks", type=int, default=None, help="Number of ticks to replay (default: all logged ticks)")
+    replay_parser.add_argument("--dt", type=float, default=1.0 / 60.0, help="Delta time step (default: 1/60s)")
+
+    # 3. Run subcommand (default / backward-compatible)
+    run_parser = subparsers.add_parser("run", help="Run MLUE scene in GUI or headless mode")
+    run_parser.add_argument("target_file", help="Path to .mlue or .mlueb file")
+    run_parser.add_argument("--headless", action="store_true", help="Evaluate simulation without launching GUI window")
+    run_parser.add_argument("--ticks", type=int, default=None, help="Number of simulation steps in headless mode")
+    run_parser.add_argument("--dt", type=float, default=1.0 / 60.0, help="Delta time per step (default: 1/60 s)")
+    run_parser.add_argument("--fps", type=int, default=60, help="Presentation frame rate (default: 60)")
+    run_parser.add_argument("--duration", type=float, default=None, help="Simulation duration in seconds")
+    run_parser.add_argument("--wal", type=str, default=None, help="Path to write Write-Ahead Log (.wal)")
+
+    # Fallback compatibility check
+    if len(sys.argv) > 1 and sys.argv[1] not in ("compile", "replay", "run", "-h", "--help"):
+        # Synthesize 'run' command
+        sys.argv.insert(1, "run")
+
+    args = parser.parse_args()
+
+    if args.subcommand == "compile":
+        return handle_compile(args)
+    elif args.subcommand == "replay":
+        return handle_replay(args)
+    elif args.subcommand == "run":
+        return handle_run(args)
+    else:
+        parser.print_help()
+        return 0
 
 
 if __name__ == "__main__":

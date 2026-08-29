@@ -121,7 +121,7 @@ class BenchmarkRunnerBP2:
                     if val_lower in forbidden_game_strings:
                         violations.append(f"engine.py:{node.lineno} contains bespoke game string '{node.value}'")
 
-        num_apps = 7
+        num_apps = len(list(self.examples_dir.glob("*.mlue")))
         num_primitives = 2
         multiplier = round(num_apps / num_primitives, 2)
         passed = (len(violations) == 0) and (multiplier >= 2.0)
@@ -614,7 +614,7 @@ class BenchmarkRunnerBP2:
         run_record = {
             "run_id": f"RUN_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             "timestamp": timestamp_iso,
-            "mlue_phase": "Phase 0.7 (v0.7.0 Machine-Accessible AI Interface)",
+            "mlue_phase": "Phase 1.2 (v1.2.0 Zero-Copy Binary Document & WAL Persistence)",
             "environment": {
                 "python_version": platform.python_version(),
                 "os": f"{platform.system()} {platform.release()}",
