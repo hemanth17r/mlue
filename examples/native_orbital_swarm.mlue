@@ -1,0 +1,32 @@
+{
+  "mlue_version": "1.5",
+  "environment": {
+    "dimensions": [800, 600],
+    "background": "#030712"
+  },
+  "state_variables": {
+    "swarm": {
+      "particles": 8,
+      "energy": 1000.0
+    }
+  },
+  "entities": [
+    { "id": "sat_01", "type": "circle", "position": { "x": 0.20, "y": 0.20 }, "size": { "radius": 0.025 }, "velocity": { "vx": 0.45, "vy": 0.35 }, "properties": { "color": "#06B6D4", "solid": true } },
+    { "id": "sat_02", "type": "circle", "position": { "x": 0.80, "y": 0.20 }, "size": { "radius": 0.025 }, "velocity": { "vx": -0.35, "vy": 0.45 }, "properties": { "color": "#06B6D4", "solid": true } },
+    { "id": "sat_03", "type": "circle", "position": { "x": 0.20, "y": 0.80 }, "size": { "radius": 0.025 }, "velocity": { "vx": 0.45, "vy": -0.35 }, "properties": { "color": "#3B82F6", "solid": true } },
+    { "id": "sat_04", "type": "circle", "position": { "x": 0.80, "y": 0.80 }, "size": { "radius": 0.025 }, "velocity": { "vx": -0.35, "vy": -0.45 }, "properties": { "color": "#3B82F6", "solid": true } },
+    { "id": "block_01", "type": "box", "position": { "x": 0.50, "y": 0.30 }, "size": { "width": 0.06, "height": 0.06 }, "velocity": { "vx": -0.10, "vy": 0.0 }, "properties": { "color": "#F59E0B", "solid": true } },
+    { "id": "block_02", "type": "box", "position": { "x": 0.50, "y": 0.70 }, "size": { "width": 0.06, "height": 0.06 }, "velocity": { "vx": 0.10, "vy": 0.0 }, "properties": { "color": "#F59E0B", "solid": true } },
+    { "id": "central_station", "type": "circle", "position": { "x": 0.50, "y": 0.50 }, "size": { "radius": 0.06 }, "velocity": { "vx": 0.0, "vy": 0.0 }, "properties": { "color": "#10B981", "solid": true } }
+  ],
+  "rules": [
+    {
+      "trigger": "satellite_ping",
+      "event": "collision",
+      "entities": ["central_station", "sat_01"],
+      "actions": [
+        { "type": "increment_path", "target": "swarm.energy", "amount": 10 }
+      ]
+    }
+  ]
+}

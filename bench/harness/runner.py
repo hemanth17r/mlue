@@ -766,7 +766,7 @@ class BenchmarkRunnerBP2:
         run_record = {
             "run_id": f"RUN_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             "timestamp": timestamp_iso,
-            "mlue_phase": "Phase 1.4 (v1.4.0 Fixed-Point Math & Cross-Architecture Parity)",
+            "mlue_phase": "Phase 1.5 (v1.5.0 Native C Execution Core & C-ABI)",
             "environment": {
                 "python_version": platform.python_version(),
                 "os": f"{platform.system()} {platform.release()}",
