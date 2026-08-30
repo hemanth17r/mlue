@@ -101,14 +101,21 @@ python mlue.py run examples/pong.mlue
 python mlue.py run examples/bumper_arena.mlue
 ```
 
-### 2. High-Speed Headless Evaluation (For AI Agents)
-Evaluate 1,000 deterministic state and rule steps in milliseconds without opening a window:
+### 2. High-Speed Headless Evaluation & Parallel Batch Rollouts (For AI Agents)
+Evaluate deterministic simulation steps at native speed or step hundreds of parallel worlds simultaneously:
 
 ```bash
-python mlue.py run examples/dashboard_app.mlue --headless --ticks 1000
+# Evaluate 1,000 steps headlessly on a single scene
+python mlue.py run examples/breakout.mlue --headless --ticks 1000
+
+# Compile .mlue to zero-copy binary .mlueb (50% size reduction)
+python mlue.py compile examples/breakout.mlue -o examples/breakout.mlueb
+
+# Step 200 parallel environments simultaneously (100,000 aggregate steps in seconds)
+python mlue.py batch examples/parallel_eval_swarm.mlueb --envs 200 --ticks 500
 ```
 
-### 3. Run Unit Tests (19/19 Tests Passing)
+### 3. Run Automated Unit Tests (73/73 Tests Passing)
 ```bash
 python -m unittest discover -s tests -p "test_*.py" -v
 ```
