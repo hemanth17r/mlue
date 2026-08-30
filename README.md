@@ -5,7 +5,7 @@
 [![Live Benchmarks](https://img.shields.io/badge/Live%20Telemetry-12%2F12%20Passing-success?style=for-the-badge&logo=vercel)](https://mlue-bench.vercel.app)
 [![Substrate Tier](https://img.shields.io/badge/Substrate-Tier%20L1%20Decoupled-blue?style=for-the-badge)](https://mlue-bench.vercel.app)
 [![Dependencies](https://img.shields.io/badge/Dependencies-0%20(Pure%20Stdlib%20%2B%20C%20Core)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
-[![Tests](https://img.shields.io/badge/Tests-64%2F64%20Passing%20(100%25)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
+[![Tests](https://img.shields.io/badge/Tests-73%2F73%20Passing%20(100%25)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
 [![Throughput](https://img.shields.io/badge/Throughput->10M%20ticks%2Fs%20(SIMD%20Batch)-orange?style=for-the-badge)](https://mlue-bench.vercel.app)
 [![Determinism](https://img.shields.io/badge/Determinism-100%25%20Bit--Exact-purple?style=for-the-badge)](https://mlue-bench.vercel.app)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)

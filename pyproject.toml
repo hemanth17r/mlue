@@ -14,14 +14,18 @@ authors = [
 ]
 keywords = [
     "ai",
-    "simulation",
+    "autonomous-agents",
+    "software-substrate",
+    "declarative-ui",
+    "state-database",
+    "model-context-protocol",
     "mcp",
     "reinforcement-learning",
-    "game-engine",
+    "c-abi",
     "deterministic",
-    "fixed-point",
+    "fixed-point-math",
     "spatial-indexing",
-    "c-abi"
+    "simulation"
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
