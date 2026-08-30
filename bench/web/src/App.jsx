@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Hero from './components/Hero';
+import Playground from './components/Playground';
 import RunComparisonInspector from './components/RunComparisonInspector';
 import HeadToHeadComparison from './components/HeadToHeadComparison';
 import BenchmarkCard from './components/BenchmarkCard';
@@ -58,9 +59,14 @@ export default function App() {
         <Header latestRun={currentRun} />
 
         {/* Content Container */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
           {/* Keynote Style Hero */}
           <Hero latestRun={currentRun} />
+
+          {/* Interactive Web Player & Live AI Studio Playground */}
+          <section id="playground" className="pt-2">
+            <Playground />
+          </section>
 
           {/* Historical Run Comparison Inspector & Executive Synthesis */}
           <RunComparisonInspector

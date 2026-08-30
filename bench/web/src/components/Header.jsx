@@ -32,6 +32,14 @@ export default function Header({ latestRun }) {
             <span className="font-medium">{latestRun?.substrate_tier || 'Tier L1 Substrate'}</span>
           </div>
 
+          <a
+            href="#playground"
+            className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-semibold transition shadow-sm shadow-cyan-500/20"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+            <span>PLAY LIVE</span>
+          </a>
+
           <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-semibold shadow-sm shadow-emerald-500/10">
             <ShieldCheck className="w-3 h-3" />
             <span>{latestRun?.passed_count || 12}/{latestRun?.total_count || 12} INVARIANTS PASSED</span>

@@ -1,5 +1,7 @@
 import json
 import sys
+import base64
+import urllib.parse
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 
@@ -17,6 +19,17 @@ MAX_ENTITIES = 50
 
 ai_interface = MLUEAIInterface()
 engine = MLUEEngine()
+
+
+def make_playable_url(scene: dict) -> str:
+    """Generates direct zero-install playable web link for an MLUE scene."""
+    try:
+        raw_json = json.dumps(scene)
+        encoded = urllib.parse.quote(raw_json)
+        b64 = base64.b64encode(encoded.encode('utf-8')).decode('utf-8')
+        return f"https://mlue-bench.vercel.app/#data={b64}"
+    except Exception:
+        return "https://mlue-bench.vercel.app/#playground"
 
 
 class handler(BaseHTTPRequestHandler):
@@ -176,7 +189,8 @@ class handler(BaseHTTPRequestHandler):
                         'dimensions': [doc.environment.width, doc.environment.height],
                         'entity_count': len(doc.entities),
                         'rule_count': len(doc.rules),
-                        'state_variables': doc.state_variables
+                        'state_variables': doc.state_variables,
+                        'playable_url': make_playable_url(scene)
                     }
                     self._send_tool_text(rpc_id, json.dumps(res, indent=2))
                 except MLUEValidationError as e:
@@ -251,7 +265,8 @@ class handler(BaseHTTPRequestHandler):
                         'max_ticks_limit': MAX_TICKS,
                         'total_time': round(state.time, 6),
                         'state_variables': state.state_variables,
-                        'entities': output_entities
+                        'entities': output_entities,
+                        'playable_url': make_playable_url(scene)
                     }
                     if warning_msg:
                         res['warning'] = warning_msg
