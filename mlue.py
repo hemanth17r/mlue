@@ -139,9 +139,50 @@ def handle_run(args: argparse.Namespace) -> int:
         return 1
 
 
+def handle_batch(args) -> int:
+    """Execute high-speed vectorized multi-agent parallel simulation batch."""
+    from runtime.batch import BatchEnvironmentPool
+    import time
+
+    target_path = Path(args.target_file).resolve()
+    if not target_path.exists():
+        print(f"[MLUE Error] Scene file not found: {target_path}", file=sys.stderr)
+        return 1
+
+    try:
+        doc = load_mlue(target_path)
+        num_envs = args.envs
+        ticks = args.ticks
+        dt = args.dt
+
+        print(f"[MLUE Batch Engine] Initializing {num_envs:,} parallel environments from '{target_path.name}'...")
+        pool = BatchEnvironmentPool(doc, num_envs=num_envs)
+
+        start_time = time.perf_counter()
+        for t in range(ticks):
+            pool.step(dt=dt)
+        elapsed = time.perf_counter() - start_time
+
+        total_steps = num_envs * ticks
+        throughput = total_steps / max(elapsed, 1e-9)
+
+        print(f"[MLUE Batch Engine] Completed {total_steps:,} total simulation steps in {elapsed:.4f}s.")
+        print(f"  - Parallel Environments : {num_envs:,}")
+        print(f"  - Ticks per Environment : {ticks:,}")
+        print(f"  - Aggregate Throughput  : {throughput:,.0f} steps/second ({1e6/throughput:.2f} µs/step)")
+        return 0
+
+    except MLUEValidationError as e:
+        print(f"[MLUE Validation Error] {e}", file=sys.stderr)
+        return 1
+    except Exception as e:
+        print(f"[MLUE Batch Error] {e}", file=sys.stderr)
+        return 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="MLUE CLI Toolchain — Binary Compiler, Engine & WAL Persistence (Phase 1.2)",
+        description="MLUE CLI Toolchain — Binary Compiler, Engine & Batch Rollout (Phase 1.6)",
     )
     subparsers = parser.add_subparsers(dest="subcommand")
 
@@ -157,7 +198,14 @@ def main() -> int:
     replay_parser.add_argument("--ticks", type=int, default=None, help="Number of ticks to replay (default: all logged ticks)")
     replay_parser.add_argument("--dt", type=float, default=1.0 / 60.0, help="Delta time step (default: 1/60s)")
 
-    # 3. Run subcommand (default / backward-compatible)
+    # 3. Batch subcommand
+    batch_parser = subparsers.add_parser("batch", help="Run high-throughput parallel batch simulation")
+    batch_parser.add_argument("target_file", help="Path to .mlue or .mlueb file")
+    batch_parser.add_argument("--envs", type=int, default=100, help="Number of parallel environments (default: 100)")
+    batch_parser.add_argument("--ticks", type=int, default=1000, help="Number of simulation steps per environment (default: 1000)")
+    batch_parser.add_argument("--dt", type=float, default=1.0 / 60.0, help="Delta time per step (default: 1/60 s)")
+
+    # 4. Run subcommand (default / backward-compatible)
     run_parser = subparsers.add_parser("run", help="Run MLUE scene in GUI or headless mode")
     run_parser.add_argument("target_file", help="Path to .mlue or .mlueb file")
     run_parser.add_argument("--headless", action="store_true", help="Evaluate simulation without launching GUI window")
@@ -168,7 +216,7 @@ def main() -> int:
     run_parser.add_argument("--wal", type=str, default=None, help="Path to write Write-Ahead Log (.wal)")
 
     # Fallback compatibility check
-    if len(sys.argv) > 1 and sys.argv[1] not in ("compile", "replay", "run", "-h", "--help"):
+    if len(sys.argv) > 1 and sys.argv[1] not in ("compile", "replay", "batch", "run", "-h", "--help"):
         # Synthesize 'run' command
         sys.argv.insert(1, "run")
 
@@ -178,6 +226,8 @@ def main() -> int:
         return handle_compile(args)
     elif args.subcommand == "replay":
         return handle_replay(args)
+    elif args.subcommand == "batch":
+        return handle_batch(args)
     elif args.subcommand == "run":
         return handle_run(args)
     else:

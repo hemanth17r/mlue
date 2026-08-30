@@ -110,6 +110,24 @@ class NativeCore:
                     ctypes.c_int64,
                 ]
 
+                lib.mlue_core_step_batch.restype = StepResultC
+                lib.mlue_core_step_batch.argtypes = [
+                    ctypes.POINTER(EntityRecordC),
+                    ctypes.c_uint32,
+                    ctypes.c_uint32,
+                    ctypes.POINTER(EnvironmentC),
+                    ctypes.c_double,
+                ]
+
+                lib.mlue_core_step_batch_fixed.restype = StepResultC
+                lib.mlue_core_step_batch_fixed.argtypes = [
+                    ctypes.POINTER(EntityRecordC),
+                    ctypes.c_uint32,
+                    ctypes.c_uint32,
+                    ctypes.POINTER(EnvironmentC),
+                    ctypes.c_int64,
+                ]
+
                 cls._lib = lib
             except Exception:
                 cls._lib = None
@@ -209,3 +227,104 @@ class NativeCore:
         # Collision events
         collision_events: Set[FrozenSet[str]] = set()
         return updated, collision_events
+
+    @classmethod
+    def step_batch(
+        cls, batch_entities: List[List[Entity]], env: Environment, dt: float = 1.0 / 60.0
+    ) -> List[List[Entity]]:
+        """Simulates M independent environments simultaneously in a vectorized batch."""
+        cls.initialize()
+        num_envs = len(batch_entities)
+        if num_envs == 0:
+            return []
+
+        entities_per_env = len(batch_entities[0])
+        if entities_per_env == 0:
+            return [[] for _ in range(num_envs)]
+
+        # If C library is absent, fall back to pure-Python/Q32.32 batch step
+        if cls._lib is None:
+            updated_batch: List[List[Entity]] = []
+            for env_entities in batch_entities:
+                upd, _ = cls._fallback_engine.step(env_entities, env)
+                updated_batch.append(upd)
+            return updated_batch
+
+        # Allocate contiguous M * N array of 64-byte records
+        total_records = num_envs * entities_per_env
+        records_array = (EntityRecordC * total_records)()
+
+        idx = 0
+        for env_entities in batch_entities:
+            for e in env_entities:
+                flags = 0
+                if e.properties.get("solid", False):
+                    flags |= 1
+                if e.active:
+                    flags |= 2
+
+                etype = 1 if e.type == "circle" else 2
+                if e.type == "circle" and isinstance(e.size, CircleSize):
+                    p1, p2 = e.size.radius, 0.0
+                elif e.type == "box" and isinstance(e.size, BoxSize):
+                    p1, p2 = e.size.width, e.size.height
+                else:
+                    p1, p2 = 0.0, 0.0
+
+                records_array[idx] = EntityRecordC(
+                    id_idx=0,
+                    color_rgba=0xFFFFFFFF,
+                    entity_type=etype,
+                    flags=flags,
+                    ctrl_axis=0,
+                    reserved_1=0,
+                    ctrl_channel_idx=0,
+                    pos_x=float(e.position.x),
+                    pos_y=float(e.position.y),
+                    vel_vx=float(e.velocity.vx),
+                    vel_vy=float(e.velocity.vy),
+                    size_p1=p1,
+                    size_p2=p2,
+                )
+                idx += 1
+
+        env_c = EnvironmentC(
+            width=env.width,
+            height=env.height,
+            bg_rgba=0x000000FF,
+            reserved_0=0,
+        )
+
+        res = cls._lib.mlue_core_step_batch(
+            records_array,
+            num_envs,
+            entities_per_env,
+            ctypes.byref(env_c),
+            float(dt),
+        )
+
+        # Reconstruct updated batch from contiguous memory
+        result_batch: List[List[Entity]] = []
+        idx = 0
+        for k in range(num_envs):
+            current_env_updated: List[Entity] = []
+            orig_entities = batch_entities[k]
+            for i in range(entities_per_env):
+                rec = records_array[idx]
+                e = orig_entities[i]
+                current_env_updated.append(
+                    Entity(
+                        id=e.id,
+                        type=e.type,
+                        position=Position(x=rec.pos_x, y=rec.pos_y),
+                        size=e.size,
+                        velocity=Velocity(vx=rec.vel_vx, vy=rec.vel_vy),
+                        properties=dict(e.properties),
+                        active=bool(rec.flags & 2),
+                    )
+                )
+                idx += 1
+            result_batch.append(current_env_updated)
+
+        return result_batch
+

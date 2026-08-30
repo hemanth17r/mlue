@@ -766,7 +766,7 @@ class BenchmarkRunnerBP2:
         run_record = {
             "run_id": f"RUN_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             "timestamp": timestamp_iso,
-            "mlue_phase": "Phase 1.5 (v1.5.0 Native C Execution Core & C-ABI)",
+            "mlue_phase": "Phase 1.6 (v1.6.0 SIMD Multi-Agent Vectorized Rollout Engine)",
             "environment": {
                 "python_version": platform.python_version(),
                 "os": f"{platform.system()} {platform.release()}",

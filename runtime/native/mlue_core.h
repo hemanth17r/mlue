@@ -85,6 +85,22 @@ MLUE_API MLUE_StepResult mlue_core_step_fixed(
     int64_t dt_fp
 );
 
+MLUE_API MLUE_StepResult mlue_core_step_batch(
+    MLUE_EntityRecord* entities_batch,
+    uint32_t num_environments,
+    uint32_t entities_per_env,
+    const MLUE_Environment* env,
+    double dt
+);
+
+MLUE_API MLUE_StepResult mlue_core_step_batch_fixed(
+    MLUE_EntityRecord* entities_batch,
+    uint32_t num_environments,
+    uint32_t entities_per_env,
+    const MLUE_Environment* env,
+    int64_t dt_fp
+);
+
 #ifdef __cplusplus
 }
 #endif

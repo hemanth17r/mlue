@@ -275,3 +275,46 @@ MLUE_API MLUE_StepResult mlue_core_step_fixed(
     double dt = fp_to_float_c(dt_fp);
     return mlue_core_step(entities, num_entities, env, dt);
 }
+
+/* Vectorized Multi-Environment Batch Step */
+MLUE_API MLUE_StepResult mlue_core_step_batch(
+    MLUE_EntityRecord* entities_batch,
+    uint32_t num_environments,
+    uint32_t entities_per_env,
+    const MLUE_Environment* env,
+    double dt
+) {
+    MLUE_StepResult total_result;
+    total_result.num_active_entities = 0;
+    total_result.num_collision_events = 0;
+    total_result.candidate_pairs_checked = 0;
+    total_result.status_flags = 0;
+
+    if (!entities_batch || !env || num_environments == 0 || entities_per_env == 0) {
+        return total_result;
+    }
+
+    for (uint32_t k = 0; k < num_environments; k++) {
+        MLUE_EntityRecord* env_entities = &entities_batch[k * entities_per_env];
+        MLUE_StepResult sub = mlue_core_step(env_entities, entities_per_env, env, dt);
+        total_result.num_active_entities += sub.num_active_entities;
+        total_result.num_collision_events += sub.num_collision_events;
+        total_result.candidate_pairs_checked += sub.candidate_pairs_checked;
+        total_result.status_flags |= sub.status_flags;
+    }
+
+    return total_result;
+}
+
+/* Fixed-Point Vectorized Multi-Environment Batch Step */
+MLUE_API MLUE_StepResult mlue_core_step_batch_fixed(
+    MLUE_EntityRecord* entities_batch,
+    uint32_t num_environments,
+    uint32_t entities_per_env,
+    const MLUE_Environment* env,
+    int64_t dt_fp
+) {
+    double dt = fp_to_float_c(dt_fp);
+    return mlue_core_step_batch(entities_batch, num_environments, entities_per_env, env, dt);
+}
+

@@ -1,0 +1,30 @@
+{
+  "mlue_version": "1.6",
+  "environment": {
+    "dimensions": [800, 600],
+    "background": "#020617"
+  },
+  "state_variables": {
+    "evaluation": {
+      "total_score": 0,
+      "status": "RUNNING"
+    }
+  },
+  "entities": [
+    { "id": "agent_01", "type": "circle", "position": { "x": 0.15, "y": 0.20 }, "size": { "radius": 0.03 }, "velocity": { "vx": 0.35, "vy": 0.25 }, "properties": { "color": "#38BDF8", "solid": true } },
+    { "id": "agent_02", "type": "circle", "position": { "x": 0.85, "y": 0.20 }, "size": { "radius": 0.03 }, "velocity": { "vx": -0.25, "vy": 0.35 }, "properties": { "color": "#38BDF8", "solid": true } },
+    { "id": "target_core", "type": "circle", "position": { "x": 0.50, "y": 0.50 }, "size": { "radius": 0.06 }, "velocity": { "vx": 0.0, "vy": 0.0 }, "properties": { "color": "#F43F5E", "solid": true } },
+    { "id": "barrier_top", "type": "box", "position": { "x": 0.50, "y": 0.25 }, "size": { "width": 0.08, "height": 0.04 }, "velocity": { "vx": 0.10, "vy": 0.0 }, "properties": { "color": "#EAB308", "solid": true } },
+    { "id": "barrier_bottom", "type": "box", "position": { "x": 0.50, "y": 0.75 }, "size": { "width": 0.08, "height": 0.04 }, "velocity": { "vx": -0.10, "vy": 0.0 }, "properties": { "color": "#EAB308", "solid": true } }
+  ],
+  "rules": [
+    {
+      "trigger": "target_hit",
+      "event": "collision",
+      "entities": ["target_core", "agent_01"],
+      "actions": [
+        { "type": "increment_path", "target": "evaluation.total_score", "amount": 50 }
+      ]
+    }
+  ]
+}
