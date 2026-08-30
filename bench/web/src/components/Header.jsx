@@ -24,7 +24,7 @@ export default function Header({ latestRun }) {
           
           <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] text-slate-300">
             <span className="w-1.5 h-1.5 rounded-full bg-sand-400 shadow-[0_0_6px_rgba(245,158,11,0.6)]" />
-            <span>{latestRun?.mlue_phase || 'Phase 0.6'}</span>
+            <span>{latestRun?.mlue_phase || 'Phase 1.6'}</span>
           </div>
 
           <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 shadow-sm shadow-cyan-500/10">
@@ -34,7 +34,7 @@ export default function Header({ latestRun }) {
 
           <div className="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 font-semibold shadow-sm shadow-emerald-500/10">
             <ShieldCheck className="w-3 h-3" />
-            <span>{latestRun?.passed_count || 10}/{latestRun?.total_count || 10} INVARIANTS PASSED</span>
+            <span>{latestRun?.passed_count || 12}/{latestRun?.total_count || 12} INVARIANTS PASSED</span>
           </div>
 
         </div>

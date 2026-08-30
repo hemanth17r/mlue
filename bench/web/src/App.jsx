@@ -132,7 +132,7 @@ export default function App() {
           <div className="flex items-center space-x-2">
             <span className="text-slate-300 font-semibold">MLUE Substrate</span>
             <span>•</span>
-            <span>{currentRun?.mlue_phase || 'Phase 1.4'}</span>
+            <span>{currentRun?.mlue_phase || 'Phase 1.6'}</span>
           </div>
           <span className="apple-ocean-text font-semibold">"AI is the builder. Humans are users."</span>
           <div className="text-slate-400">

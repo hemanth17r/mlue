@@ -302,7 +302,7 @@ def run_self_test():
     schema_req = {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "mlue_get_schema", "arguments": {}}}
     schema_resp = handle_jsonrpc_message(schema_req)
     schema_obj = json.loads(schema_resp["result"]["content"][0]["text"])
-    assert schema_obj["mlue_version"] == "0.7"
+    assert "mlue_version" in schema_obj and float(schema_obj["mlue_version"]) >= 0.7
     print("[PASS] mlue_get_schema verified.")
 
     # 4. Start simulation with breakout

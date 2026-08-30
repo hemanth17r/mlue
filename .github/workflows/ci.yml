@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run Runtime Unit Tests (19/19)
+      - name: Run Runtime Unit Tests (73/73)
         run: |
           python -m unittest discover -s tests -p "test_*.py" -v
 
@@ -33,6 +33,6 @@ jobs:
         run: |
           python mcp_server.py --test
 
-      - name: Run 10-Pillar Benchmark & Invariant Harness
+      - name: Run The Universal 12 Invariant Benchmark Harness
         run: |
           python bench/harness/runner.py
