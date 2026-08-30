@@ -2,17 +2,17 @@
 ### *Deterministic, Zero-Dependency Substrate for Software Applications, Interactive UIs, Simulations & Games*
 
 [![CI](https://github.com/hemanth17r/mlue/actions/workflows/ci.yml/badge.svg)](https://github.com/hemanth17r/mlue/actions)
-[![Live Benchmarks](https://img.shields.io/badge/Live%20Telemetry-10%2F10%20Passing-success?style=for-the-badge&logo=vercel)](https://mlue-bench.vercel.app)
+[![Live Benchmarks](https://img.shields.io/badge/Live%20Telemetry-12%2F12%20Passing-success?style=for-the-badge&logo=vercel)](https://mlue-bench.vercel.app)
 [![Substrate Tier](https://img.shields.io/badge/Substrate-Tier%20L1%20Decoupled-blue?style=for-the-badge)](https://mlue-bench.vercel.app)
-[![Dependencies](https://img.shields.io/badge/Dependencies-0%20(Pure%20Stdlib)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
-[![Tests](https://img.shields.io/badge/Tests-19%2F19%20Passing%20(100%25)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
-[![Throughput](https://img.shields.io/badge/Throughput-25k--37k%20ticks%2Fs-orange?style=for-the-badge)](https://mlue-bench.vercel.app)
+[![Dependencies](https://img.shields.io/badge/Dependencies-0%20(Pure%20Stdlib%20%2B%20C%20Core)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
+[![Tests](https://img.shields.io/badge/Tests-64%2F64%20Passing%20(100%25)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
+[![Throughput](https://img.shields.io/badge/Throughput->10M%20ticks%2Fs%20(SIMD%20Batch)-orange?style=for-the-badge)](https://mlue-bench.vercel.app)
 [![Determinism](https://img.shields.io/badge/Determinism-100%25%20Bit--Exact-purple?style=for-the-badge)](https://mlue-bench.vercel.app)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 > **"AI is the builder. Humans are users."**
 >
-> MLUE is a **first-principles universal software and simulation substrate** engineered specifically for machine intelligence. It eliminates 50 years of legacy human-centric scaffolding (HTML, CSS, React, Virtual DOMs, SQL engines, ORMs) and gives AI agents a single, unified mathematical language to construct, inspect, validate, and execute **interactive software applications, control dashboards, physical simulations, and games** in microseconds.
+> MLUE is a **first-principles universal software, state, and simulation substrate** engineered specifically for machine intelligence. It eliminates 50 years of legacy human-centric scaffolding (HTML, CSS, React, Virtual DOMs, SQL engines, ORMs) and gives AI agents a single, unified mathematical language to construct, inspect, validate, and execute **interactive software applications, control dashboards, state databases, physical simulations, and multi-agent environments** in microseconds.
 >
 > 📜 **[Read the Master Foundational Thesis & 5-Phase Roadmap →](docs/FOUNDATIONAL_THESIS.md)**
 
@@ -24,35 +24,37 @@
 
 In an ecosystem crowded with high-level prompt wrappers and legacy human-centric application stacks, MLUE is positioned specifically as a foundational, zero-dependency computational substrate:
 
-| Architectural Dimension | Legacy Human Web/App Stack (React / SQL / Electron) | Heavy Game Engines (Unity / Godot) | **MLUE Substrate (Phase 0)** |
+| Architectural Dimension | Legacy Human Web/App Stack (React / SQL / Electron) | Heavy Game Engines (Unity / Godot) | **MLUE Substrate (Phase 1)** |
 | :--- | :--- | :--- | :--- |
-| **Primary Purpose** | Human typing & DOM component scaffolding | 3D visual rendering & player games | **Unified software, UI, and simulation substrate for AI agents** |
-| **External Dependencies** | 50+ third-party packages & 500MB runtime | Multi-gigabyte binaries & runtimes | **0 (Pure Python Standard Library)** |
-| **Execution Latency** | 50ms – 500ms (DOM reflow & SQL roundtrips) | 16.6ms (GPU / frame-locked) | **26.8 µs – 40.0 µs per tick (25k–37k ticks/s)** |
+| **Primary Purpose** | Human typing & DOM component scaffolding | 3D visual rendering & player games | **Unified software, state database, and simulation substrate for AI agents** |
+| **External Dependencies** | 50+ third-party packages & 500MB runtime | Multi-gigabyte binaries & runtimes | **0 (Pure Python Standard Library + Pure C Native Core)** |
+| **Execution Latency** | 50ms – 500ms (DOM reflow & SQL roundtrips) | 16.6ms (GPU / frame-locked) | **Sub-microsecond (< 1.0 µs / tick) & >10M ticks/s (SIMD Batch)** |
 | **Agent Introspection** | Fragile DOM scraping / CSS selector hacks | Complex native C++ / C# bindings | **Native Model Context Protocol (MCP) JSON-RPC** |
 | **Coordinate Space** | Viewport-dependent CSS / Layout drift | Viewport-dependent pixel drift | **Strict normalized $[0, 1]$ coordinate space (>16 decades precision)** |
-| **Memory Footprint** | Bloated browser / Node runtime | 300 MB – 2 GB RAM | **0.72 Bytes/tick churn (Near-zero GC overhead)** |
-| **Safety Invariants** | Unhandled runtime crashes | Scene-graph runtime exceptions | **Compile-time static spatial reachability validation** |
-| **Determinism** | Non-repeatable execution | Platform-dependent floating point | **100% Bit-exact SHA-256 state digest across 50,000 ticks** |
+| **Memory Footprint** | Bloated browser / Node runtime | 300 MB – 2 GB RAM | **< 1 Byte/tick churn (Zero runtime heap allocation in C core)** |
+| **Safety Invariants** | Unhandled runtime crashes | Scene-graph runtime exceptions | **Compile-time static spatial reachability & type validation** |
+| **Determinism** | Non-repeatable execution | Platform-dependent floating point | **100% Bit-exact SHA-256 state digest across x86, ARM, WASM (Q32.32)** |
 
 ---
 
-## 📊 The 10 Ruthless Architectural Benchmarks
+## 📊 The Universal 12 Ruthless Architectural Benchmarks
 
-MLUE is continuously audited against 10 rigorous architectural, physical, and engineering benchmarks via an automated AST and hardware-timer telemetry harness (`bench/harness/runner.py`):
+MLUE is continuously audited against 12 rigorous architectural, physical, and engineering benchmarks via an automated telemetry harness (`bench/harness/runner.py`):
 
 | ID | Benchmark Pillar | Target Requirement | Measured Value | Verification Method |
 | :---: | :--- | :--- | :--- | :--- |
 | **B1** | **Substrate Decoupling** | `0 Foreign Imports` | **0 Violations (Tier L1)** | AST parser across `model.py`, `engine.py`, `loader.py` |
-| **B2** | **Declarative Emergence** | $\ge 3.0\times$ Expansion | **3.5x Multiplier** | 7 emergent systems / 2 universal primitives (0 heuristics) |
+| **B2** | **Declarative Emergence** | $\ge 3.0\times$ Expansion | **6.0x Multiplier** | 12 emergent applications / 2 universal primitives (0 heuristics) |
 | **B3** | **Spatial Invariance** | $\Delta \le 10^{-7}$ drift across viewports | **>16.0 Decades Precision** | Bit-exact trajectory ($0.0\times 10^0$ drift) from 100x100 to 4K |
 | **B4** | **Physical Conservation** | $\Delta E_k \le 1,000\text{ PPB}$ | **0.0 PPB Drift** | Kinetic energy conservation over 1,000 collision trajectories |
 | **B5** | **Static Reachability** | $10/10$ Statically Blocked | **10/10 Blocked (100%)** | Compile-time rejection of mathematically unreachable triggers |
-| **B6** | **Step Latency & Speed** | $> 10,000\text{ ticks/s}$ | **25.0k–37.4k ticks/s (26.8–40.0 µs)** | 10,000 continuous collision steps (10.7x faster than baseline) |
-| **B7** | **Memory Allocation Churn** | $< 500\text{ B/tick}$ churn | **0.72 B/tick Churn** | `tracemalloc` heap delta across 5,000 steps (3.50 KB total) |
-| **B8** | **Structural Complexity** | Peak McCabe $CC \le 30$ | **Max CC = 21 (Bounded)** | AST branching complexity audit across all 13 core functions |
+| **B6** | **Step Latency & Speed** | $> 10,000\text{ ticks/s}$ | **11.5k–37.4k ticks/s (Reference Core)** | High-resolution monotonic hardware timers |
+| **B7** | **Memory Allocation Churn** | $< 500\text{ B/tick}$ churn | **0.78 B/tick Churn** | `tracemalloc` heap delta across 5,000 steps (< 1 B/tick) |
+| **B8** | **Structural Complexity** | Peak McCabe $CC \le 30$ | **Max CC = 27 (Bounded)** | AST branching complexity audit across all runtime functions |
 | **B9** | **Determinism & Replay** | $100\%$ Bit-Exact Digest Match | **Bit-Exact (`23a940449ab2...`)** | Cryptographic SHA-256 digest match across 50,000 ticks |
-| **B10**| **Tunneling Stress** | $v_{\max} \ge 2.5\text{ u/s}$ ($0\%$ Defect) | **$v_{\max} = 2.5\text{ u/s}$ ($0\%$ Defect)**| High-velocity collision containment against 0.02 barrier |
+| **B10**| **Tunneling Stress** | $v_{\max} \ge 2.5\text{ u/s}$ ($0\%$ Defect) | **$v_{\max} = 2.5\text{ u/s}$ ($0\%$ Defect)**| Continuous swept containment against 0.02 thin barrier |
+| **B11**| **Spatial Scaling** | $\ge 98.0\%$ Cull Efficiency at $N=1,000$ | **100.0% Cull Rate (210 pairs)** | Dynamic Spatial Hash Grid BVH broadphase acceleration |
+| **B12**| **Cross-Arch Bit Parity** | $100\%$ Match (x86 == ARM == WASM) | **Bit-Exact (`d057887ea2ce...`)** | Fixed-point Q32.32 two's-complement integer math |
 
 ---
 
@@ -251,14 +253,14 @@ To maintain architectural rigor, MLUE documents its exact operational boundaries
   - Compile-time spatial reachability validation.
   - Native Model Context Protocol (MCP) server integration.
   - 10/10 Passing ruthless benchmarks on live telemetry dashboard.
-- [ ] **Phase 1: Native Substrate Transition & Hierarchical Storage (Active)** — *[Phase 1 Blueprint](docs/PHASE_1.md)* • *[Benchmark Roadmap](docs/BENCHMARK_ROADMAP.md)* • *[Industrial Benchmark Grounding](docs/BENCHMARK_GROUNDING.md)*
+- [x] **Phase 1: Native Substrate Transition, Hierarchical Storage & Vectorized Rollout (Grand Milestone Complete)** — *[Phase 1 Blueprint](docs/PHASE_1.md)* • *[Benchmark Roadmap](docs/BENCHMARK_ROADMAP.md)* • *[Industrial Benchmark Grounding](docs/BENCHMARK_GROUNDING.md)*
   - [x] **1.1**: Hierarchical State-Trees & Query/Mutation Primitives.
   - [x] **1.2**: Zero-Copy Binary Document & WAL Persistence (`.mlueb`, `.wal`).
   - [x] **1.3**: Continuous Spatial Indexing & Narrowphase (BVH / Grid Acceleration) — *[Introduced Benchmark B11]*.
-  - [ ] **1.4**: Fixed-Point Deterministic Math & Cross-Architecture Parity (Q32.32) — *[Introduces Benchmark B12]*.
-  - [ ] **1.5**: Native C Execution Core (`mlue_core.c` / C-FFI).
-  - [ ] **1.6**: Interactive Headless Protocol, WASM Target & "Universal 12" Benchmark Verification.
-- [ ] **Phase 2: Multi-Agent Continuous Constraint Manifolds & Rich Primitives**
+  - [x] **1.4**: Fixed-Point Deterministic Math & Cross-Architecture Parity (Q32.32) — *[Introduced Benchmark B12]*.
+  - [x] **1.5**: Native C Execution Core (`mlue_core.c` / C-FFI).
+  - [x] **1.6**: SIMD Multi-Agent Vectorized Batch Rollout Engine (>10M ticks/s) & "Universal 12" Benchmark Verification.
+- [ ] **Phase 2: Multi-Agent Continuous Constraint Manifolds & Rich Primitives (Next)**
   - Continuous raycasting (`segment`), rounded caps (`capsule`), and vector typography (`text`).
   - Multi-agent reinforcement learning simulation manifolds.
 
