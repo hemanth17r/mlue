@@ -19,6 +19,23 @@ export default function App() {
   const [compareMode, setCompareMode] = useState('target'); // 'target' | 'previous' | 'baseline' | 'custom'
   const [selectedCategory, setSelectedCategory] = useState('All');
 
+  // Determine initial view based on domain / hash
+  const [activeView, setActiveView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      if (window.location.hash === '#benchmarks' || window.location.hostname.includes('mlue-bench')) {
+        return 'benchmarks';
+      }
+    }
+    return 'studio';
+  });
+
+  const handleSelectView = (view) => {
+    setActiveView(view);
+    if (typeof window !== 'undefined') {
+      window.location.hash = view === 'benchmarks' ? '#benchmarks' : '#studio';
+    }
+  };
+
   // Background GitHub Sync for real-time freshness
   useEffect(() => {
     const fetchLatestGitHubTelemetry = async () => {
@@ -56,79 +73,92 @@ export default function App() {
     <div className="min-h-screen beach-radial-bg text-slate-100 flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
       <div>
         {/* Navigation Header */}
-        <Header latestRun={currentRun} />
+        <Header 
+          latestRun={currentRun} 
+          activeView={activeView}
+          onSelectView={handleSelectView}
+        />
 
         {/* Content Container */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-12">
-          {/* Keynote Style Hero */}
-          <Hero latestRun={currentRun} />
-
-          {/* Interactive Web Player & Live AI Studio Playground */}
-          <section id="playground" className="pt-2">
-            <Playground />
-          </section>
-
-          {/* Historical Run Comparison Inspector & Executive Synthesis */}
-          <RunComparisonInspector
-            runs={runs}
-            selectedRunIdx={selectedRunIdx}
-            onSelectRun={(idx) => setSelectedRunIdx(idx)}
-            compareRunIdx={compareRunIdx}
-            onSelectCompareRun={(idx) => setCompareRunIdx(idx)}
-            compareMode={compareMode}
-            setCompareMode={setCompareMode}
-          />
-
-          {/* Section Divider & Filter Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 mb-6 border-t border-white/[0.06] pt-6">
-            <div className="flex items-center space-x-2">
-              <h2 className="text-sm font-semibold tracking-tight text-white font-mono uppercase">
-                The {benchmarks.length} Invariant Matrix
-              </h2>
-              <span className="text-[11px] font-mono text-cyan-400/80 px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/40">
-                100% EMPIRICAL
-              </span>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+          
+          {/* VIEW 1: DEDICATED AI STUDIO */}
+          {activeView === 'studio' && (
+            <div className="space-y-8 animate-fadeIn">
+              <Playground onOpenBenchmarks={() => handleSelectView('benchmarks')} />
             </div>
+          )}
 
-            {/* Filter Pills */}
-            <div className="flex flex-wrap items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/[0.06] text-[11px] font-mono">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1 rounded-lg transition-all ${
-                    selectedCategory === cat
-                      ? 'bg-cyan-500 text-[#030712] font-bold shadow-sm shadow-cyan-500/20'
-                      : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* VIEW 2: 12 INVARIANT BENCHMARK MATRIX */}
+          {activeView === 'benchmarks' && (
+            <div className="space-y-12 animate-fadeIn">
+              {/* Keynote Style Hero */}
+              <Hero latestRun={currentRun} />
 
-          {/* Invariant Benchmark Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredBenchmarks.map((benchmark) => (
-              <BenchmarkCard
-                key={benchmark.id}
-                benchmark={benchmark}
-                allRuns={runs}
-                currentRunIdx={selectedRunIdx}
+              {/* Historical Run Comparison Inspector & Executive Synthesis */}
+              <RunComparisonInspector
+                runs={runs}
+                selectedRunIdx={selectedRunIdx}
+                onSelectRun={(idx) => setSelectedRunIdx(idx)}
                 compareRunIdx={compareRunIdx}
+                onSelectCompareRun={(idx) => setCompareRunIdx(idx)}
                 compareMode={compareMode}
+                setCompareMode={setCompareMode}
               />
-            ))}
-          </div>
 
-          {/* Application Architecture Showcase (Head-to-Head Proofs) */}
-          <div className="mt-14 pt-8 border-t border-white/[0.06]">
-            <HeadToHeadComparison />
-          </div>
+              {/* Section Divider & Filter Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 mb-6 border-t border-white/[0.06] pt-6">
+                <div className="flex items-center space-x-2">
+                  <h2 className="text-sm font-semibold tracking-tight text-white font-mono uppercase">
+                    The {benchmarks.length} Invariant Matrix
+                  </h2>
+                  <span className="text-[11px] font-mono text-cyan-400/80 px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/40">
+                    100% EMPIRICAL
+                  </span>
+                </div>
 
-          {/* Verification Terminal */}
-          <VerificationTerminal />
+                {/* Filter Pills */}
+                <div className="flex flex-wrap items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/[0.06] text-[11px] font-mono">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setSelectedCategory(cat)}
+                      className={`px-3 py-1 rounded-lg transition-all ${
+                        selectedCategory === cat
+                          ? 'bg-cyan-500 text-[#030712] font-bold shadow-sm shadow-cyan-500/20'
+                          : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Invariant Benchmark Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredBenchmarks.map((benchmark) => (
+                  <BenchmarkCard
+                    key={benchmark.id}
+                    benchmark={benchmark}
+                    allRuns={runs}
+                    currentRunIdx={selectedRunIdx}
+                    compareRunIdx={compareRunIdx}
+                    compareMode={compareMode}
+                  />
+                ))}
+              </div>
+
+              {/* Application Architecture Showcase (Head-to-Head Proofs) */}
+              <div className="mt-14 pt-8 border-t border-white/[0.06]">
+                <HeadToHeadComparison />
+              </div>
+
+              {/* Verification Terminal */}
+              <VerificationTerminal />
+            </div>
+          )}
+
         </main>
       </div>
 

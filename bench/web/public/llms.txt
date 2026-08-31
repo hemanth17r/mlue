@@ -1,0 +1,90 @@
+# MLUE Specification for Large Language Models & AI Agents
+
+> MLUE (Multi-Level Universal Emergence) is a native, declarative, zero-dependency computational and spatial simulation substrate. It enables AI models to create, step, simulate, and modify interactive 60 FPS applications and games purely through structured JSON documents.
+
+## Overview & Principles
+- **Declarative Purity**: Applications are 100% defined as a single JSON object. No imperative JavaScript, Python scripts, or external asset dependencies.
+- **Normalized Coordinate Space**: All coordinates $(x, y)$ and sizes are bounded in $[0.0, 1.0]$. Screen resolution does not alter simulation physics.
+- **Deterministic Math**: Continuous linear kinematics ($p += v \cdot dt$), impulse momentum exchange, boundary clamping, and atomic rule actions.
+
+---
+
+## Schema Structure (`mlue_version: "1.6"`)
+
+```json
+{
+  "mlue_version": "1.6",
+  "environment": {
+    "dimensions": [800, 600],
+    "background": "#020617"
+  },
+  "state_variables": {
+    "game": {
+      "score": 0,
+      "lives": 3,
+      "state": "PLAYING"
+    }
+  },
+  "entities": [
+    {
+      "id": "ball",
+      "type": "circle",
+      "position": { "x": 0.50, "y": 0.70 },
+      "size": { "radius": 0.025 },
+      "velocity": { "vx": 0.28, "vy": -0.38 },
+      "properties": {
+        "solid": true,
+        "color": "#38BDF8"
+      }
+    },
+    {
+      "id": "paddle",
+      "type": "box",
+      "position": { "x": 0.50, "y": 0.90 },
+      "size": { "width": 0.16, "height": 0.03 },
+      "velocity": { "vx": 0.0, "vy": 0.0 },
+      "properties": {
+        "solid": true,
+        "color": "#10B981",
+        "control": { "channel": "paddle", "axis": "x" }
+      }
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "score_point",
+      "event": "collision",
+      "entities": ["ball", "target_brick"],
+      "actions": [
+        { "type": "destroy_entity", "target": "target_brick" },
+        { "type": "increment_path", "target": "game.score", "amount": 100 }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+## Entity Primitives
+1. **`circle`**:
+   - `size`: `{ "radius": float }` (range: $0.005$ to $0.50$).
+2. **`box`**:
+   - `size`: `{ "width": float, "height": float }` (range: $0.01$ to $1.0$).
+3. **`properties.control`**:
+   - `{ "channel": "paddle", "axis": "x" }` allows keyboard (Arrow keys / A-D) or touch control.
+
+---
+
+## Rule Events & Actions
+- **Events**: `"collision"` between two entity IDs.
+- **Actions**:
+  - `destroy_entity`: `{ "type": "destroy_entity", "target": "entity_id" }`
+  - `increment_path`: `{ "type": "increment_path", "target": "state.variable.path", "amount": number }`
+  - `decrement_path`: `{ "type": "decrement_path", "target": "state.variable.path", "amount": number }`
+
+---
+
+## Model Context Protocol (MCP) Endpoints
+- **Public Cloud Gateway**: `https://mlue-bench.vercel.app/api/mcp`
+- **Playable Zero-Install Link Format**: `https://mlue-bench.vercel.app/#data=<BASE64_URL_ENCODED_JSON>`
