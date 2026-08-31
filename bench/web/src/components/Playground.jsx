@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, 
   Pause, 
@@ -17,10 +18,17 @@ import {
   Loader2,
   ChevronRight,
   Gamepad2,
-  HelpCircle,
   Clock,
-  Trash2
+  X
 } from 'lucide-react';
+import { 
+  springJelly, 
+  springSnappy, 
+  springModal, 
+  tapScale, 
+  backdropVariants, 
+  modalVariants 
+} from '../lib/motion';
 
 const SUGGESTIONS = [
   "Cyberpunk Asteroid Dodge with shield controls",
@@ -170,7 +178,7 @@ export default function Playground({ onOpenBenchmarks }) {
     } catch (e) {}
   }, []);
 
-  // Initialize or reset simulation state from current JSON text
+  // Initialize or reset simulation state
   const initSimulation = useCallback((jsonObj, saveHistory = false, historyName = '') => {
     try {
       const cloned = JSON.parse(JSON.stringify(jsonObj));
@@ -192,7 +200,7 @@ export default function Playground({ onOpenBenchmarks }) {
     }
   }, [saveToRecent]);
 
-  // On mount / URL query parameter detection
+  // On mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const sceneParam = params.get('scene');
@@ -218,7 +226,7 @@ export default function Playground({ onOpenBenchmarks }) {
     initSimulation(PRESET_SCENES.breakout.json);
   }, [initSimulation]);
 
-  // Handle Preset Selection
+  // Preset Selection
   const selectPreset = (key) => {
     setActivePreset(key);
     const selected = PRESET_SCENES[key].json;
@@ -226,7 +234,7 @@ export default function Playground({ onOpenBenchmarks }) {
     initSimulation(selected, true, PRESET_SCENES[key].name);
   };
 
-  // Live JSON Text Editor Change
+  // Editor Change
   const handleJsonChange = (e) => {
     const text = e.target.value;
     setJsonText(text);
@@ -246,7 +254,7 @@ export default function Playground({ onOpenBenchmarks }) {
     setShowKeyModal(false);
   };
 
-  // AI Generation & Conversational Refinement Handler
+  // AI Game Generator
   const handleGenerateGame = async (promptToUse = userPrompt) => {
     if (!promptToUse.trim()) return;
     setIsGenerating(true);
@@ -283,7 +291,7 @@ export default function Playground({ onOpenBenchmarks }) {
         initSimulation(data.scene, true, userMsg.slice(0, 24));
         setChatHistory(prev => [
           ...prev, 
-          { sender: 'ai', text: `✨ Generated "${userMsg.slice(0, 30)}..." successfully! Play and tweak live.` }
+          { sender: 'ai', text: `✨ Built "${userMsg.slice(0, 28)}..." successfully! Play and tweak live.` }
         ]);
       } else {
         const errMsg = data.error || 'Failed to generate scene.';
@@ -293,7 +301,7 @@ export default function Playground({ onOpenBenchmarks }) {
         }
         setChatHistory(prev => [
           ...prev, 
-          { sender: 'ai', text: `⚠️ Error: ${errMsg}` }
+          { sender: 'ai', text: `⚠️ ${errMsg}` }
         ]);
       }
     } catch (err) {
@@ -307,7 +315,7 @@ export default function Playground({ onOpenBenchmarks }) {
     }
   };
 
-  // Keyboard Event Listeners for Paddle / Inputs
+  // Keyboard Event Listeners
   useEffect(() => {
     const handleKeyDown = (e) => {
       keysDownRef.current[e.key] = true;
@@ -326,12 +334,11 @@ export default function Playground({ onOpenBenchmarks }) {
     };
   }, []);
 
-  // Trigger Touch Action for Mobile
   const triggerTouchControl = (key, isDown) => {
     keysDownRef.current[key] = isDown;
   };
 
-  // Main Simulation Step Logic (60 FPS HTML5 Canvas Engine)
+  // Simulation Step
   const stepSimulation = useCallback((dt) => {
     const state = simStateRef.current;
     if (!state) return;
@@ -339,7 +346,7 @@ export default function Playground({ onOpenBenchmarks }) {
     const [envW, envH] = state.env.dimensions || [800, 600];
     const minDim = Math.min(envW, envH);
 
-    // 1. Process Input Controls
+    // 1. Process Controls
     const keys = keysDownRef.current;
     for (const ent of state.entities) {
       const ctrl = ent.properties?.control;
@@ -375,7 +382,7 @@ export default function Playground({ onOpenBenchmarks }) {
       }
     }
 
-    // 2. Integration & Boundary Clamping
+    // 2. Continuous Integration & Arena Bounding
     for (const ent of state.entities) {
       if (ent.active === false) continue;
 
@@ -392,7 +399,6 @@ export default function Playground({ onOpenBenchmarks }) {
       let newX = ent.position.x + (ent.velocity.vx * dt);
       let newY = ent.position.y + (ent.velocity.vy * dt);
 
-      // Arena boundaries [0.0, 1.0]
       if (newX - ex <= 0.0) {
         newX = ex;
         if (ent.velocity.vx < 0) ent.velocity.vx = -ent.velocity.vx;
@@ -413,7 +419,7 @@ export default function Playground({ onOpenBenchmarks }) {
       ent.position.y = Math.max(ey, Math.min(1.0 - ey, newY));
     }
 
-    // 3. Pairwise Collisions
+    // 3. Collisions
     const entities = state.entities;
     const collisionsThisFrame = [];
 
@@ -499,7 +505,7 @@ export default function Playground({ onOpenBenchmarks }) {
       }
     }
 
-    // 4. Evaluate Declarative Rules
+    // 4. Rules
     if (state.rules && state.rules.length > 0) {
       for (const rule of state.rules) {
         if (rule.event === 'collision') {
@@ -531,7 +537,7 @@ export default function Playground({ onOpenBenchmarks }) {
     setTickCount(state.tick);
   }, []);
 
-  // Canvas Render Loop
+  // Canvas Loop
   useEffect(() => {
     let lastTime = performance.now();
 
@@ -553,11 +559,9 @@ export default function Playground({ onOpenBenchmarks }) {
         }
         lastTime = time;
 
-        // Clear Canvas
         ctx.fillStyle = state.env.background || "#020617";
         ctx.fillRect(0, 0, envW, envH);
 
-        // Render Entities
         for (const ent of state.entities) {
           if (ent.active === false) continue;
           const color = ent.properties?.color || "#38BDF8";
@@ -596,7 +600,7 @@ export default function Playground({ onOpenBenchmarks }) {
     return () => cancelAnimationFrame(animFrameRef.current);
   }, [isPlaying, simSpeed, stepSimulation]);
 
-  // Handle Drag and Drop
+  // Drag & Drop
   const handleDrop = (e) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
@@ -616,7 +620,7 @@ export default function Playground({ onOpenBenchmarks }) {
     }
   };
 
-  // Copy Shareable Link
+  // Copy Link
   const copyShareLink = () => {
     try {
       const base64 = btoa(encodeURIComponent(jsonText));
@@ -629,7 +633,7 @@ export default function Playground({ onOpenBenchmarks }) {
     }
   };
 
-  // Download .mlue
+  // Download
   const downloadMlue = () => {
     const blob = new Blob([jsonText], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -642,15 +646,15 @@ export default function Playground({ onOpenBenchmarks }) {
 
   return (
     <div 
-      className="space-y-6"
+      className="space-y-6 max-w-6xl mx-auto"
       onDragOver={(e) => e.preventDefault()}
       onDrop={handleDrop}
     >
-      {/* 1. HERO AI PROMPT BAR */}
-      <div className="relative bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 border border-cyan-500/20 p-6 rounded-2xl shadow-2xl backdrop-blur-xl">
+      {/* 1. HERO AI PROMPT BAR (Golden Standard Container: rounded-2xl) */}
+      <div className="relative bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border border-cyan-500/20 p-6 sm:p-8 rounded-2xl shadow-2xl backdrop-blur-xl">
         <div className="max-w-4xl mx-auto space-y-4">
           
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
                 <Sparkles className="w-6 h-6 text-cyan-400 animate-pulse" />
@@ -661,19 +665,20 @@ export default function Playground({ onOpenBenchmarks }) {
               </p>
             </div>
 
-            <button
+            <motion.button
+              {...tapScale.button}
               onClick={() => setShowKeyModal(true)}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-mono text-slate-300 self-start sm:self-auto transition"
+              className="flex items-center space-x-2 px-4 py-2 rounded-full bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-xs font-mono text-slate-300 self-start sm:self-auto cursor-pointer shadow-sm"
             >
               <Key className="w-3.5 h-3.5 text-amber-400" />
-              <span>{apiKey ? 'API Key Set ✓' : 'Add Gemini Key'}</span>
-            </button>
+              <span>{apiKey ? 'API Key Active ✓' : 'Add Gemini Key'}</span>
+            </motion.button>
           </div>
 
-          {/* Main Input Form */}
+          {/* Main Input Form with Pill CTA */}
           <form 
             onSubmit={(e) => { e.preventDefault(); handleGenerateGame(); }}
-            className="flex items-center bg-black/70 border border-cyan-500/40 rounded-xl p-1.5 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all shadow-inner"
+            className="flex items-center bg-black/75 border border-cyan-500/40 rounded-2xl p-1.5 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 transition-all shadow-inner"
           >
             <input
               type="text"
@@ -681,17 +686,18 @@ export default function Playground({ onOpenBenchmarks }) {
               onChange={(e) => setUserPrompt(e.target.value)}
               placeholder="e.g. Create a neon space defender with 4 bouncing asteroids and an energy shield..."
               disabled={isGenerating}
-              className="flex-1 bg-transparent px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none font-sans"
+              className="flex-1 bg-transparent px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none font-sans"
             />
-            <button
+            <motion.button
+              {...tapScale.button}
               type="submit"
               disabled={isGenerating || !userPrompt.trim()}
-              className="flex items-center space-x-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs px-5 py-2.5 rounded-lg transition disabled:opacity-50 shadow-md shadow-cyan-500/20"
+              className="flex items-center space-x-2 bg-gradient-to-r from-cyan-400 to-blue-500 hover:from-cyan-300 hover:to-blue-400 text-slate-950 font-black text-xs px-6 py-3 rounded-full transition disabled:opacity-50 shadow-md shadow-cyan-500/20 cursor-pointer"
             >
               {isGenerating ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Building...</span>
+                  <span>BUILDING...</span>
                 </>
               ) : (
                 <>
@@ -699,21 +705,22 @@ export default function Playground({ onOpenBenchmarks }) {
                   <span>BUILD GAME</span>
                 </>
               )}
-            </button>
+            </motion.button>
           </form>
 
-          {/* Suggestion Chips */}
+          {/* Suggestion Pills (Golden Standard: rounded-full) */}
           <div className="flex flex-wrap items-center gap-1.5 pt-1">
             <span className="text-[11px] font-mono text-slate-500 mr-1">Quick Prompts:</span>
             {SUGGESTIONS.map((sug, i) => (
-              <button
+              <motion.button
+                {...tapScale.pill}
                 key={i}
                 onClick={() => handleGenerateGame(sug)}
                 disabled={isGenerating}
-                className="text-[11px] font-mono bg-slate-800/80 hover:bg-cyan-950/60 hover:text-cyan-300 hover:border-cyan-500/40 border border-slate-700/80 text-slate-300 px-2.5 py-1 rounded-lg transition"
+                className="text-[11px] font-mono bg-slate-800/80 hover:bg-cyan-950/60 hover:text-cyan-300 hover:border-cyan-500/40 border border-slate-700/80 text-slate-300 px-3 py-1 rounded-full cursor-pointer transition-colors"
               >
                 {sug}
-              </button>
+              </motion.button>
             ))}
           </div>
 
@@ -721,7 +728,7 @@ export default function Playground({ onOpenBenchmarks }) {
       </div>
 
       {/* 2. RECENT BUILDS & PRESET GALLERY */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
             <Clock className="w-3.5 h-3.5 text-cyan-400" />
@@ -729,62 +736,64 @@ export default function Playground({ onOpenBenchmarks }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <motion.button
+              {...tapScale.button}
               onClick={copyShareLink}
-              className="flex items-center gap-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition"
+              className="flex items-center gap-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs px-3.5 py-1.5 rounded-full border border-slate-700 cursor-pointer shadow-sm"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-cyan-400" />}
               <span>{copiedLink ? 'Copied!' : 'Share Link'}</span>
-            </button>
+            </motion.button>
 
-            <button
+            <motion.button
+              {...tapScale.button}
               onClick={downloadMlue}
-              className="flex items-center gap-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-700 transition"
+              className="flex items-center gap-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-200 text-xs px-3.5 py-1.5 rounded-full border border-slate-700 cursor-pointer shadow-sm"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
               <span>Export .mlue</span>
-            </button>
+            </motion.button>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
-          {/* Default Presets */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
           {Object.entries(PRESET_SCENES).map(([key, item]) => (
-            <button
+            <motion.button
+              {...tapScale.card}
               key={key}
               onClick={() => selectPreset(key)}
-              className={`p-2.5 text-left rounded-xl border transition-all ${
+              className={`p-3 text-left rounded-2xl border cursor-pointer transition-colors ${
                 activePreset === key 
                   ? 'bg-cyan-500/10 border-cyan-500/50 shadow-md shadow-cyan-500/5' 
                   : 'bg-slate-900/60 border-slate-800 hover:border-slate-700 text-slate-400'
               }`}
             >
               <div className="flex items-center justify-between mb-1">
-                <span className={`text-xs font-semibold ${activePreset === key ? 'text-cyan-300' : 'text-slate-200'}`}>
+                <span className={`text-xs font-bold ${activePreset === key ? 'text-cyan-300' : 'text-slate-200'}`}>
                   {item.name}
                 </span>
                 {activePreset === key && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />}
               </div>
               <p className="text-[10px] text-slate-500 line-clamp-1">{item.description}</p>
-            </button>
+            </motion.button>
           ))}
 
-          {/* Local User Builds */}
           {recentBuilds.slice(0, 3).map((build) => (
-            <button
+            <motion.button
+              {...tapScale.card}
               key={build.id}
               onClick={() => {
                 setJsonText(JSON.stringify(build.json, null, 2));
                 initSimulation(build.json);
               }}
-              className="p-2.5 text-left rounded-xl border border-emerald-500/30 bg-emerald-950/20 hover:border-emerald-500/60 transition-all text-slate-300"
+              className="p-3 text-left rounded-2xl border border-emerald-500/30 bg-emerald-950/20 hover:border-emerald-500/60 cursor-pointer transition-colors text-slate-300"
             >
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-emerald-400 truncate">{build.name}</span>
+                <span className="text-xs font-bold text-emerald-400 truncate">{build.name}</span>
                 <span className="text-[9px] font-mono text-slate-500">{build.timestamp}</span>
               </div>
               <p className="text-[10px] text-slate-500">My Saved Build</p>
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
@@ -793,39 +802,42 @@ export default function Playground({ onOpenBenchmarks }) {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left Side: 60 FPS HTML5 Canvas Stage */}
-        <div className="lg:col-span-7 flex flex-col bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl">
+        <div className="lg:col-span-7 flex flex-col bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
           
           {/* Canvas Toolbar */}
           <div className="bg-slate-950/90 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <button
+              <motion.button
+                {...tapScale.button}
                 onClick={() => setIsPlaying(!isPlaying)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
                   isPlaying ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                 }`}
               >
                 {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                {isPlaying ? 'Pause' : 'Play'}
-              </button>
+                {isPlaying ? 'PAUSE' : 'PLAY'}
+              </motion.button>
 
-              <button
+              <motion.button
+                {...tapScale.button}
                 onClick={() => stepSimulation(0.01667)}
                 disabled={isPlaying}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 disabled:opacity-40"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 disabled:opacity-40 cursor-pointer"
               >
-                <FastForward className="w-3 h-3" /> Step
-              </button>
+                <FastForward className="w-3 h-3" /> STEP
+              </motion.button>
 
-              <button
+              <motion.button
+                {...tapScale.button}
                 onClick={() => {
                   try {
                     initSimulation(JSON.parse(jsonText));
                   } catch (e) {}
                 }}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 cursor-pointer"
               >
-                <RotateCcw className="w-3 h-3" /> Reset
-              </button>
+                <RotateCcw className="w-3 h-3" /> RESET
+              </motion.button>
             </div>
 
             {/* Simulation Status */}
@@ -836,7 +848,7 @@ export default function Playground({ onOpenBenchmarks }) {
                 <select
                   value={simSpeed}
                   onChange={(e) => setSimSpeed(parseFloat(e.target.value))}
-                  className="bg-slate-800 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-slate-200"
+                  className="bg-slate-800 border border-slate-700 rounded-full px-2.5 py-0.5 text-xs text-slate-200"
                 >
                   <option value={0.5}>0.5x</option>
                   <option value={1.0}>1.0x</option>
@@ -847,15 +859,15 @@ export default function Playground({ onOpenBenchmarks }) {
             </div>
           </div>
 
-          {/* Interactive Canvas Viewport */}
+          {/* Interactive Canvas Viewport (Inner element: rounded-xl) */}
           <div className="relative aspect-[4/3] bg-slate-950 flex items-center justify-center p-2">
             <canvas
               ref={canvasRef}
-              className="w-full h-full object-contain rounded border border-slate-800/80 shadow-inner"
+              className="w-full h-full object-contain rounded-xl border border-slate-800/80 shadow-inner"
             />
 
             {/* Live HUD Overlay (State Variables) */}
-            <div className="absolute top-4 left-4 bg-slate-900/90 border border-slate-700/80 rounded-lg p-2.5 backdrop-blur font-mono text-xs pointer-events-none shadow-lg">
+            <div className="absolute top-4 left-4 bg-slate-900/90 border border-slate-700/80 rounded-xl p-3 backdrop-blur font-mono text-xs pointer-events-none shadow-lg">
               <div className="text-[10px] uppercase text-slate-400 font-bold tracking-wider mb-1">State Variables</div>
               {simStateRef.current && simStateRef.current.state_variables && (
                 <div className="space-y-0.5">
@@ -869,40 +881,42 @@ export default function Playground({ onOpenBenchmarks }) {
             </div>
 
             {/* Keyboard Control Hints */}
-            <div className="absolute bottom-4 right-4 hidden sm:flex bg-slate-900/80 border border-slate-800 rounded px-2.5 py-1 text-[11px] text-slate-400 font-mono pointer-events-none">
+            <div className="absolute bottom-4 right-4 hidden sm:flex bg-slate-900/80 border border-slate-800 rounded-full px-3 py-1 text-[11px] text-slate-400 font-mono pointer-events-none">
               Controls: <span className="text-emerald-400 font-bold mx-1">A / D</span> or <span className="text-emerald-400 font-bold ml-1">← / →</span>
             </div>
           </div>
 
-          {/* Mobile On-Screen Touch Controls */}
+          {/* Mobile On-Screen Touch Controls (Pill buttons: rounded-full) */}
           <div className="flex sm:hidden items-center justify-center gap-4 bg-slate-950 border-t border-slate-800 p-3">
-            <button
+            <motion.button
+              {...tapScale.button}
               onTouchStart={() => triggerTouchControl('ArrowLeft', true)}
               onTouchEnd={() => triggerTouchControl('ArrowLeft', false)}
               onMouseDown={() => triggerTouchControl('ArrowLeft', true)}
               onMouseUp={() => triggerTouchControl('ArrowLeft', false)}
-              className="flex-1 py-3 bg-slate-800 active:bg-cyan-600 rounded-xl font-mono text-sm font-bold text-center border border-slate-700"
+              className="flex-1 py-3 bg-slate-800 active:bg-cyan-600 rounded-full font-mono text-sm font-bold text-center border border-slate-700 cursor-pointer"
             >
               ◀ LEFT
-            </button>
-            <button
+            </motion.button>
+            <motion.button
+              {...tapScale.button}
               onTouchStart={() => triggerTouchControl('ArrowRight', true)}
               onTouchEnd={() => triggerTouchControl('ArrowRight', false)}
               onMouseDown={() => triggerTouchControl('ArrowRight', true)}
               onMouseUp={() => triggerTouchControl('ArrowRight', false)}
-              className="flex-1 py-3 bg-slate-800 active:bg-cyan-600 rounded-xl font-mono text-sm font-bold text-center border border-slate-700"
+              className="flex-1 py-3 bg-slate-800 active:bg-cyan-600 rounded-full font-mono text-sm font-bold text-center border border-slate-700 cursor-pointer"
             >
               RIGHT ▶
-            </button>
+            </motion.button>
           </div>
 
         </div>
 
-        {/* Right Side: Conversational Refinement & Document Editor Split */}
+        {/* Right Side: Conversational Refinement & Document Editor */}
         <div className="lg:col-span-5 flex flex-col space-y-4">
           
-          {/* Conversational Refinement Chat */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl flex flex-col h-64">
+          {/* Conversational Refinement Chat (Container: rounded-2xl) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col h-64">
             <div className="bg-slate-950/80 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-cyan-400" />
@@ -915,7 +929,7 @@ export default function Playground({ onOpenBenchmarks }) {
               {chatHistory.map((msg, i) => (
                 <div 
                   key={i} 
-                  className={`p-2.5 rounded-lg max-w-[90%] ${
+                  className={`p-2.5 rounded-xl max-w-[90%] leading-relaxed ${
                     msg.sender === 'user' 
                       ? 'ml-auto bg-cyan-600/30 text-cyan-200 border border-cyan-500/30' 
                       : 'bg-slate-800/80 text-slate-300 border border-slate-700/80'
@@ -926,7 +940,7 @@ export default function Playground({ onOpenBenchmarks }) {
               ))}
             </div>
 
-            {/* Quick Refinement Form */}
+            {/* Quick Refinement Form with Pill CTA */}
             <form 
               onSubmit={(e) => {
                 e.preventDefault();
@@ -943,20 +957,21 @@ export default function Playground({ onOpenBenchmarks }) {
                 type="text"
                 placeholder="e.g. Make the ball faster, add 3 green targets..."
                 disabled={isGenerating}
-                className="flex-1 bg-slate-900 border border-slate-800 px-3 py-1.5 text-xs text-slate-200 rounded-lg focus:outline-none focus:border-cyan-500"
+                className="flex-1 bg-slate-900 border border-slate-800 px-3 py-2 text-xs text-slate-200 rounded-xl focus:outline-none focus:border-cyan-500 font-sans"
               />
-              <button
+              <motion.button
+                {...tapScale.icon}
                 type="submit"
                 disabled={isGenerating}
-                className="p-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 rounded-lg transition disabled:opacity-40"
+                className="p-2.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 rounded-full transition disabled:opacity-40 cursor-pointer shadow-sm"
               >
                 <Send className="w-3.5 h-3.5" />
-              </button>
+              </motion.button>
             </form>
           </div>
 
-          {/* Declarative Document Editor */}
-          <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-2xl flex flex-col flex-1">
+          {/* Declarative Document Editor (Container: rounded-2xl, Input: rounded-xl) */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl flex flex-col flex-1">
             <div className="bg-slate-950/80 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Terminal className="w-4 h-4 text-cyan-400" />
@@ -965,16 +980,16 @@ export default function Playground({ onOpenBenchmarks }) {
               <span className="text-[10px] text-slate-500 font-mono">Hot-Reloading</span>
             </div>
 
-            <div className="p-2 flex-1 flex flex-col">
+            <div className="p-2.5 flex-1 flex flex-col">
               <textarea
                 value={jsonText}
                 onChange={handleJsonChange}
                 spellCheck={false}
-                className="w-full h-44 bg-slate-950 text-cyan-300 font-mono text-[11px] p-2.5 rounded-lg border border-slate-800 focus:border-cyan-500 focus:outline-none resize-none leading-relaxed"
+                className="w-full h-44 bg-slate-950 text-cyan-300 font-mono text-[11px] p-3 rounded-xl border border-slate-800 focus:border-cyan-500 focus:outline-none resize-none leading-relaxed"
               />
 
               {parseError && (
-                <div className="mt-1 p-2 bg-rose-500/10 border border-rose-500/30 rounded text-rose-400 text-[11px] font-mono">
+                <div className="mt-1 p-2 bg-rose-500/10 border border-rose-500/30 rounded-lg text-rose-400 text-[11px] font-mono">
                   {parseError}
                 </div>
               )}
@@ -985,51 +1000,74 @@ export default function Playground({ onOpenBenchmarks }) {
 
       </div>
 
-      {/* 4. API KEY CONFIGURATION MODAL */}
-      {showKeyModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-cyan-500/40 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scaleIn">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Key className="w-5 h-5 text-amber-400" />
-                <span>Google Gemini API Key</span>
-              </h3>
-              <button onClick={() => setShowKeyModal(false)} className="text-slate-400 hover:text-white text-sm">✕</button>
-            </div>
-
-            <p className="text-xs text-slate-400 leading-relaxed font-sans">
-              To generate and refine games with sub-second AI inference, enter your free Google Gemini API Key from Google AI Studio. It is saved 100% locally in your browser.
-            </p>
-
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="Paste your Gemini API key (AIzaSy...)"
-              className="w-full bg-slate-950 border border-slate-700 px-3 py-2 text-xs text-slate-100 font-mono rounded-lg focus:outline-none focus:border-cyan-500"
+      {/* 4. API KEY CONFIGURATION MODAL (Golden Standard: rounded-3xl with AnimatePresence) */}
+      <AnimatePresence>
+        {showKeyModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              variants={backdropVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              onClick={() => setShowKeyModal(false)}
+              className="absolute inset-0 bg-black/75 backdrop-blur-md"
             />
+            <motion.div
+              variants={modalVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              className="relative bg-slate-900 border border-cyan-500/40 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-4 shadow-2xl z-10"
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <Key className="w-5 h-5 text-amber-400" />
+                  <span>Google Gemini API Key</span>
+                </h3>
+                <motion.button 
+                  {...tapScale.icon}
+                  onClick={() => setShowKeyModal(false)} 
+                  className="p-1.5 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </motion.button>
+              </div>
 
-            <div className="flex items-center justify-between pt-2">
-              <a
-                href="https://aistudio.google.com/app/apikey"
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] text-cyan-400 hover:underline flex items-center gap-1 font-mono"
-              >
-                <span>Get Free Key at Google AI Studio</span>
-                <ChevronRight className="w-3 h-3" />
-              </a>
+              <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                To generate and refine games with sub-second AI inference, enter your free Google Gemini API Key from Google AI Studio. It is saved 100% locally in your browser.
+              </p>
 
-              <button
-                onClick={() => handleSaveApiKey(apiKey)}
-                className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs rounded-lg transition shadow-md shadow-cyan-500/20"
-              >
-                Save Key
-              </button>
-            </div>
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Paste your Gemini API key (AIzaSy...)"
+                className="w-full bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-xs text-slate-100 font-mono rounded-xl focus:outline-none focus:border-cyan-500"
+              />
+
+              <div className="flex items-center justify-between pt-3">
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-cyan-400 hover:underline flex items-center gap-1 font-mono"
+                >
+                  <span>Get Free Key at Google AI Studio</span>
+                  <ChevronRight className="w-3 h-3" />
+                </a>
+
+                <motion.button
+                  {...tapScale.button}
+                  onClick={() => handleSaveApiKey(apiKey)}
+                  className="px-5 py-2 bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black text-xs rounded-full transition shadow-md shadow-cyan-500/20 cursor-pointer"
+                >
+                  SAVE KEY
+                </motion.button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
     </div>
   );

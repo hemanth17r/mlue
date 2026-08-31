@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Playground from './components/Playground';
@@ -6,6 +7,7 @@ import RunComparisonInspector from './components/RunComparisonInspector';
 import HeadToHeadComparison from './components/HeadToHeadComparison';
 import BenchmarkCard from './components/BenchmarkCard';
 import VerificationTerminal from './components/VerificationTerminal';
+import { springJelly, tapScale } from './lib/motion';
 
 // Bundled telemetry snapshot for 0ms initial load
 import initialTelemetry from './telemetry.json';
@@ -70,7 +72,7 @@ export default function App() {
       : benchmarks.filter((b) => b.category.toLowerCase() === selectedCategory.toLowerCase());
 
   return (
-    <div className="min-h-screen beach-radial-bg text-slate-100 flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+    <div className="min-h-screen beach-radial-bg text-slate-100 flex flex-col justify-between selection:bg-cyan-400 selection:text-black">
       <div>
         {/* Navigation Header */}
         <Header 
@@ -84,14 +86,14 @@ export default function App() {
           
           {/* VIEW 1: DEDICATED AI STUDIO */}
           {activeView === 'studio' && (
-            <div className="space-y-8 animate-fadeIn">
+            <div className="space-y-8">
               <Playground onOpenBenchmarks={() => handleSelectView('benchmarks')} />
             </div>
           )}
 
           {/* VIEW 2: 12 INVARIANT BENCHMARK MATRIX */}
           {activeView === 'benchmarks' && (
-            <div className="space-y-12 animate-fadeIn">
+            <div className="space-y-12">
               {/* Keynote Style Hero */}
               <Hero latestRun={currentRun} />
 
@@ -112,26 +114,35 @@ export default function App() {
                   <h2 className="text-sm font-semibold tracking-tight text-white font-mono uppercase">
                     The {benchmarks.length} Invariant Matrix
                   </h2>
-                  <span className="text-[11px] font-mono text-cyan-400/80 px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/40">
+                  <span className="text-[11px] font-mono text-cyan-400/80 px-2.5 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/40 font-semibold">
                     100% EMPIRICAL
                   </span>
                 </div>
 
-                {/* Filter Pills */}
-                <div className="flex flex-wrap items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/[0.06] text-[11px] font-mono">
-                  {categories.map((cat) => (
-                    <button
-                      key={cat}
-                      onClick={() => setSelectedCategory(cat)}
-                      className={`px-3 py-1 rounded-lg transition-all ${
-                        selectedCategory === cat
-                          ? 'bg-cyan-500 text-[#030712] font-bold shadow-sm shadow-cyan-500/20'
-                          : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                {/* Filter Pills (Golden Standard: Floating Capsule Pill Tabs) */}
+                <div className="flex flex-wrap items-center gap-1 bg-black/60 p-1 rounded-full border border-white/[0.08] shadow-inner font-mono text-xs relative">
+                  {categories.map((cat) => {
+                    const isActive = selectedCategory === cat;
+                    return (
+                      <motion.button
+                        {...tapScale.pill}
+                        key={cat}
+                        onClick={() => setSelectedCategory(cat)}
+                        className={`relative z-10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer text-xs font-bold ${
+                          isActive ? 'text-slate-950 font-black' : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeCategoryPill"
+                            className="absolute inset-0 bg-cyan-400 rounded-full shadow-md shadow-cyan-500/20 z-[-1]"
+                            transition={springJelly}
+                          />
+                        )}
+                        {cat}
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -162,17 +173,19 @@ export default function App() {
         </main>
       </div>
 
-      {/* Clean Footer */}
-      <footer className="border-t border-white/[0.06] bg-black/30 backdrop-blur-xl py-6 mt-16 text-[11px] text-slate-500 font-mono text-center">
+      {/* Clean Footer (Golden Standard) */}
+      <footer className="border-t border-white/[0.06] bg-black/40 backdrop-blur-xl py-6 mt-16 text-xs text-slate-400 font-mono text-center">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
-            <span className="text-slate-300 font-semibold">MLUE Substrate</span>
+            <span className="text-slate-200 font-bold">MLUE Substrate</span>
             <span>•</span>
-            <span>{currentRun?.mlue_phase || 'Phase 1.6'}</span>
+            <span className="text-cyan-400">{currentRun?.mlue_phase || 'Phase 1.6'}</span>
           </div>
-          <span className="apple-ocean-text font-semibold">"AI is the builder. Humans are users."</span>
+          <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent font-bold">
+            "AI is the builder. Humans are users."
+          </span>
           <div className="text-slate-400">
-            Audit Hash: <code className="text-cyan-300">{currentRun?.run_id || 'RUN_20260829'}</code>
+            Audit Hash: <code className="text-cyan-300 font-semibold">{currentRun?.run_id || 'RUN_20260829'}</code>
           </div>
         </div>
       </footer>

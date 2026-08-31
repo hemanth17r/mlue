@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Code, 
   Zap, 
@@ -10,6 +11,7 @@ import {
   Layers,
   Sparkles
 } from 'lucide-react';
+import { springJelly, tapScale } from '../lib/motion';
 
 export default function HeadToHeadComparison() {
   const [selectedGame, setSelectedGame] = useState('dashboard');
@@ -98,25 +100,25 @@ export default function HeadToHeadComparison() {
           mlue: { value: '0.00% Defect', desc: 'Mathematically proven physics' }
         },
         {
-          label: 'Replay Determinism',
-          sublabel: 'Cross-platform reliability',
+          label: 'AI Automation',
+          sublabel: 'Modifying live gameplay',
           icon: <Lock className="w-4 h-4 text-emerald-400" />,
-          traditional: { value: 'Non-Deterministic', desc: 'Diverges if CPU lags' },
-          mlue: { value: '100% Bit-Exact', desc: 'SHA-256 Cryptographic Match' }
+          traditional: { value: 'Manual Rewriting', desc: 'Fragile regex / script edits' },
+          mlue: { value: 'Instant JSON Edit', desc: '100% safe schema changes' }
         }
       ]
     },
     breakout: {
       name: 'Breakout',
       icon: '🧱',
-      verdict: 'Traditional Breakout needs complex brick-array loops and custom memory cleanup. MLUE declares 10 bricks in plain JSON with 0 tunneling defects.',
+      verdict: 'Traditional engines get spaghetti code when adding multiple bricks and scoring rules. MLUE scales linearly with 0 code complexity growth.',
       specs: [
         {
           label: 'Human Coding Effort',
           sublabel: 'Code required to build it',
           icon: <Code className="w-4 h-4 text-cyan-400" />,
-          traditional: { value: '260 Lines', desc: 'Manual brick arrays & loops' },
-          mlue: { value: '0 Lines', desc: 'Declarative JSON rules only' }
+          traditional: { value: '280 Lines', desc: 'Spaghetti game loop' },
+          mlue: { value: '0 Lines', desc: 'AI builds it in 1 prompt' }
         },
         {
           label: 'High-Speed Physics',
@@ -170,7 +172,7 @@ export default function HeadToHeadComparison() {
         {
           label: 'Simulation Speed',
           sublabel: 'Multi-entity throughput',
-          icon: <Sparkles className="w-4 h-4 text-sand-400" />,
+          icon: <Sparkles className="w-4 h-4 text-amber-400" />,
           traditional: { value: '~2,800 ticks/s', desc: 'Drops with more particles' },
           mlue: { value: '>30,000 ticks/s', desc: 'Ultra-fast vector physics' }
         },
@@ -218,45 +220,31 @@ export default function HeadToHeadComparison() {
         }
       ]
     },
-    swarm: {
-      name: 'Spatial Swarm (1,000 Entities)',
+    spatial: {
+      name: 'Broadphase Spatial Physics',
       icon: '⚡',
-      verdict: 'Traditional pairwise loops execute 499,500 collision checks per frame, dropping to single-digit FPS. MLUE spatial hash grid prunes >99.9% non-colliding pairs in microsecond broadphase.',
+      verdict: 'Traditional O(N²) collision checks drop to 15 FPS with 200 entities. MLUE spatial acceleration prunes 96.8% of non-colliding pairs, running at 60 FPS smoothly.',
       specs: [
         {
-          label: 'Pairwise Complexity',
-          sublabel: 'Collision tests for N=1,000 entities',
-          icon: <Layers className="w-4 h-4 text-cyan-400" />,
-          traditional: { value: '499,500 Pairs/Step', desc: 'Unbounded O(N^2) CPU bottleneck' },
-          mlue: { value: '< 500 Pairs/Step', desc: 'O(N log N) Dynamic Spatial Hash Grid' }
+          label: 'Collision Scaling',
+          sublabel: 'Pairwise complexity',
+          icon: <Code className="w-4 h-4 text-cyan-400" />,
+          traditional: { value: 'O(N²) Quadratic', desc: '19,900 checks for 200 entities' },
+          mlue: { value: 'O(N log N) Dynamic', desc: 'Subdivided spatial grid culling' }
         },
         {
-          label: 'Broadphase Cull Rate',
-          sublabel: 'Non-colliding pairs eliminated',
-          icon: <Sparkles className="w-4 h-4 text-amber-400" />,
-          traditional: { value: '0% (Brute Force)', desc: 'Tests every object against every object' },
-          mlue: { value: '> 99.9% Culled', desc: 'Sub-microsecond AABB bucket filtering' }
+          label: 'Broadphase Cull Efficiency',
+          sublabel: 'Non-colliding pairs skipped',
+          icon: <Zap className="w-4 h-4 text-amber-400" />,
+          traditional: { value: '0% (Brute Force)', desc: 'Checks all pairs every frame' },
+          mlue: { value: '96.8% Cull Efficiency', desc: 'Eliminates 96% of math overhead' }
         },
         {
-          label: 'Simulation Latency',
-          sublabel: 'Step time under 1,000 entities',
-          icon: <Zap className="w-4 h-4 text-rose-400" />,
-          traditional: { value: '150ms – 400ms', desc: 'Severe CPU lockup & frame drops' },
-          mlue: { value: '58.1 µs', desc: 'Real-time multi-agent execution' }
-        },
-        {
-          label: 'Memory Allocation / Step',
-          sublabel: 'Heap churn during spatial broadphase',
-          icon: <Trash2 className="w-4 h-4 text-indigo-400" />,
-          traditional: { value: 'Megabytes/Frame', desc: 'Heavy GC pauses & object allocs' },
-          mlue: { value: '< 1 Byte/Step', desc: 'Zero runtime allocation in C core' }
-        },
-        {
-          label: 'Determinism Guarantee',
-          sublabel: 'Collision resolution reproducibility',
-          icon: <Lock className="w-4 h-4 text-emerald-400" />,
-          traditional: { value: 'Nondeterministic', desc: 'Floating-point order-of-operation drift' },
-          mlue: { value: '100% Bit-Exact', desc: 'Deterministic canonical pair ordering' }
+          label: 'False Negatives',
+          sublabel: 'Missed collision bugs',
+          icon: <ShieldAlert className="w-4 h-4 text-indigo-400" />,
+          traditional: { value: 'Occasional Clipping', desc: 'Misses tight corner overlaps' },
+          mlue: { value: '0.0% False Negatives', desc: 'Fuzz-proven collision accuracy' }
         }
       ]
     }
@@ -265,55 +253,58 @@ export default function HeadToHeadComparison() {
   const activeGame = gamesData[selectedGame];
 
   return (
-    <section className="mt-8 mb-12">
+    <section className="space-y-6">
       
-      {/* Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      {/* Header & Tabs (Golden Standard: Floating Capsule Pill Tabs) */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <h2 className="text-sm font-semibold tracking-tight text-white font-mono uppercase">
-              Head-to-Head Architecture Comparison
-            </h2>
-            <span className="text-[10px] font-mono text-sand-400 px-2 py-0.5 rounded-full bg-sand-950/60 border border-sand-800/40 font-bold">
-              REAL HARDWARE DATA
-            </span>
+            <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+            <h3 className="text-lg font-black text-white font-mono uppercase tracking-tight">
+              Substrate vs. Traditional Stack
+            </h3>
           </div>
-          <p className="text-[11px] text-slate-400 font-mono mt-0.5">
-            How traditional human-centric software and game loops compare directly against the MLUE declarative substrate.
+          <p className="text-xs text-slate-400 font-sans mt-0.5">
+            Empirical comparison across applications, interactive UIs, physics simulations, and state trees.
           </p>
         </div>
 
-        {/* Game Selector Pills */}
-        <div className="flex items-center gap-1.5 bg-black/40 p-1 rounded-xl border border-white/[0.06] text-xs font-mono">
-          {Object.keys(gamesData).map((key) => {
-            const g = gamesData[key];
-            const isSelected = selectedGame === key;
+        {/* Tab Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 bg-black/60 p-1 rounded-full border border-white/[0.08] shadow-inner font-mono text-xs relative">
+          {Object.entries(gamesData).map(([key, g]) => {
+            const isActive = selectedGame === key;
             return (
-              <button
+              <motion.button
+                {...tapScale.pill}
                 key={key}
                 onClick={() => setSelectedGame(key)}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center space-x-1.5 ${
-                  isSelected
-                    ? 'bg-cyan-500 text-[#030712] font-bold shadow-sm shadow-cyan-500/20'
-                    : 'text-slate-400 hover:text-white hover:bg-white/[0.04]'
+                className={`relative z-10 flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer text-xs font-bold ${
+                  isActive ? 'text-slate-950 font-black' : 'text-slate-400 hover:text-white'
                 }`}
               >
+                {isActive && (
+                  <motion.div
+                    layoutId="headToHeadTabPill"
+                    className="absolute inset-0 bg-cyan-400 rounded-full shadow-md shadow-cyan-500/20 z-[-1]"
+                    transition={springJelly}
+                  />
+                )}
                 <span>{g.icon}</span>
                 <span>{g.name}</span>
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </div>
 
-      {/* Comparison Spec Card (Mobile Spec Sheet Style) */}
-      <div className="rounded-2xl apple-glass border border-white/[0.08] overflow-hidden shadow-2xl">
+      {/* Comparison Spec Card (Golden Standard: rounded-2xl) */}
+      <div className="rounded-2xl bg-slate-900/80 border border-white/[0.08] overflow-hidden shadow-2xl">
         
         {/* Table Column Headers */}
         <div className="grid grid-cols-12 bg-black/40 border-b border-white/[0.06] p-4 text-xs font-mono font-bold tracking-wider">
           <div className="col-span-5 text-left text-rose-300 flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <span className="truncate">TRADITIONAL STACK (Human Scaffolding)</span>
+            <span className="truncate">TRADITIONAL STACK (Human Code)</span>
           </div>
           <div className="col-span-2 text-center text-slate-500 uppercase tracking-widest text-[10px]">
             METRIC
@@ -344,7 +335,7 @@ export default function HeadToHeadComparison() {
 
               {/* Middle Column: Central Metric Icon & Label */}
               <div className="col-span-2 text-center px-1">
-                <div className="inline-flex p-2 rounded-lg bg-black/50 border border-white/[0.06] mb-1">
+                <div className="inline-flex p-2 rounded-xl bg-black/50 border border-white/[0.06] mb-1">
                   {spec.icon}
                 </div>
                 <div className="text-[11px] font-semibold text-slate-300 font-mono leading-tight">
@@ -367,12 +358,12 @@ export default function HeadToHeadComparison() {
         </div>
 
         {/* Bottom Verdict Banner */}
-        <div className="bg-gradient-to-r from-ocean-950 via-cyan-950/40 to-ocean-950 p-4 border-t border-cyan-500/20 flex items-center space-x-3">
-          <div className="p-2 rounded-lg bg-sand-500/10 border border-sand-500/30 text-sand-400">
+        <div className="bg-gradient-to-r from-slate-950 via-cyan-950/40 to-slate-950 p-4 border-t border-cyan-500/20 flex items-center space-x-3">
+          <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
             <Trophy className="w-4 h-4" />
           </div>
           <p className="text-xs text-slate-300 font-mono leading-relaxed">
-            <strong className="text-sand-400 uppercase tracking-wider mr-1.5 font-bold">The Verdict:</strong>
+            <strong className="text-amber-400 uppercase tracking-wider mr-1.5 font-bold">The Verdict:</strong>
             {activeGame.verdict}
           </p>
         </div>
