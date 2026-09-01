@@ -7,7 +7,6 @@ import {
   Share2, 
   Download, 
   Check, 
-  Sparkles, 
   ArrowUp,
   Loader2,
   Code2,
@@ -38,7 +37,7 @@ const PRESET_SCENES = {
       state_variables: { game: { score: 0, lives: 3, bricks_remaining: 5, state: "PLAYING" } },
       entities: [
         { id: "ball", type: "circle", position: { x: 0.50, y: 0.70 }, size: { radius: 0.025 }, velocity: { vx: 0.28, vy: -0.38 }, properties: { solid: true, color: "#38BDF8" } },
-        { id: "paddle", type: "box", position: { x: 0.50, y: 0.90 }, size: { width: 0.16, height: 0.03 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#10B981", control: { channel: "paddle", axis: "x" } } },
+        { id: "paddle", type: "box", position: { x: 0.50, y: 0.90 }, size: { width: 0.18, height: 0.035 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#10B981", control: { channel: "paddle", axis: "x", speed: 0.85 } } },
         { id: "brick_1", type: "box", position: { x: 0.20, y: 0.20 }, size: { width: 0.12, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#F43F5E" } },
         { id: "brick_2", type: "box", position: { x: 0.35, y: 0.20 }, size: { width: 0.12, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#F59E0B" } },
         { id: "brick_3", type: "box", position: { x: 0.50, y: 0.20 }, size: { width: 0.12, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#10B981" } },
@@ -54,6 +53,26 @@ const PRESET_SCENES = {
       ]
     }
   },
+  dodge: {
+    name: 'Cyberpunk Asteroid Dodge',
+    description: 'Full 2D ship control (Arrows / WASD / Touch) dodging incoming high-speed asteroids.',
+    json: {
+      mlue_version: "1.6",
+      environment: { dimensions: [800, 600], background: "#050814" },
+      state_variables: { game: { score: 0, lives: 3, state: "PLAYING" } },
+      entities: [
+        { id: "player_ship", type: "box", position: { x: 0.50, y: 0.85 }, size: { width: 0.08, height: 0.05 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#06B6D4", control: { channel: "paddle", axis: "xy", speed: 0.80 } } },
+        { id: "asteroid_1", type: "circle", position: { x: 0.20, y: 0.15 }, size: { radius: 0.045 }, velocity: { vx: 0.12, vy: 0.35 }, properties: { solid: true, color: "#F43F5E" } },
+        { id: "asteroid_2", type: "circle", position: { x: 0.50, y: 0.25 }, size: { radius: 0.055 }, velocity: { vx: -0.18, vy: 0.28 }, properties: { solid: true, color: "#A855F7" } },
+        { id: "asteroid_3", type: "circle", position: { x: 0.80, y: 0.10 }, size: { radius: 0.038 }, velocity: { vx: 0.08, vy: 0.40 }, properties: { solid: true, color: "#EAB308" } }
+      ],
+      rules: [
+        { trigger: "hit_ast_1", event: "collision", entities: ["player_ship", "asteroid_1"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_1", position: { x: 0.2, y: 0.05 }, velocity: { vx: 0.12, vy: 0.35 } }] },
+        { trigger: "hit_ast_2", event: "collision", entities: ["player_ship", "asteroid_2"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_2", position: { x: 0.5, y: 0.05 }, velocity: { vx: -0.18, vy: 0.28 } }] },
+        { trigger: "hit_ast_3", event: "collision", entities: ["player_ship", "asteroid_3"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_3", position: { x: 0.8, y: 0.05 }, velocity: { vx: 0.08, vy: 0.40 } }] }
+      ]
+    }
+  },
   pong: {
     name: 'Emergent Dual Pong',
     description: 'Two-player paddle simulation with continuous normal reflections.',
@@ -63,8 +82,8 @@ const PRESET_SCENES = {
       state_variables: { score: { p1: 0, p2: 0, rallies: 0 } },
       entities: [
         { id: "pong_ball", type: "circle", position: { x: 0.50, y: 0.50 }, size: { radius: 0.025 }, velocity: { vx: 0.35, vy: 0.22 }, properties: { solid: true, color: "#F59E0B" } },
-        { id: "left_paddle", type: "box", position: { x: 0.08, y: 0.50 }, size: { width: 0.025, height: 0.20 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#3B82F6", control: { channel: "p1", axis: "y" } } },
-        { id: "right_paddle", type: "box", position: { x: 0.92, y: 0.50 }, size: { width: 0.025, height: 0.20 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#EC4899", control: { channel: "p2", axis: "y" } } }
+        { id: "left_paddle", type: "box", position: { x: 0.06, y: 0.50 }, size: { width: 0.025, height: 0.20 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#3B82F6", control: { channel: "p1", axis: "y", speed: 0.85 } } },
+        { id: "right_paddle", type: "box", position: { x: 0.94, y: 0.50 }, size: { width: 0.025, height: 0.20 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#EC4899", control: { channel: "p2", axis: "y", speed: 0.85 } } }
       ],
       rules: [
         { trigger: "p1_deflect", event: "collision", entities: ["pong_ball", "left_paddle"], actions: [{ type: "increment_path", target: "score.rallies", amount: 1 }] },
@@ -88,23 +107,6 @@ const PRESET_SCENES = {
       ],
       rules: [
         { trigger: "core_ping", event: "collision", entities: ["center_core", "atom_1"], actions: [{ type: "increment_path", target: "chaos.collisions", amount: 1 }] }
-      ]
-    }
-  },
-  orbital: {
-    name: 'Orbital Satellites',
-    description: 'Orbital physics with central space station and energy collection.',
-    json: {
-      mlue_version: "1.6",
-      environment: { dimensions: [800, 600], background: "#020617" },
-      state_variables: { station: { energy: 100 } },
-      entities: [
-        { id: "sat_1", type: "circle", position: { x: 0.25, y: 0.30 }, size: { radius: 0.03 }, velocity: { vx: 0.42, vy: 0.31 }, properties: { solid: true, color: "#38BDF8" } },
-        { id: "sat_2", type: "circle", position: { x: 0.75, y: 0.30 }, size: { radius: 0.03 }, velocity: { vx: -0.31, vy: 0.42 }, properties: { solid: true, color: "#38BDF8" } },
-        { id: "core_station", type: "box", position: { x: 0.50, y: 0.50 }, size: { width: 0.10, height: 0.10 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#10B981" } }
-      ],
-      rules: [
-        { trigger: "sat1_energy", event: "collision", entities: ["core_station", "sat_1"], actions: [{ type: "increment_path", target: "station.energy", amount: 25 }] }
       ]
     }
   }
@@ -142,6 +144,7 @@ export default function Playground({ onOpenBenchmarks }) {
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
   const keysDownRef = useRef({});
+  const pointerTargetRef = useRef({ x: 0.5, y: 0.5, active: false });
   const stageRef = useRef(null);
 
   // Save Scene
@@ -176,6 +179,7 @@ export default function Playground({ onOpenBenchmarks }) {
       };
       setTickCount(0);
       setErrorMsg(null);
+      pointerTargetRef.current.active = false;
       if (saveHistory) {
         saveToRecent(historyName || 'Custom Scene', cloned);
       }
@@ -202,10 +206,11 @@ export default function Playground({ onOpenBenchmarks }) {
   // Handle Preset Select
   const handleSelectPreset = (key) => {
     const preset = PRESET_SCENES[key];
+    if (!preset) return;
     setActiveTitle(preset.name);
     setJsonText(JSON.stringify(preset.json, null, 2));
     initSimulation(preset.json, true, preset.name);
-    stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   };
 
   // AI Game Generator
@@ -252,24 +257,54 @@ export default function Playground({ onOpenBenchmarks }) {
     }
   };
 
-  // Keyboard controls
+  // Keyboard controls with scroll interception fix
   useEffect(() => {
     const handleKeyDown = (e) => {
+      const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+      if (isInput) return; // Allow normal typing in prompt boxes
+
+      // Prevent window scrolling on arrow keys & space
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', ' ', 'Space'].includes(e.key)) {
+        e.preventDefault();
+      }
+
       keysDownRef.current[e.key] = true;
       keysDownRef.current[e.code] = true;
     };
+
     const handleKeyUp = (e) => {
+      const isInput = ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
+      if (isInput) return;
+
       keysDownRef.current[e.key] = false;
       keysDownRef.current[e.code] = false;
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
     window.addEventListener('keyup', handleKeyUp);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
+
+  // Touch / Pointer Tracking directly on Canvas
+  const handlePointerMove = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const nx = (e.clientX - rect.left) / rect.width;
+    const ny = (e.clientY - rect.top) / rect.height;
+    pointerTargetRef.current = {
+      x: Math.max(0.04, Math.min(0.96, nx)),
+      y: Math.max(0.04, Math.min(0.96, ny)),
+      active: true
+    };
+  };
+
+  const handlePointerLeave = () => {
+    pointerTargetRef.current.active = false;
+  };
 
   const triggerTouch = (key, isDown) => {
     keysDownRef.current[key] = isDown;
@@ -283,37 +318,50 @@ export default function Playground({ onOpenBenchmarks }) {
     const [envW, envH] = state.env.dimensions || [800, 600];
     const minDim = Math.min(envW, envH);
 
-    // Controls
+    // Controls & Player Inputs
     const keys = keysDownRef.current;
     for (const ent of state.entities) {
+      if (ent.active === false) continue;
       const ctrl = ent.properties?.control;
       if (ctrl) {
-        let speed = 0.60;
+        const speed = ctrl.speed || 0.85;
+        const axis = ctrl.axis || 'xy';
+
+        let moveX = 0;
+        let moveY = 0;
+
         if (ctrl.channel === 'paddle' || ctrl.channel === 'p1') {
-          if (ctrl.axis === 'x') {
-            if (keys['ArrowLeft'] || keys['a'] || keys['KeyA']) {
-              ent.velocity.vx = -speed;
-            } else if (keys['ArrowRight'] || keys['d'] || keys['KeyD']) {
-              ent.velocity.vx = speed;
-            } else {
-              ent.velocity.vx = 0.0;
-            }
-          } else if (ctrl.axis === 'y') {
-            if (keys['ArrowUp'] || keys['w'] || keys['KeyW']) {
-              ent.velocity.vy = -speed;
-            } else if (keys['ArrowDown'] || keys['s'] || keys['KeyS']) {
-              ent.velocity.vy = speed;
-            } else {
-              ent.velocity.vy = 0.0;
-            }
-          }
+          if (keys['ArrowLeft'] || keys['a'] || keys['KeyA']) moveX -= 1;
+          if (keys['ArrowRight'] || keys['d'] || keys['KeyD']) moveX += 1;
+          if (keys['ArrowUp'] || keys['w'] || keys['KeyW']) moveY -= 1;
+          if (keys['ArrowDown'] || keys['s'] || keys['KeyS']) moveY += 1;
         } else if (ctrl.channel === 'p2') {
-          if (keys['ArrowUp'] || keys['k']) {
-            ent.velocity.vy = -speed;
-          } else if (keys['ArrowDown'] || keys['j']) {
-            ent.velocity.vy = speed;
-          } else {
-            ent.velocity.vy = 0.0;
+          if (keys['ArrowUp'] || keys['k']) moveY -= 1;
+          if (keys['ArrowDown'] || keys['j']) moveY += 1;
+        }
+
+        // Apply Keyboard Velocities
+        if (axis === 'x') {
+          ent.velocity.vx = moveX * speed;
+          ent.velocity.vy = 0.0;
+        } else if (axis === 'y') {
+          ent.velocity.vx = 0.0;
+          ent.velocity.vy = moveY * speed;
+        } else {
+          ent.velocity.vx = moveX * speed;
+          ent.velocity.vy = moveY * speed;
+        }
+
+        // Apply Direct Pointer / Mouse / Touch Follower
+        if (pointerTargetRef.current?.active && (ctrl.channel === 'paddle' || ctrl.channel === 'p1')) {
+          const pt = pointerTargetRef.current;
+          if (axis === 'x' || axis === 'xy') {
+            const dx = pt.x - ent.position.x;
+            ent.position.x += dx * Math.min(1.0, dt * 18.0);
+          }
+          if (axis === 'y' || axis === 'xy') {
+            const dy = pt.y - ent.position.y;
+            ent.position.y += dy * Math.min(1.0, dt * 18.0);
           }
         }
       }
@@ -336,20 +384,23 @@ export default function Playground({ onOpenBenchmarks }) {
       let newX = ent.position.x + (ent.velocity.vx * dt);
       let newY = ent.position.y + (ent.velocity.vy * dt);
 
+      // Boundary reflections (only for autonomous moving entities, clamp player)
+      const hasControl = Boolean(ent.properties?.control);
+
       if (newX - ex <= 0.0) {
         newX = ex;
-        if (ent.velocity.vx < 0) ent.velocity.vx = -ent.velocity.vx;
+        if (!hasControl && ent.velocity.vx < 0) ent.velocity.vx = -ent.velocity.vx;
       } else if (newX + ex >= 1.0) {
         newX = 1.0 - ex;
-        if (ent.velocity.vx > 0) ent.velocity.vx = -ent.velocity.vx;
+        if (!hasControl && ent.velocity.vx > 0) ent.velocity.vx = -ent.velocity.vx;
       }
 
       if (newY - ey <= 0.0) {
         newY = ey;
-        if (ent.velocity.vy < 0) ent.velocity.vy = -ent.velocity.vy;
+        if (!hasControl && ent.velocity.vy < 0) ent.velocity.vy = -ent.velocity.vy;
       } else if (newY + ey >= 1.0) {
         newY = 1.0 - ey;
-        if (ent.velocity.vy > 0) ent.velocity.vy = -ent.velocity.vy;
+        if (!hasControl && ent.velocity.vy > 0) ent.velocity.vy = -ent.velocity.vy;
       }
 
       ent.position.x = Math.max(ex, Math.min(1.0 - ex, newX));
@@ -422,27 +473,35 @@ export default function Playground({ onOpenBenchmarks }) {
             const dist = Math.sqrt(distSq);
             const nx = dx / dist;
             const ny = dy / dist;
-            const rvx = circle.velocity.vx - box.velocity.vx;
-            const rvy = circle.velocity.vy - box.velocity.vy;
-            const velAlongNorm = (rvx * nx) + (rvy * ny);
 
-            if (velAlongNorm < 0) {
-              const impulse = -(1.0 + 1.0) * velAlongNorm * 0.5;
-              circle.velocity.vx += nx * impulse;
-              circle.velocity.vy += ny * impulse;
+            // Check if box is a player paddle: apply angular deflection
+            if (box.properties?.control) {
+              const hitOffset = (circle.position.x - box.position.x) / hw;
+              circle.velocity.vx = hitOffset * 0.42;
+              circle.velocity.vy = -Math.abs(circle.velocity.vy || 0.35);
+            } else {
+              const rvx = circle.velocity.vx - box.velocity.vx;
+              const rvy = circle.velocity.vy - box.velocity.vy;
+              const velAlongNorm = (rvx * nx) + (rvy * ny);
 
-              const pen = (r - dist);
-              circle.position.x += nx * pen * (minDim / envW);
-              circle.position.y += ny * pen * (minDim / envH);
-
-              collisionsThisFrame.push([circle.id, box.id]);
+              if (velAlongNorm < 0) {
+                const impulse = -(1.0 + 1.0) * velAlongNorm * 0.5;
+                circle.velocity.vx += nx * impulse;
+                circle.velocity.vy += ny * impulse;
+              }
             }
+
+            const pen = (r - dist);
+            circle.position.x += nx * pen * (minDim / envW);
+            circle.position.y += ny * pen * (minDim / envH);
+
+            collisionsThisFrame.push([circle.id, box.id]);
           }
         }
       }
     }
 
-    // Rules
+    // Declarative Rules Execution
     if (state.rules && state.rules.length > 0) {
       for (const rule of state.rules) {
         if (rule.event === 'collision') {
@@ -450,18 +509,45 @@ export default function Playground({ onOpenBenchmarks }) {
           const hit = collisionsThisFrame.some(([c1, c2]) => (c1 === idA && c2 === idB) || (c1 === idB && c2 === idA));
           if (hit) {
             for (const action of rule.actions || []) {
-              if (action.type === 'destroy_entity') {
+              if (action.type === 'destroy_entity' || action.type === 'deactivate_entity') {
                 const target = state.entities.find(e => e.id === action.target);
                 if (target) target.active = false;
-              } else if (action.type === 'increment_path') {
-                const parts = action.target.split('.');
+              } else if (action.type === 'reset_entity') {
+                const target = state.entities.find(e => e.id === action.target);
+                if (target) {
+                  if (action.position) {
+                    target.position.x = action.position.x;
+                    target.position.y = action.position.y;
+                  }
+                  if (action.velocity) {
+                    target.velocity.vx = action.velocity.vx;
+                    target.velocity.vy = action.velocity.vy;
+                  }
+                }
+              } else if (action.type === 'increment_path' || action.type === 'increment') {
+                const targetPath = action.target;
+                const amount = action.amount ?? 1;
+                const parts = targetPath.split('.');
                 let curr = state.state_variables;
                 for (let k = 0; k < parts.length - 1; k++) {
+                  if (!curr[parts[k]]) curr[parts[k]] = {};
                   curr = curr[parts[k]];
                 }
                 if (curr && parts.length > 0) {
                   const lastKey = parts[parts.length - 1];
-                  curr[lastKey] = (curr[lastKey] || 0) + action.amount;
+                  curr[lastKey] = (curr[lastKey] || 0) + amount;
+                }
+              } else if (action.type === 'set_path' || action.type === 'set') {
+                const targetPath = action.target;
+                const val = action.value;
+                const parts = targetPath.split('.');
+                let curr = state.state_variables;
+                for (let k = 0; k < parts.length - 1; k++) {
+                  if (!curr[parts[k]]) curr[parts[k]] = {};
+                  curr = curr[parts[k]];
+                }
+                if (curr && parts.length > 0) {
+                  curr[parts[parts.length - 1]] = val;
                 }
               }
             }
@@ -486,8 +572,10 @@ export default function Playground({ onOpenBenchmarks }) {
         const [envW, envH] = state.env.dimensions || [800, 600];
         const minDim = Math.min(envW, envH);
 
-        canvas.width = envW;
-        canvas.height = envH;
+        if (canvas.width !== envW || canvas.height !== envH) {
+          canvas.width = envW;
+          canvas.height = envH;
+        }
 
         if (isPlaying) {
           const rawDt = (time - lastTime) / 1000.0;
@@ -496,9 +584,27 @@ export default function Playground({ onOpenBenchmarks }) {
         }
         lastTime = time;
 
+        // Background
         ctx.fillStyle = state.env.background || "#020617";
         ctx.fillRect(0, 0, envW, envH);
 
+        // Grid accents
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < envW; x += 40) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, envH);
+          ctx.stroke();
+        }
+        for (let y = 0; y < envH; y += 40) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(envW, y);
+          ctx.stroke();
+        }
+
+        // Render Entities
         for (const ent of state.entities) {
           if (ent.active === false) continue;
           const color = ent.properties?.color || "#38BDF8";
@@ -512,7 +618,7 @@ export default function Playground({ onOpenBenchmarks }) {
             ctx.arc(px, py, r, 0, Math.PI * 2);
             ctx.fillStyle = color;
             ctx.shadowColor = color;
-            ctx.shadowBlur = 8;
+            ctx.shadowBlur = 12;
             ctx.fill();
             ctx.shadowBlur = 0;
           } else if (ent.type === 'box') {
@@ -523,7 +629,7 @@ export default function Playground({ onOpenBenchmarks }) {
 
             ctx.fillStyle = color;
             ctx.shadowColor = color;
-            ctx.shadowBlur = 6;
+            ctx.shadowBlur = 10;
             ctx.fillRect(px, py, w, h);
             ctx.shadowBlur = 0;
           }
@@ -560,10 +666,10 @@ export default function Playground({ onOpenBenchmarks }) {
   };
 
   return (
-    <div className="space-y-16 max-w-5xl mx-auto px-2">
+    <div className="space-y-12 max-w-5xl mx-auto px-2">
       
       {/* 1. HERO PROMPT SECTION: MINIMALIST, BREATHABLE, ATTRACTOR (Apple / ChatGPT Style) */}
-      <section className="pt-8 pb-4 text-center max-w-3xl mx-auto space-y-6">
+      <section className="pt-6 pb-2 text-center max-w-3xl mx-auto space-y-6">
         
         {/* Title */}
         <div className="space-y-2">
@@ -637,7 +743,7 @@ export default function Playground({ onOpenBenchmarks }) {
             <div className="flex items-center space-x-3">
               <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
               <h2 className="text-sm font-bold text-white tracking-tight truncate">{activeTitle}</h2>
-              <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">60 FPS Native</span>
+              <span className="text-[11px] font-mono text-slate-500 hidden sm:inline">60 FPS Deterministic</span>
             </div>
 
             {/* Playback Controls */}
@@ -699,39 +805,50 @@ export default function Playground({ onOpenBenchmarks }) {
             </div>
           </div>
 
-          {/* Canvas Viewport */}
-          <div className="relative aspect-[16/10] sm:aspect-[16/9] bg-slate-950 flex items-center justify-center p-2">
+          {/* Canvas Viewport (Supports Keyboard + Mouse Move + Touch Drag) */}
+          <div className="relative aspect-[16/10] sm:aspect-[16/9] bg-slate-950 flex items-center justify-center p-2 select-none">
             <canvas
               ref={canvasRef}
-              className="w-full h-full object-contain rounded-2xl border border-white/[0.04]"
+              onPointerMove={handlePointerMove}
+              onPointerDown={handlePointerMove}
+              onPointerLeave={handlePointerLeave}
+              className="w-full h-full object-contain rounded-2xl border border-white/[0.04] cursor-crosshair touch-none"
             />
 
             {/* Minimal HUD (State Variables) */}
             {simStateRef.current?.state_variables && Object.keys(simStateRef.current.state_variables).length > 0 && (
-              <div className="absolute top-4 left-4 bg-black/60 border border-white/[0.08] rounded-xl px-3 py-2 backdrop-blur-md font-mono text-[11px] pointer-events-none space-y-0.5">
+              <div className="absolute top-4 left-4 bg-black/70 border border-white/[0.08] rounded-xl px-3.5 py-2 backdrop-blur-md font-mono text-xs pointer-events-none space-y-1 shadow-lg">
                 {Object.entries(simStateRef.current.state_variables).map(([k, v]) => (
-                  <div key={k} className="text-slate-300">
-                    <span className="text-cyan-400">{k}</span>: {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                  <div key={k} className="text-slate-200">
+                    <span className="text-cyan-400 font-bold uppercase tracking-wider text-[10px] mr-1">{k}:</span>
+                    {typeof v === 'object' ? (
+                      <span className="text-emerald-400 font-bold">
+                        {Object.entries(v).map(([subK, subV]) => `${subK}: ${subV}`).join(' | ')}
+                      </span>
+                    ) : (
+                      <span className="text-emerald-400 font-bold">{String(v)}</span>
+                    )}
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Keyboard Hint */}
-            <div className="absolute bottom-4 right-4 hidden sm:flex bg-black/60 border border-white/[0.08] rounded-full px-3 py-1 text-[11px] text-slate-400 font-mono pointer-events-none">
-              Move: <span className="text-cyan-400 font-bold mx-1">A / D</span> or <span className="text-cyan-400 font-bold ml-1">← / →</span>
+            {/* Controls Badge */}
+            <div className="absolute bottom-4 right-4 hidden sm:flex items-center gap-2 bg-black/70 border border-white/[0.08] rounded-full px-3.5 py-1.5 text-xs text-slate-300 font-mono pointer-events-none backdrop-blur-md shadow-lg">
+              <span>🎮 Move:</span>
+              <span className="text-cyan-400 font-bold">Arrows / WASD / Mouse Drag</span>
             </div>
           </div>
 
-          {/* Mobile Touch Controls */}
-          <div className="flex sm:hidden items-center justify-center gap-3 bg-slate-950 border-t border-white/[0.06] p-3">
+          {/* Mobile Touch Directional Controls */}
+          <div className="grid grid-cols-4 gap-2 bg-slate-950 border-t border-white/[0.06] p-3 sm:hidden">
             <motion.button
               {...tapScale.button}
               onTouchStart={() => triggerTouch('ArrowLeft', true)}
               onTouchEnd={() => triggerTouch('ArrowLeft', false)}
               onMouseDown={() => triggerTouch('ArrowLeft', true)}
               onMouseUp={() => triggerTouch('ArrowLeft', false)}
-              className="flex-1 py-3 bg-slate-800 active:bg-cyan-600 rounded-full font-mono text-sm font-bold text-center border border-white/[0.08] cursor-pointer"
+              className="py-3 bg-slate-800 active:bg-cyan-600 rounded-2xl font-mono text-sm font-bold text-center border border-white/[0.08] cursor-pointer"
             >
               ◀ LEFT
             </motion.button>
@@ -741,9 +858,29 @@ export default function Playground({ onOpenBenchmarks }) {
               onTouchEnd={() => triggerTouch('ArrowRight', false)}
               onMouseDown={() => triggerTouch('ArrowRight', true)}
               onMouseUp={() => triggerTouch('ArrowRight', false)}
-              className="flex-1 py-3 bg-slate-800 active:bg-cyan-600 rounded-full font-mono text-sm font-bold text-center border border-white/[0.08] cursor-pointer"
+              className="py-3 bg-slate-800 active:bg-cyan-600 rounded-2xl font-mono text-sm font-bold text-center border border-white/[0.08] cursor-pointer"
             >
               RIGHT ▶
+            </motion.button>
+            <motion.button
+              {...tapScale.button}
+              onTouchStart={() => triggerTouch('ArrowUp', true)}
+              onTouchEnd={() => triggerTouch('ArrowUp', false)}
+              onMouseDown={() => triggerTouch('ArrowUp', true)}
+              onMouseUp={() => triggerTouch('ArrowUp', false)}
+              className="py-3 bg-slate-800 active:bg-cyan-600 rounded-2xl font-mono text-sm font-bold text-center border border-white/[0.08] cursor-pointer"
+            >
+              ▲ UP
+            </motion.button>
+            <motion.button
+              {...tapScale.button}
+              onTouchStart={() => triggerTouch('ArrowDown', true)}
+              onTouchEnd={() => triggerTouch('ArrowDown', false)}
+              onMouseDown={() => triggerTouch('ArrowDown', true)}
+              onMouseUp={() => triggerTouch('ArrowDown', false)}
+              className="py-3 bg-slate-800 active:bg-cyan-600 rounded-2xl font-mono text-sm font-bold text-center border border-white/[0.08] cursor-pointer"
+            >
+              DOWN ▼
             </motion.button>
           </div>
 
@@ -847,7 +984,7 @@ export default function Playground({ onOpenBenchmarks }) {
                 setActiveTitle(build.name);
                 setJsonText(JSON.stringify(build.json, null, 2));
                 initSimulation(build.json);
-                stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
               className="p-4 text-left rounded-2xl border border-emerald-500/30 bg-emerald-950/20 hover:border-emerald-500/60 text-slate-300 cursor-pointer"
             >
