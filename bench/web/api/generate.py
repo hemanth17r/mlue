@@ -122,7 +122,7 @@ class handler(BaseHTTPRequestHandler):
                 method='POST'
             )
 
-            with urllib.request.urlopen(req, timeout=9) as response:
+            with urllib.request.urlopen(req, timeout=25) as response:
                 raw_resp = response.read().decode('utf-8')
                 gemini_json = json.loads(raw_resp)
 
