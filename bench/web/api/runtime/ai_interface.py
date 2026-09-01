@@ -30,17 +30,17 @@ class MLUEAIInterface:
     def get_schema(self) -> Dict[str, Any]:
         """Returns the machine-readable schema definition and spatial invariant constraints."""
         return {
-            "mlue_version": "0.7",
+            "mlue_version": "1.6",
             "description": "MLUE Native AI Computational & Spatial Simulation Substrate",
             "root_fields": {
-                "mlue_version": {"type": "string", "enum": ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7"]},
+                "mlue_version": {"type": "string", "enum": ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6"]},
                 "environment": {
                     "dimensions": {"type": "array", "items": "integer", "minItems": 2, "maxItems": 2, "description": "[width, height]"},
                     "background": {"type": "string", "description": "Hex color code e.g. #0F172A"}
                 },
                 "state_variables": {
                     "type": "object",
-                    "description": "Key-value state storage (e.g. scores, counters, flags)"
+                    "description": "Hierarchical document state storage (nested objects, lists, scores, counters, flags)"
                 },
                 "entities": {
                     "type": "array",
@@ -74,15 +74,21 @@ class MLUEAIInterface:
                         "condition": {
                             "entity": "string entity ID (for spatial/velocity conditions)",
                             "property": "position.x, position.y, velocity.vx, velocity.vy",
-                            "state_variable": "string state variable name (for state conditions)",
-                            "op": "<=, >=, ==, <, >",
-                            "value": "number or literal"
+                            "state_variable": "string state variable name (for legacy flat state conditions)",
+                            "state_path": "string dot/bracket keypath (e.g. 'session.stats.energy', 'inventory.length')",
+                            "op": "<=, >=, ==, <, >, !=",
+                            "value": "number, string, boolean, or literal"
                         },
                         "actions": [
                             {"type": "destroy_entity", "target": "entity ID"},
                             {"type": "set_property", "target": "entity ID", "property": "property_name", "value": "new_value"},
                             {"type": "increment", "target": "state_variable_name", "amount": "number"},
                             {"type": "set", "target": "state_variable_name", "value": "new_value"},
+                            {"type": "set_path", "target": "dot/bracket keypath", "value": "new_value"},
+                            {"type": "increment_path", "target": "dot/bracket keypath", "amount": "number"},
+                            {"type": "push", "target": "array keypath", "value": "item_value"},
+                            {"type": "pop", "target": "array keypath", "index": "optional int (default -1)"},
+                            {"type": "delete_key", "target": "object keypath", "key": "optional string"},
                             {"type": "reset_entity", "target": "entity ID", "position": {"x": "float", "y": "float"}, "velocity": {"vx": "float", "vy": "float"}}
                         ]
                     }

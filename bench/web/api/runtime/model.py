@@ -57,6 +57,7 @@ class Condition:
     entity: Optional[str] = None
     property: Optional[str] = None
     state_variable: Optional[str] = None
+    state_path: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -68,6 +69,8 @@ class Action:
     property: Optional[str] = None
     position: Optional[Position] = None
     velocity: Optional[Velocity] = None
+    index: Optional[int] = None
+    key: Optional[str] = None
 
 
 @dataclass(frozen=True)
