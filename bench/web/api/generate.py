@@ -67,7 +67,7 @@ class handler(BaseHTTPRequestHandler):
         res = {
             'service': 'MLUE AI Game Generator',
             'status': 'online',
-            'model': 'gemini-1.5-flash',
+            'model': 'gemini-2.0-flash',
             'supported_versions': ['1.6']
         }
         self.wfile.write(json.dumps(res, indent=2).encode('utf-8'))
@@ -90,7 +90,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         if not api_key:
-            self._send_json_error(401, 'No Gemini API Key provided. Please provide a key or enter one in the studio settings.')
+            self._send_json_error(401, 'GEMINI_API_KEY not configured on server. Please add it to Vercel Environment Variables.')
             return
 
         # Prepare prompt for Gemini
@@ -98,68 +98,84 @@ class handler(BaseHTTPRequestHandler):
         if current_scene:
             full_user_content += f"\nExisting Scene to Modify:\n{json.dumps(current_scene, indent=2)}\n\nApply the requested changes and output the complete updated .mlue JSON document."
 
-        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        # Support Gemini 2.0 Flash primary, 1.5 Flash fallback
+        models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        last_error = None
 
-        gemini_body = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": SYSTEM_PROMPT},
-                        {"text": full_user_content}
-                    ]
+        for model_name in models_to_try:
+            gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+            gemini_body = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": SYSTEM_PROMPT},
+                            {"text": full_user_content}
+                        ]
+                    }
+                ],
+                "generationConfig": {
+                    "temperature": 0.3,
+                    "topP": 0.95,
+                    "responseMimeType": "application/json"
                 }
-            ],
-            "generationConfig": {
-                "temperature": 0.3,
-                "topP": 0.95,
-                "responseMimeType": "application/json"
             }
-        }
 
-        try:
-            req = urllib.request.Request(
-                gemini_url,
-                data=json.dumps(gemini_body).encode('utf-8'),
-                headers={'Content-Type': 'application/json'}
-            )
-            with urllib.request.urlopen(req, timeout=15) as resp:
-                resp_data = json.loads(resp.read().decode('utf-8'))
+            try:
+                req = urllib.request.Request(
+                    gemini_url,
+                    data=json.dumps(gemini_body).encode('utf-8'),
+                    headers={'Content-Type': 'application/json'},
+                    method='POST'
+                )
 
-            # Extract generated text
-            candidates = resp_data.get('candidates', [])
-            if not candidates:
-                self._send_json_error(502, 'Gemini returned no candidates.')
+                with urllib.request.urlopen(req, timeout=15) as response:
+                    raw_resp = response.read().decode('utf-8')
+                    gemini_json = json.loads(raw_resp)
+
+                # Extract generated text
+                candidates = gemini_json.get('candidates', [])
+                if not candidates:
+                    raise ValueError('Gemini returned no candidates.')
+
+                generated_text = candidates[0].get('content', {}).get('parts', [{}])[0].get('text', '')
+                if not generated_text:
+                    raise ValueError('Empty text response from Gemini.')
+
+                # Parse JSON
+                parsed_scene = json.loads(generated_text)
+
+                # In-memory validation
+                validate_and_parse(parsed_scene)
+
+                # Return success
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self._send_cors_headers()
+                self.end_headers()
+
+                out = {
+                    'success': True,
+                    'model': model_name,
+                    'prompt': prompt,
+                    'scene': parsed_scene
+                }
+                self.wfile.write(json.dumps(out, indent=2).encode('utf-8'))
                 return
 
-            text_content = candidates[0].get('content', {}).get('parts', [{}])[0].get('text', '')
-            parsed_scene = json.loads(text_content)
+            except urllib.error.HTTPError as he:
+                error_body = he.read().decode('utf-8', errors='ignore')
+                last_error = f"Gemini API Error ({he.code}): {error_body}"
+            except MLUEValidationError as ve:
+                last_error = f"MLUE Schema Validation Error: {ve}"
+            except Exception as ex:
+                last_error = f"Generation Error: {ex}"
 
-            # In-memory validation
-            validate_and_parse(parsed_scene)
+        self._send_json_error(500, last_error or 'Failed to generate valid scene.')
 
-            self.send_response(200)
-            self.send_header('Content-Type', 'application/json')
-            self._send_cors_headers()
-            self.end_headers()
-            
-            res_obj = {
-                'success': True,
-                'scene': parsed_scene,
-                'prompt': prompt
-            }
-            self.wfile.write(json.dumps(res_obj, indent=2).encode('utf-8'))
-
-        except urllib.error.HTTPError as http_err:
-            err_msg = http_err.read().decode('utf-8', errors='ignore')
-            self._send_json_error(http_err.code, f"Gemini API Error: {err_msg}")
-        except MLUEValidationError as val_err:
-            self._send_json_error(422, f"Generated scene failed MLUE invariant validation: {val_err}")
-        except Exception as gen_err:
-            self._send_json_error(500, f"Generation failed: {gen_err}")
-
-    def _send_json_error(self, code: int, message: str):
+    def _send_json_error(self, code, message):
         self.send_response(code)
         self.send_header('Content-Type', 'application/json')
         self._send_cors_headers()
         self.end_headers()
-        self.wfile.write(json.dumps({'success': False, 'error': message}, indent=2).encode('utf-8'))
+        err = {'success': False, 'error': message}
+        self.wfile.write(json.dumps(err).encode('utf-8'))
