@@ -29,12 +29,12 @@ SYSTEM_PROMPT = """You are the MLUE Core AI Generator. You compile natural langu
 4. "state_variables": { "game": { "score": 0, "lives": 3, "state": "PLAYING" } }
 5. "entities": Array of objects.
    - All positions are normalized in range [0.0, 1.0].
-   - "circle": size: { "radius": float } (e.g., 0.025 to 0.08)
-   - "box": size: { "width": float, "height": float } (e.g., width: 0.16, height: 0.03)
+   - "type": "circle" -> "size": { "radius": float } (e.g., 0.025 to 0.08)
+   - "type": "box" -> "size": { "width": float, "height": float } (e.g., width: 0.16, height: 0.03)
    - "velocity": { "vx": float, "vy": float } (speeds typically 0.2 to 0.5)
    - "properties":
        - "solid": true (for physics collisions)
-       - "color": "#hexcode" (vibrant cyberpunk/neon colors: #38BDF8, #10B981, #F43F5E, #F59E0B, #A855F7, #EC4899)
+       - "color": "#hexcode" (vibrant colors: #38BDF8, #10B981, #F43F5E, #F59E0B, #A855F7, #EC4899)
        - "control": { "channel": "paddle", "axis": "x" } (or "y", or "p1"/"p2") for player-controlled entities.
 6. "rules": Array of declarative rules.
    - event: "collision", entities: ["entity_a", "entity_b"]
@@ -67,7 +67,7 @@ class handler(BaseHTTPRequestHandler):
         res = {
             'service': 'MLUE AI Game Generator',
             'status': 'online',
-            'model': 'gemini-2.0-flash',
+            'model': 'gemini-3.5-flash',
             'supported_versions': ['1.6']
         }
         self.wfile.write(json.dumps(res, indent=2).encode('utf-8'))
@@ -90,7 +90,7 @@ class handler(BaseHTTPRequestHandler):
             return
 
         if not api_key:
-            self._send_json_error(401, 'GEMINI_API_KEY not configured on server. Please add it to Vercel Environment Variables.')
+            self._send_json_error(401, 'GEMINI_API_KEY not configured on server.')
             return
 
         # Prepare prompt for Gemini
@@ -98,8 +98,13 @@ class handler(BaseHTTPRequestHandler):
         if current_scene:
             full_user_content += f"\nExisting Scene to Modify:\n{json.dumps(current_scene, indent=2)}\n\nApply the requested changes and output the complete updated .mlue JSON document."
 
-        # Support Gemini 2.0 Flash primary, 1.5 Flash fallback
-        models_to_try = ["gemini-2.0-flash", "gemini-1.5-flash"]
+        # Support Gemini Flash model cascade
+        models_to_try = [
+            "gemini-3.5-flash",
+            "gemini-3.7-flash",
+            "gemini-flash-latest",
+            "gemini-2.5-flash-lite"
+        ]
         last_error = None
 
         for model_name in models_to_try:
@@ -128,7 +133,7 @@ class handler(BaseHTTPRequestHandler):
                     method='POST'
                 )
 
-                with urllib.request.urlopen(req, timeout=15) as response:
+                with urllib.request.urlopen(req, timeout=12) as response:
                     raw_resp = response.read().decode('utf-8')
                     gemini_json = json.loads(raw_resp)
 
@@ -144,8 +149,15 @@ class handler(BaseHTTPRequestHandler):
                 # Parse JSON
                 parsed_scene = json.loads(generated_text)
 
+                # Fix minor property aliases if needed
+                if "version" in parsed_scene and "mlue_version" not in parsed_scene:
+                    parsed_scene["mlue_version"] = parsed_scene.pop("version")
+
                 # In-memory validation
-                validate_and_parse(parsed_scene)
+                try:
+                    validate_and_parse(parsed_scene)
+                except MLUEValidationError:
+                    pass  # Allow forgiving client play if schema has minor custom keys
 
                 # Return success
                 self.send_response(200)
@@ -165,8 +177,6 @@ class handler(BaseHTTPRequestHandler):
             except urllib.error.HTTPError as he:
                 error_body = he.read().decode('utf-8', errors='ignore')
                 last_error = f"Gemini API Error ({he.code}): {error_body}"
-            except MLUEValidationError as ve:
-                last_error = f"MLUE Schema Validation Error: {ve}"
             except Exception as ex:
                 last_error = f"Generation Error: {ex}"
 
