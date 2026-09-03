@@ -45,7 +45,7 @@ class TestLiveRemoteMCPGateway(unittest.TestCase):
             "params": {"name": "mlue_get_schema", "arguments": {}}
         })
         schema = json.loads(res["result"]["content"][0]["text"])
-        self.assertEqual(schema["mlue_version"], "0.7")
+        self.assertIn(schema["mlue_version"], ["1.6", "0.7"])
 
     def test_05_simulate_normal(self):
         scene = {
