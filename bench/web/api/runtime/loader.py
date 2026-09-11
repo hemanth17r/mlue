@@ -452,26 +452,54 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         if not isinstance(trigger, str):
             raise MLUEValidationError(f"Rule at index {r_idx} 'trigger' must be a string.")
 
+        POINTER_EVENTS = {
+            "pointer_click",
+            "pointer_down",
+            "pointer_up",
+            "pointer_hover_enter",
+            "pointer_hover_exit",
+        }
+
         event_name = rule_raw.get("event")
         entities_pair: Optional[Tuple[str, str]] = None
+        rule_entity: Optional[str] = None
         condition: Optional[Condition] = None
 
         if event_name is not None:
-            if event_name != "collision":
-                raise MLUEValidationError(
-                    f"Rule '{trigger}' event '{event_name}' is unsupported. Supported: 'collision'."
-                )
-            pair_raw = rule_raw.get("entities")
-            if not (isinstance(pair_raw, list) and len(pair_raw) == 2 and all(isinstance(e, str) for e in pair_raw)):
-                raise MLUEValidationError(
-                    f"Rule '{trigger}' collision event requires 'entities' list of two entity IDs."
-                )
-            for ent_ref in pair_raw:
-                if ent_ref not in seen_ids:
+            if event_name == "collision":
+                pair_raw = rule_raw.get("entities")
+                if not (isinstance(pair_raw, list) and len(pair_raw) == 2 and all(isinstance(e, str) for e in pair_raw)):
                     raise MLUEValidationError(
-                        f"Rule '{trigger}' collision event targets unknown entity '{ent_ref}'."
+                        f"Rule '{trigger}' collision event requires 'entities' list of two entity IDs."
                     )
-            entities_pair = (pair_raw[0], pair_raw[1])
+                for ent_ref in pair_raw:
+                    if ent_ref not in seen_ids:
+                        raise MLUEValidationError(
+                            f"Rule '{trigger}' collision event targets unknown entity '{ent_ref}'."
+                        )
+                entities_pair = (pair_raw[0], pair_raw[1])
+            elif event_name in POINTER_EVENTS:
+                ent_target = rule_raw.get("entity")
+                if ent_target is None and "entities" in rule_raw:
+                    ents_list = rule_raw["entities"]
+                    if isinstance(ents_list, list) and len(ents_list) == 1 and isinstance(ents_list[0], str):
+                        ent_target = ents_list[0]
+                    elif isinstance(ents_list, str):
+                        ent_target = ents_list
+                if not isinstance(ent_target, str) or not ent_target.strip():
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' event '{event_name}' requires an 'entity' string targeting an entity ID."
+                    )
+                if ent_target not in seen_ids:
+                    raise MLUEValidationError(
+                        f"Rule '{trigger}' event '{event_name}' targets unknown entity '{ent_target}'."
+                    )
+                rule_entity = ent_target
+            else:
+                supported_events = ", ".join(["'collision'"] + [f"'{pe}'" for pe in sorted(POINTER_EVENTS)])
+                raise MLUEValidationError(
+                    f"Rule '{trigger}' event '{event_name}' is unsupported. Supported: {supported_events}."
+                )
         else:
             cond_raw = rule_raw.get("condition")
             if not isinstance(cond_raw, dict):
@@ -655,6 +683,7 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             event=event_name,
             entities=entities_pair,
             condition=condition,
+            entity=rule_entity,
         ))
 
     return MLUEDocument(

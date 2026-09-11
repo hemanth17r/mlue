@@ -332,75 +332,85 @@ export default function HeadToHeadComparison() {
         </div>
       </div>
 
-      {/* Comparison Spec Card (Golden Standard: rounded-2xl) */}
+      {/* Comparison Spec Card */}
       <div className="rounded-2xl bg-slate-900/80 border border-white/[0.08] overflow-hidden shadow-2xl">
         
-        {/* Table Column Headers */}
-        <div className="grid grid-cols-12 bg-black/40 border-b border-white/[0.06] p-4 text-xs font-mono font-bold tracking-wider">
-          <div className="col-span-5 text-left text-rose-300 flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-rose-400" />
-            <span className="truncate">TRADITIONAL STACK (Human Code)</span>
-          </div>
-          <div className="col-span-2 text-center text-slate-500 uppercase tracking-widest text-[10px]">
-            METRIC
-          </div>
-          <div className="col-span-5 text-right text-cyan-300 flex items-center justify-end space-x-2">
-            <span className="truncate">MLUE SUBSTRATE</span>
-            <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-          </div>
-        </div>
-
-        {/* Spec Rows */}
-        <div className="divide-y divide-white/[0.04]">
-          {activeGame.specs.map((spec, idx) => (
-            <div 
-              key={idx} 
-              className="grid grid-cols-12 p-4 items-center hover:bg-white/[0.02] transition-colors"
-            >
-              
-              {/* Left Column: Traditional Stack */}
-              <div className="col-span-5 text-left pr-2">
-                <div className="text-sm font-bold font-mono text-slate-200">
-                  {spec.traditional.value}
-                </div>
-                <div className="text-[11px] font-mono text-slate-500 mt-0.5">
-                  {spec.traditional.desc}
-                </div>
+        {/* Scrollable Container for Mobile Viewports */}
+        <div className="overflow-x-auto w-full">
+          <div className="min-w-[560px]">
+            {/* Table Column Headers */}
+            <div className="grid grid-cols-12 bg-black/40 border-b border-white/[0.06] p-4 text-xs font-mono font-bold tracking-wider">
+              <div className="col-span-5 text-left text-rose-300 flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-rose-400" />
+                <span className="truncate">CONVENTIONAL WEB STACK (Human Code)</span>
               </div>
-
-              {/* Middle Column: Central Metric Icon & Label */}
-              <div className="col-span-2 text-center px-1">
-                <div className="inline-flex p-2 rounded-xl bg-black/50 border border-white/[0.06] mb-1">
-                  {spec.icon}
-                </div>
-                <div className="text-[11px] font-semibold text-slate-300 font-mono leading-tight">
-                  {spec.label}
-                </div>
+              <div className="col-span-2 text-center text-slate-500 uppercase tracking-widest text-[10px]">
+                METRIC
               </div>
-
-              {/* Right Column: MLUE Substrate */}
-              <div className="col-span-5 text-right pl-2">
-                <div className="text-sm font-bold font-mono text-cyan-300">
-                  {spec.mlue.value}
-                </div>
-                <div className="text-[11px] font-mono text-emerald-400/90 font-medium mt-0.5">
-                  {spec.mlue.desc}
-                </div>
+              <div className="col-span-5 text-right text-cyan-300 flex items-center justify-end space-x-2">
+                <span className="truncate">MLUE RUNTIME SUBSTRATE</span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
               </div>
-
             </div>
-          ))}
+
+            {/* Spec Rows */}
+            <div className="divide-y divide-white/[0.04]">
+              {activeGame.specs.map((spec, idx) => (
+                <div 
+                  key={idx} 
+                  className="grid grid-cols-12 p-4 items-center hover:bg-white/[0.02] transition-colors"
+                >
+                  
+                  {/* Left Column: Traditional Stack */}
+                  <div className="col-span-5 text-left pr-2">
+                    <div className="text-sm font-bold font-mono text-slate-200">
+                      {spec.traditional.value}
+                    </div>
+                    <div className="text-[11px] font-mono text-slate-500 mt-0.5">
+                      {spec.traditional.desc}
+                    </div>
+                  </div>
+
+                  {/* Middle Column: Central Metric Icon & Label */}
+                  <div className="col-span-2 text-center px-1">
+                    <div className="inline-flex p-2 rounded-xl bg-black/50 border border-white/[0.06] mb-1">
+                      {spec.icon}
+                    </div>
+                    <div className="text-[11px] font-semibold text-slate-300 font-mono leading-tight">
+                      {spec.label}
+                    </div>
+                  </div>
+
+                  {/* Right Column: MLUE Substrate */}
+                  <div className="col-span-5 text-right pl-2">
+                    <div className="text-sm font-bold font-mono text-cyan-300">
+                      {spec.mlue.value}
+                    </div>
+                    <div className="text-[11px] font-mono text-emerald-400/90 font-medium mt-0.5">
+                      {spec.mlue.desc}
+                    </div>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        {/* Bottom Verdict Banner */}
-        <div className="bg-gradient-to-r from-slate-950 via-cyan-950/40 to-slate-950 p-4 border-t border-cyan-500/20 flex items-center space-x-3">
-          <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400">
+        {/* Bottom Demonstrated Capability Banner */}
+        <div className="bg-gradient-to-r from-slate-950 via-cyan-950/40 to-slate-950 p-4 border-t border-cyan-500/20 flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+          <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 shrink-0">
             <Trophy className="w-4 h-4" />
           </div>
-          <p className="text-xs text-slate-300 font-mono leading-relaxed">
-            <strong className="text-amber-400 uppercase tracking-wider mr-1.5 font-bold">The Verdict:</strong>
-            {activeGame.verdict}
-          </p>
+          <div>
+            <p className="text-xs text-slate-300 font-mono leading-relaxed">
+              <strong className="text-amber-400 uppercase tracking-wider mr-1.5 font-bold">Demonstrated Findings:</strong>
+              {activeGame.verdict}
+            </p>
+            <p className="text-[10px] text-slate-500 font-sans mt-0.5">
+              Workload comparison evaluates deterministic runtime evaluation against equivalent declarative browser components.
+            </p>
+          </div>
         </div>
 
       </div>

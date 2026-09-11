@@ -1,0 +1,103 @@
+{
+  "mlue_version": "2.1",
+  "environment": {
+    "dimensions": [600, 400],
+    "background": "#020617"
+  },
+  "state_variables": {
+    "counter": 0,
+    "hovered": false,
+    "status": "IDLE"
+  },
+  "entities": [
+    {
+      "id": "card_bg",
+      "type": "box",
+      "position": { "x": 0.5, "y": 0.5 },
+      "size": { "width": 0.6, "height": 0.6 },
+      "velocity": { "vx": 0.0, "vy": 0.0 },
+      "properties": { "color": "#0F172A", "solid": false },
+      "active": true
+    },
+    {
+      "id": "counter_label",
+      "type": "text",
+      "position": { "x": 0.5, "y": 0.35 },
+      "template": "CLICK COUNT: {counter} - {status}",
+      "size": { "font_scale": 0.035, "align": "center" },
+      "properties": { "color": "#38BDF8" },
+      "active": true
+    },
+    {
+      "id": "increment_btn",
+      "type": "capsule",
+      "position": { "x": 0.5, "y": 0.55 },
+      "size": { "length": 0.25, "radius": 0.045, "angle": 0.0 },
+      "velocity": { "vx": 0.0, "vy": 0.0 },
+      "properties": { "color": "#10B981", "solid": false },
+      "active": true
+    },
+    {
+      "id": "btn_label",
+      "type": "text",
+      "position": { "x": 0.5, "y": 0.55 },
+      "template": "TAP TO INCREMENT",
+      "size": { "font_scale": 0.025, "align": "center" },
+      "properties": { "color": "#020617" },
+      "active": true
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "on_btn_click",
+      "event": "pointer_click",
+      "entity": "increment_btn",
+      "actions": [
+        {
+          "type": "increment_path",
+          "target": "counter",
+          "amount": 1
+        },
+        {
+          "type": "set_path",
+          "target": "status",
+          "value": "CLICKED"
+        }
+      ]
+    },
+    {
+      "trigger": "on_btn_hover_enter",
+      "event": "pointer_hover_enter",
+      "entity": "increment_btn",
+      "actions": [
+        {
+          "type": "set_path",
+          "target": "hovered",
+          "value": true
+        },
+        {
+          "type": "set_path",
+          "target": "status",
+          "value": "HOVERING"
+        }
+      ]
+    },
+    {
+      "trigger": "on_btn_hover_exit",
+      "event": "pointer_hover_exit",
+      "entity": "increment_btn",
+      "actions": [
+        {
+          "type": "set_path",
+          "target": "hovered",
+          "value": false
+        },
+        {
+          "type": "set_path",
+          "target": "status",
+          "value": "IDLE"
+        }
+      ]
+    }
+  ]
+}

@@ -21,22 +21,22 @@ import { tapScale, springSnappy } from '../lib/motion';
 // Industrial Grounding Metadata from docs/BENCHMARK_GROUNDING.md
 const GROUNDING_DATA = {
   B1: {
-    standardName: 'ISO 26262 / MISRA-C Sandboxing',
-    rationale: 'Safety-critical core calculation engines must remain decoupled from host OS, display drivers, and third-party UI runtimes.',
+    standardName: 'Sandboxing Principle (Informed by ISO 26262 / MISRA-C)',
+    rationale: 'Safety-critical calculation engines decouple from host OS, display drivers, and third-party UI runtimes.',
     targetRule: '0 Foreign OS/GUI Imports (Tier L1 Substrate)',
   },
   B2: {
     standardName: 'Kolmogorov-Chaitin Complexity & Orthogonal DSL',
-    rationale: 'A true universal substrate expresses diverse applications from minimal orthogonal primitives without hardcoded engine code.',
+    rationale: 'A declarative substrate expresses diverse applications from minimal orthogonal primitives without hardcoded engine code.',
     targetRule: '≥ 3.0x App-to-Primitive Expansion Ratio',
   },
   B3: {
-    standardName: 'IEEE 754-2019 Double Precision Standard',
-    rationale: 'Simulation coordinates are normalized in [0, 1]. Viewport invariance must match up to machine epsilon across screens.',
+    standardName: 'Precision Guideline (IEEE 754-2019 Double Precision)',
+    rationale: 'Simulation coordinates are normalized in [0, 1]. Viewport invariance matches up to machine epsilon across screens.',
     targetRule: '> 16.0 Decades Precision (Δ = 0.0 Normalized Drift)',
   },
   B4: {
-    standardName: 'Symplectic Numerical Integration (NASA SPICE)',
+    standardName: 'Symplectic Numerical Integration (NASA SPICE Guidelines)',
     rationale: 'Closed elastic collisions must conserve total kinetic energy without numerical damping or explosive energy gain.',
     targetRule: '≤ 1,000 PPB Total Kinetic Energy Drift (0.0001%)',
   },
@@ -46,22 +46,22 @@ const GROUNDING_DATA = {
     targetRule: '100% Compile-Time Defect Interception (10/10 Cases)',
   },
   B6: {
-    standardName: 'Real-Time Physics Engine Budgets (Havok/PhysX)',
+    standardName: 'Real-Time Evaluation Budgets (Havok/PhysX Baselines)',
     rationale: 'A 60Hz frame budgets 16.6ms. Microsecond evaluation (< 100 µs) enables real-time interaction and 166x faster AI training.',
     targetRule: '> 10,000 ticks/s (Step Latency < 100 µs/step)',
   },
   B7: {
-    standardName: 'FAA DO-178C Level A Real-Time Zero-Allocation',
+    standardName: 'Zero-Allocation Principle (Informed by FAA DO-178C Level A)',
     rationale: 'Garbage collection pauses cause frame stutters. Steady-state simulation steps must avoid unbounded heap allocation.',
     targetRule: '< 500 Bytes/step Steady-State Heap Churn',
   },
   B8: {
-    standardName: 'NIST Special Publication 500-235 (CC ≤ 30)',
+    standardName: 'Cyclomatic Complexity Threshold (NIST SP 500-235)',
     rationale: 'NIST classifies CC > 30 as high risk for latent defects. Strict cyclomatic gating guarantees modular, provable logic.',
     targetRule: 'Max Cyclomatic Complexity ≤ 30',
   },
   B9: {
-    standardName: 'NIST FIPS 180-4 SHA-256 Bit-Exact Verification',
+    standardName: 'Cryptographic Determinism (NIST FIPS 180-4 SHA-256)',
     rationale: 'Autonomous AI verification requires deterministic reproducibility across 50,000 continuous simulation steps.',
     targetRule: '100% Cryptographic Bit-Exact Parity',
   },

@@ -583,3 +583,154 @@ def cast_ray_scene(
         hit=best_entity_id is not None,
     )
 
+
+# =============================================================================
+# ANALYTICAL POINT-IN-SHAPE HIT-TESTING
+# =============================================================================
+
+def point_in_circle(
+    px: float, py: float, cx: float, cy: float, radius: float, env: Optional[Environment] = None
+) -> bool:
+    """Evaluates if point (px, py) lies inside circle centered at (cx, cy) with given radius."""
+    if env is not None:
+        w, h = float(env.width), float(env.height)
+        min_dim = min(w, h)
+        dx = (px - cx) * (w / min_dim)
+        dy = (py - cy) * (h / min_dim)
+    else:
+        dx = px - cx
+        dy = py - cy
+    return (dx * dx + dy * dy) <= (radius * radius + 1e-9)
+
+
+def point_in_box(
+    px: float, py: float, bx: float, by: float, width: float, height: float
+) -> bool:
+    """Evaluates if point (px, py) lies inside axis-aligned box centered at (bx, by)."""
+    hw = width / 2.0
+    hh = height / 2.0
+    return (bx - hw - 1e-9 <= px <= bx + hw + 1e-9) and (by - hh - 1e-9 <= py <= by + hh + 1e-9)
+
+
+def point_in_capsule(
+    px: float,
+    py: float,
+    cap_x: float,
+    cap_y: float,
+    length: float,
+    radius: float,
+    angle: float = 0.0,
+    env: Optional[Environment] = None,
+) -> bool:
+    """Evaluates if point (px, py) lies inside capsule centered at (cap_x, cap_y)."""
+    if env is not None:
+        w, h = float(env.width), float(env.height)
+        min_dim = min(w, h)
+        scale_x = w / min_dim
+        scale_y = h / min_dim
+    else:
+        scale_x = 1.0
+        scale_y = 1.0
+
+    hl = length / 2.0
+    dx_dir = hl * math.cos(angle)
+    dy_dir = hl * math.sin(angle)
+    ax = (cap_x - dx_dir) * scale_x
+    ay = (cap_y - dy_dir) * scale_y
+    bx = (cap_x + dx_dir) * scale_x
+    by = (cap_y + dy_dir) * scale_y
+    p_iso_x = px * scale_x
+    p_iso_y = py * scale_y
+
+    vx = bx - ax
+    vy = by - ay
+    v_len_sq = vx * vx + vy * vy
+    if v_len_sq <= 1e-12:
+        t = 0.0
+    else:
+        t = max(0.0, min(1.0, ((p_iso_x - ax) * vx + (p_iso_y - ay) * vy) / v_len_sq))
+    qx = ax + t * vx
+    qy = ay + t * vy
+    dist_sq = (p_iso_x - qx) ** 2 + (p_iso_y - qy) ** 2
+    return dist_sq <= (radius * radius + 1e-9)
+
+
+def point_near_segment(
+    px: float,
+    py: float,
+    x1: float,
+    y1: float,
+    x2: float,
+    y2: float,
+    thickness: float,
+    env: Optional[Environment] = None,
+) -> bool:
+    """Evaluates if point (px, py) lies within thickness radius of segment (x1, y1) -> (x2, y2)."""
+    if env is not None:
+        w, h = float(env.width), float(env.height)
+        min_dim = min(w, h)
+        scale_x = w / min_dim
+        scale_y = h / min_dim
+    else:
+        scale_x = 1.0
+        scale_y = 1.0
+
+    ax = x1 * scale_x
+    ay = y1 * scale_y
+    bx = x2 * scale_x
+    by = y2 * scale_y
+    p_iso_x = px * scale_x
+    p_iso_y = py * scale_y
+
+    vx = bx - ax
+    vy = by - ay
+    v_len_sq = vx * vx + vy * vy
+    if v_len_sq <= 1e-12:
+        t = 0.0
+    else:
+        t = max(0.0, min(1.0, ((p_iso_x - ax) * vx + (p_iso_y - ay) * vy) / v_len_sq))
+    qx = ax + t * vx
+    qy = ay + t * vy
+    dist_sq = (p_iso_x - qx) ** 2 + (p_iso_y - qy) ** 2
+    half_th = thickness / 2.0
+    return dist_sq <= (half_th * half_th + 1e-9)
+
+
+def hit_test_entity(
+    px: float, py: float, entity: Entity, env: Optional[Environment] = None
+) -> bool:
+    """Evaluates whether point (px, py) intersects the given entity's geometry."""
+    if not entity.active:
+        return False
+
+    if entity.type == "circle" and isinstance(entity.size, CircleSize):
+        return point_in_circle(px, py, entity.position.x, entity.position.y, entity.size.radius, env)
+    elif entity.type == "box" and isinstance(entity.size, BoxSize):
+        return point_in_box(px, py, entity.position.x, entity.position.y, entity.size.width, entity.size.height)
+    elif entity.type == "capsule" and isinstance(entity.size, CapsuleSize):
+        return point_in_capsule(
+            px, py, entity.position.x, entity.position.y, entity.size.length, entity.size.radius, entity.size.angle, env
+        )
+    elif entity.type == "segment" and isinstance(entity.size, SegmentSize):
+        return point_near_segment(
+            px, py, entity.position.x, entity.position.y, entity.size.end_x, entity.size.end_y, entity.size.thickness, env
+        )
+    return False
+
+
+def hit_test_scene(
+    entities: List[Entity], px: float, py: float, env: Optional[Environment] = None
+) -> Optional[str]:
+    """Resolves the top-most (last declared in draw order) entity ID intersecting point (px, py)."""
+    for entity in reversed(entities):
+        if not entity.active:
+            continue
+        if env is not None:
+            aabb = compute_entity_aabb(entity, env)
+            if not aabb.contains_point(px, py):
+                continue
+        if hit_test_entity(px, py, entity, env):
+            return entity.id
+    return None
+
+

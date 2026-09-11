@@ -37,14 +37,14 @@ export default function RunComparisonInspector({
   const getExecutiveSummary = () => {
     if (compareMode === 'target') {
       return {
-        badge: 'TARGET STANDARDS GROUNDING',
+        badge: 'TARGET THRESHOLDS (INFORMED BY STANDARDS)',
         badgeColor: 'text-cyan-400 bg-cyan-950/60 border-cyan-800/40',
         highlights: [
-          `${currentRun.passed_count}/${currentRun.total_count} invariants strictly verified against ISO, IEEE, NIST & FAA standards.`,
-          `Zero foreign OS/GUI imports (ISO 26262), 16.0 decades precision (IEEE 754), and 0.0 PPB energy drift (Symplectic integration).`,
+          `${currentRun.passed_count}/${currentRun.total_count} invariants verified against thresholds informed by ISO, IEEE, NIST & FAA guidelines.`,
+          `Zero foreign OS/GUI imports (sandboxing), 16.0 decades precision (IEEE 754), and 0.0 PPB energy drift (Symplectic integration).`,
         ],
         context:
-          'Every target threshold is mathematically grounded in established industrial standards rather than arbitrary test suites.',
+          'Thresholds are derived from established industrial engineering guidelines rather than arbitrary pass/fail numbers.',
       };
     }
 
@@ -82,7 +82,7 @@ export default function RunComparisonInspector({
   const summary = getExecutiveSummary();
 
   const presets = [
-    { id: 'target', label: 'vs. Target Standard', action: () => setCompareMode('target') },
+    { id: 'target', label: 'vs. Target Thresholds', action: () => setCompareMode('target') },
     { 
       id: 'previous', 
       label: 'vs. Previous Run', 
@@ -102,13 +102,13 @@ export default function RunComparisonInspector({
   ];
 
   return (
-    <section className="bg-slate-900/80 border border-white/[0.08] p-5 sm:p-6 rounded-2xl shadow-2xl backdrop-blur-xl mb-8 space-y-4">
+    <section className="bg-slate-900/80 border border-white/[0.08] p-4 sm:p-6 rounded-2xl shadow-2xl backdrop-blur-xl mb-8 space-y-4">
       {/* Top: Controls Strip */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 pb-4 border-b border-white/[0.06]">
         
         {/* Left: Active Run Selector */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="flex items-center space-x-1.5 text-xs font-mono text-cyan-400 font-semibold">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full xl:w-auto">
+          <div className="flex items-center space-x-1.5 text-xs font-mono text-cyan-400 font-semibold shrink-0">
             <History className="w-4 h-4" />
             <span>Active Run:</span>
           </div>
@@ -116,7 +116,8 @@ export default function RunComparisonInspector({
           <select
             value={selectedRunIdx}
             onChange={(e) => onSelectRun(Number(e.target.value))}
-            className="bg-black/60 text-white font-mono text-xs rounded-xl px-3 py-1.5 border border-white/[0.1] focus:outline-none focus:border-cyan-400 cursor-pointer shadow-inner"
+            aria-label="Select active benchmark run"
+            className="bg-black/60 text-white font-mono text-xs rounded-xl px-3 py-1.5 border border-white/[0.1] focus:outline-none focus:border-cyan-400 cursor-pointer shadow-inner w-full sm:w-auto max-w-full truncate"
           >
             {runs.map((r, idx) => (
               <option key={r.run_id} value={idx} className="bg-[#030712] text-slate-200">
@@ -126,40 +127,45 @@ export default function RunComparisonInspector({
           </select>
 
           {/* Compare With Target or Run */}
-          <span className="text-slate-500 font-sans text-xs">vs</span>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-slate-500 font-sans text-xs shrink-0">vs</span>
 
-          {compareMode !== 'target' ? (
-            <select
-              value={compareRunIdx ?? 0}
-              onChange={(e) => {
-                setCompareMode('custom');
-                onSelectCompareRun(Number(e.target.value));
-              }}
-              className="bg-black/60 text-slate-300 font-mono text-xs rounded-xl px-3 py-1.5 border border-white/[0.1] focus:outline-none focus:border-cyan-400 cursor-pointer shadow-inner"
-            >
-              {runs.map((r, idx) => (
-                <option key={r.run_id} value={idx} className="bg-[#030712] text-slate-200">
-                  Run #{idx + 1}: {r.run_id} ({formatDate(r.timestamp)})
-                </option>
-              ))}
-            </select>
-          ) : (
-            <span className="px-3 py-1.5 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 font-semibold text-[11px] font-mono">
-              Target Standards (IEEE / ISO / NIST)
-            </span>
-          )}
+            {compareMode !== 'target' ? (
+              <select
+                value={compareRunIdx ?? 0}
+                onChange={(e) => {
+                  setCompareMode('custom');
+                  onSelectCompareRun(Number(e.target.value));
+                }}
+                aria-label="Select benchmark run to compare against"
+                className="bg-black/60 text-slate-300 font-mono text-xs rounded-xl px-3 py-1.5 border border-white/[0.1] focus:outline-none focus:border-cyan-400 cursor-pointer shadow-inner w-full sm:w-auto max-w-full truncate"
+              >
+                {runs.map((r, idx) => (
+                  <option key={r.run_id} value={idx} className="bg-[#030712] text-slate-200">
+                    Run #{idx + 1}: {r.run_id} ({formatDate(r.timestamp)})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="px-3 py-1.5 rounded-full bg-cyan-950/40 border border-cyan-500/30 text-cyan-300 font-semibold text-[11px] font-mono truncate">
+                Target Thresholds (IEEE / ISO / NIST)
+              </span>
+            )}
+          </div>
         </div>
 
-        {/* Right: Quick Preset Buttons (Golden Standard: rounded-full pills) */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Right: Quick Preset Buttons */}
+        <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
           {presets.map((preset) => {
             const isActive = compareMode === preset.id;
             return (
               <motion.button
                 {...tapScale.pill}
                 key={preset.id}
+                type="button"
+                aria-pressed={isActive}
                 onClick={preset.action}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                className={`px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-mono transition-all cursor-pointer ${
                   isActive
                     ? 'bg-cyan-400 text-slate-950 font-black shadow-md shadow-cyan-500/20'
                     : 'bg-black/40 text-slate-400 hover:text-white hover:bg-white/[0.06] border border-white/[0.08]'

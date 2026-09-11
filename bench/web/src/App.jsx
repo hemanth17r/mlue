@@ -109,24 +109,27 @@ export default function App() {
               />
 
               {/* Section Divider & Filter Bar */}
+              {/* Section Divider & Filter Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 mb-6 border-t border-white/[0.06] pt-6">
                 <div className="flex items-center space-x-2">
                   <h2 className="text-sm font-semibold tracking-tight text-white font-mono uppercase">
                     The {benchmarks.length} Invariant Matrix
                   </h2>
                   <span className="text-[11px] font-mono text-cyan-400/80 px-2.5 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/40 font-semibold">
-                    100% EMPIRICAL
+                    AUTOMATED HARNESS
                   </span>
                 </div>
 
-                {/* Filter Pills (Golden Standard: Floating Capsule Pill Tabs) */}
-                <div className="flex flex-wrap items-center gap-1 bg-black/60 p-1 rounded-full border border-white/[0.08] shadow-inner font-mono text-xs relative">
+                {/* Filter Pills */}
+                <div className="flex flex-wrap items-center gap-1 bg-black/60 p-1 rounded-2xl sm:rounded-full border border-white/[0.08] shadow-inner font-mono text-xs relative">
                   {categories.map((cat) => {
                     const isActive = selectedCategory === cat;
                     return (
                       <motion.button
                         {...tapScale.pill}
                         key={cat}
+                        type="button"
+                        aria-pressed={isActive}
                         onClick={() => setSelectedCategory(cat)}
                         className={`relative z-10 px-3.5 py-1.5 rounded-full transition-colors cursor-pointer text-xs font-bold ${
                           isActive ? 'text-slate-950 font-black' : 'text-slate-400 hover:text-white'
@@ -177,7 +180,7 @@ export default function App() {
       <footer className="border-t border-white/[0.06] bg-black/40 backdrop-blur-xl py-6 mt-16 text-xs text-slate-400 font-mono text-center">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center space-x-2">
-            <span className="text-slate-200 font-bold">MLUE Substrate</span>
+            <span className="text-slate-200 font-bold">MLUE Runtime</span>
             <span>•</span>
             <span className="text-cyan-400">{currentRun?.mlue_phase || 'Phase 1.6'}</span>
           </div>
@@ -185,7 +188,7 @@ export default function App() {
             "AI is the builder. Humans are users."
           </span>
           <div className="text-slate-400">
-            Audit Hash: <code className="text-cyan-300 font-semibold">{currentRun?.run_id || 'RUN_20260829'}</code>
+            Run Hash: <code className="text-cyan-300 font-semibold">{currentRun?.run_id || 'RUN_20260829'}</code>
           </div>
         </div>
       </footer>

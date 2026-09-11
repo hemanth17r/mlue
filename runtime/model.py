@@ -104,6 +104,7 @@ class Rule:
     event: Optional[str] = None
     entities: Optional[Tuple[str, str]] = None
     condition: Optional[Condition] = None
+    entity: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -136,6 +137,15 @@ class MLUEDocument:
 
 
 @dataclass(frozen=True)
+class PointerState:
+    x: float = 0.0
+    y: float = 0.0
+    pressed: bool = False
+    hovered_entity_id: Optional[str] = None
+    pressed_entity_id: Optional[str] = None
+
+
+@dataclass(frozen=True)
 class SimulationState:
     time: float
     environment: Environment
@@ -146,3 +156,4 @@ class SimulationState:
     step_reward: float = 0.0
     terminated: bool = False
     truncated: bool = False
+    pointer: PointerState = field(default_factory=PointerState)

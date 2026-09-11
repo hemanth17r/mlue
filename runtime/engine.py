@@ -26,12 +26,13 @@ from .model import (
     EvaluationResult,
     ComputedShape,
     SimulationState,
+    PointerState,
     Rule,
     Condition,
     Action,
 )
 from .loader import parse_keypath
-from .spatial import SpatialHashGrid2D, Ray2D, RayHit, cast_ray_scene
+from .spatial import SpatialHashGrid2D, Ray2D, RayHit, cast_ray_scene, hit_test_scene, hit_test_entity
 
 TEMPLATE_PATTERN = re.compile(r"\{([a-zA-Z0-9_\.\[\]]+)\}")
 
@@ -373,6 +374,7 @@ class MLUEEngine:
             result=result,
             state_variables=dict(doc.state_variables),
             rules=list(doc.rules),
+            pointer=PointerState(),
         )
 
     def cast_ray(
@@ -1420,22 +1422,133 @@ class MLUEEngine:
         # 2. Resolve pairwise solid collisions
         moved_entities, collision_events = self._resolve_pairwise_collisions(moved_entities, env)
 
+    def _process_pointer_input(
+        self,
+        state: SimulationState,
+        input_map: Dict[str, Any],
+        moved_entities: List[Entity],
+        env: Environment,
+    ) -> Tuple[PointerState, Dict[str, Optional[str]]]:
+        """Resolves pointer state transitions and generates discrete interaction events."""
+        old_ptr = state.pointer
+        pointer_input = input_map.get("pointer")
+        if isinstance(pointer_input, dict):
+            new_px = float(pointer_input.get("x", old_ptr.x))
+            new_py = float(pointer_input.get("y", old_ptr.y))
+            new_pressed = bool(pointer_input.get("pressed", old_ptr.pressed))
+        elif "pointer_x" in input_map or "pointer_y" in input_map:
+            new_px = float(input_map.get("pointer_x", old_ptr.x))
+            new_py = float(input_map.get("pointer_y", old_ptr.y))
+            new_pressed = bool(input_map.get("pointer_pressed", old_ptr.pressed))
+        else:
+            new_px = old_ptr.x
+            new_py = old_ptr.y
+            new_pressed = old_ptr.pressed
+
+        just_pressed = new_pressed and not old_ptr.pressed
+        just_released = not new_pressed and old_ptr.pressed
+        current_hovered = hit_test_scene(moved_entities, new_px, new_py, env)
+
+        if just_pressed:
+            new_pressed_id = current_hovered
+        elif not new_pressed:
+            new_pressed_id = None
+        else:
+            new_pressed_id = old_ptr.pressed_entity_id
+
+        events = {
+            "pointer_down": current_hovered if just_pressed else None,
+            "pointer_up": current_hovered if just_released else None,
+            "pointer_click": (
+                current_hovered
+                if (just_released and old_ptr.pressed_entity_id == current_hovered and current_hovered is not None)
+                else None
+            ),
+            "pointer_hover_enter": (
+                current_hovered
+                if (current_hovered != old_ptr.hovered_entity_id and current_hovered is not None)
+                else None
+            ),
+            "pointer_hover_exit": (
+                old_ptr.hovered_entity_id
+                if (current_hovered != old_ptr.hovered_entity_id and old_ptr.hovered_entity_id is not None)
+                else None
+            ),
+        }
+
+        new_pointer = PointerState(
+            x=new_px,
+            y=new_py,
+            pressed=new_pressed,
+            hovered_entity_id=current_hovered,
+            pressed_entity_id=new_pressed_id,
+        )
+        return new_pointer, events
+
+    def _is_rule_triggered(
+        self,
+        rule: Rule,
+        collision_events: Set[FrozenSet[str]],
+        pointer_events: Dict[str, Optional[str]],
+        moved_entities: List[Entity],
+        entity_map: Dict[str, int],
+        state_variables: Dict[str, Any],
+    ) -> bool:
+        """Determines if a declarative rule is satisfied during the current time step."""
+        if rule.event == "collision" and rule.entities:
+            triggered = frozenset(rule.entities) in collision_events
+        elif rule.event in pointer_events:
+            target = pointer_events[rule.event]
+            triggered = (target is not None and rule.entity == target)
+        elif rule.condition is not None:
+            triggered = self._evaluate_rule_condition(
+                rule.condition, moved_entities, entity_map, state_variables
+            )
+        else:
+            triggered = False
+
+        if triggered and rule.event is not None and rule.condition is not None:
+            triggered = self._evaluate_rule_condition(
+                rule.condition, moved_entities, entity_map, state_variables
+            )
+        return triggered
+
+    def step(
+        self,
+        state: SimulationState,
+        dt: float,
+        inputs: Optional[Dict[str, float]] = None,
+    ) -> SimulationState:
+        """Advances simulation by time step dt >= 0 deterministically."""
+        if dt < 0:
+            raise ValueError(f"Time step dt must be non-negative (got {dt}).")
+
+        env = state.environment
+        input_map = inputs or {}
+        state_variables = self._clone_state_variables(state.state_variables)
+
+        # 1. Integrate motion & environment boundary constraints
+        moved_entities = [
+            self._integrate_entity_motion(e, dt, input_map, env)
+            for e in state.entities
+        ]
+
+        # 2. Resolve pairwise solid collisions
+        moved_entities, collision_events = self._resolve_pairwise_collisions(moved_entities, env)
+
+        # 3. Process pointer inputs & lifecycle transitions
+        new_pointer, pointer_events = self._process_pointer_input(state, input_map, moved_entities, env)
+
         step_reward = 0.0
         terminated = state.terminated
         truncated = state.truncated
 
-        # 3. Evaluate declarative rules and execute actions
+        # 4. Evaluate declarative rules and execute actions
         entity_map: Dict[str, int] = {e.id: idx for idx, e in enumerate(moved_entities)}
         for rule in state.rules:
-            is_triggered = False
-            if rule.event == "collision" and rule.entities:
-                is_triggered = frozenset(rule.entities) in collision_events
-            elif rule.condition is not None:
-                is_triggered = self._evaluate_rule_condition(
-                    rule.condition, moved_entities, entity_map, state_variables
-                )
-
-            if is_triggered:
+            if self._is_rule_triggered(
+                rule, collision_events, pointer_events, moved_entities, entity_map, state_variables
+            ):
                 r, term, trunc = self._execute_rule_actions(rule.actions, moved_entities, entity_map, state_variables)
                 step_reward += r
                 if term:
@@ -1443,7 +1556,7 @@ class MLUEEngine:
                 if trunc:
                     truncated = True
 
-        # 4. Compute concrete shape coordinates for active entities
+        # 5. Compute concrete shape coordinates for active entities
         new_shapes = self._compute_shapes(env, moved_entities, state_variables)
         new_result = EvaluationResult(
             width=env.width,
@@ -1462,5 +1575,6 @@ class MLUEEngine:
             step_reward=step_reward,
             terminated=terminated,
             truncated=truncated,
+            pointer=new_pointer,
         )
 
