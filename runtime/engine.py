@@ -36,6 +36,11 @@ from .spatial import SpatialHashGrid2D, Ray2D, RayHit, cast_ray_scene, hit_test_
 
 TEMPLATE_PATTERN = re.compile(r"\{([a-zA-Z0-9_\.\[\]]+)\}")
 
+_SMALL_PAIRS = {
+    k: tuple((i, j) for i in range(k) for j in range(i + 1, k))
+    for k in range(2, 7)
+}
+
 
 def _analytical_point_to_segment(
     px: float, py: float, ax: float, ay: float, bx: float, by: float
@@ -278,13 +283,44 @@ class MLUEEngine:
             return (cx, cy - fs / 2.0, cx + (t_len * fs * 0.6), cy + fs / 2.0), text_content
         return (cx, cy, cx, cy), None
 
-    def _compute_shapes(
+    def _compute_flat_shapes(
         self,
         env: Environment,
         entities: List[Entity],
-        state_vars: Optional[Dict[str, Any]] = None,
+        state_vars: Optional[Dict[str, Any]],
     ) -> List[ComputedShape]:
-        """Resolves normalized entity coordinates, layout hierarchy, and sizes into concrete screen-space geometry."""
+        """Fast-path linear shape projection for standard flat scenes without parent hierarchy."""
+        w = float(env.width)
+        h = float(env.height)
+        p_min = min(w, h)
+        shapes: List[ComputedShape] = []
+        for entity in entities:
+            if not entity.active:
+                continue
+            cx = entity.position.x * w
+            cy = entity.position.y * h
+            bbox, text_content = self._compute_entity_geometry(
+                entity, w, h, p_min, cx, cy, 0.0, 0.0, state_vars, False
+            )
+            shapes.append(
+                ComputedShape(
+                    id=entity.id,
+                    type=entity.type,
+                    bbox=bbox,
+                    center=(cx, cy),
+                    color=entity.properties.get("color", "#FFFFFF"),
+                    text=text_content,
+                )
+            )
+        return shapes
+
+    def _compute_hierarchical_shapes(
+        self,
+        env: Environment,
+        entities: List[Entity],
+        state_vars: Optional[Dict[str, Any]],
+    ) -> List[ComputedShape]:
+        """Resolves nested layout trees, parent containers, and auto-stacking."""
         w = float(env.width)
         h = float(env.height)
 
@@ -354,6 +390,18 @@ class MLUEEngine:
 
         return [shape_dict[e.id] for e in entities if e.id in shape_dict]
 
+    def _compute_shapes(
+        self,
+        env: Environment,
+        entities: List[Entity],
+        state_vars: Optional[Dict[str, Any]] = None,
+    ) -> List[ComputedShape]:
+        """Resolves normalized entity coordinates, layout hierarchy, and sizes into concrete screen-space geometry."""
+        for e in entities:
+            if e.parent_id is not None or e.layout is not None:
+                return self._compute_hierarchical_shapes(env, entities, state_vars)
+        return self._compute_flat_shapes(env, entities, state_vars)
+
     def evaluate(self, doc: MLUEDocument) -> EvaluationResult:
         """Evaluates an MLUEDocument into resolved computational entity states (instantaneous snapshot)."""
         shapes = self._compute_shapes(doc.environment, doc.entities, doc.state_variables)
@@ -417,34 +465,168 @@ class MLUEEngine:
 
     def _get_entity_extents(self, entity: Entity, env: Environment) -> Tuple[float, float]:
         """Returns normalized half-extents (ex, ey) for an entity."""
-        w = env.width
-        h = env.height
-        min_dim = min(w, h)
+        etype = entity.type
+        esize = entity.size
 
+        if etype == "circle":
+            r = esize.radius
+            if env.width == env.height:
+                return (r, r)
+            min_dim = min(env.width, env.height)
+            return (r * (min_dim / env.width), r * (min_dim / env.height))
+        elif etype == "box":
+            hw = esize.width * 0.5
+            hh = esize.height * 0.5
+            ang = entity.angle
+            if ang != 0.0:
+                c = abs(math.cos(ang))
+                s = abs(math.sin(ang))
+                return (hw * c + hh * s, hw * s + hh * c)
+            return (hw, hh)
+        elif etype == "segment":
+            w = env.width
+            h = env.height
+            min_dim = min(w, h)
+            dx = abs(esize.end_x - entity.position.x) * 0.5
+            dy = abs(esize.end_y - entity.position.y) * 0.5
+            th_x = (esize.thickness * 0.5) * (min_dim / w)
+            th_y = (esize.thickness * 0.5) * (min_dim / h)
+            return (dx + th_x, dy + th_y)
+        elif etype == "capsule":
+            w = env.width
+            h = env.height
+            hl = esize.length * 0.5
+            tot_ang = esize.angle + entity.angle
+            dx = abs(hl * math.cos(tot_ang))
+            dy = abs(hl * math.sin(tot_ang))
+            r = esize.radius
+            if w == h:
+                return (dx + r, dy + r)
+            min_dim = min(w, h)
+            return (dx + r * (min_dim / w), dy + r * (min_dim / h))
+        return 0.0, 0.0
+
+    def _get_entity_inv_mass_inertia(self, entity: Entity) -> Tuple[float, float]:
+        """Calculates (inv_mass, inv_inertia) for rigid-body impulse dynamics."""
+        props = entity.properties
+        if not props.get("solid", False) or "control" in props or props.get("static", False) or entity.type == "segment":
+            return 0.0, 0.0
+
+        mass = float(props.get("mass", 1.0))
+        if mass <= 0.0 or math.isinf(mass) or math.isnan(mass):
+            return 0.0, 0.0
+        m_inv = 1.0 / mass
+
+        if props.get("fixed_rotation", False):
+            return m_inv, 0.0
+
+        inertia = 1.0
         if entity.type == "circle" and isinstance(entity.size, CircleSize):
             r = entity.size.radius
-            return (r * (min_dim / w), r * (min_dim / h))
+            inertia = 0.5 * mass * (r * r)
         elif entity.type == "box" and isinstance(entity.size, BoxSize):
-            return (entity.size.width / 2.0, entity.size.height / 2.0)
-        elif entity.type == "segment" and isinstance(entity.size, SegmentSize):
-            dx = abs(entity.size.end_x - entity.position.x) / 2.0
-            dy = abs(entity.size.end_y - entity.position.y) / 2.0
-            th_x = (entity.size.thickness / 2.0) * (min_dim / w)
-            th_y = (entity.size.thickness / 2.0) * (min_dim / h)
-            return (dx + th_x, dy + th_y)
+            w = entity.size.width
+            h = entity.size.height
+            inertia = (1.0 / 12.0) * mass * (w * w + h * h)
         elif entity.type == "capsule" and isinstance(entity.size, CapsuleSize):
-            hl = entity.size.length / 2.0
-            dx = abs(hl * math.cos(entity.size.angle))
-            dy = abs(hl * math.sin(entity.size.angle))
-            rx = entity.size.radius * (min_dim / w)
-            ry = entity.size.radius * (min_dim / h)
-            return (dx + rx, dy + ry)
-        return 0.0, 0.0
+            L = entity.size.length
+            r = entity.size.radius
+            inertia = mass * ((L * L) / 12.0 + 0.5 * (r * r))
+
+        if inertia <= 1e-9 or math.isnan(inertia) or math.isinf(inertia):
+            return m_inv, 0.0
+        return m_inv, 1.0 / inertia
+
+    def _apply_contact_impulse(
+        self,
+        e1: Entity,
+        e2: Entity,
+        cx: float,
+        cy: float,
+        nx: float,
+        ny: float,
+        e1_static: bool = False,
+        e2_static: bool = False,
+    ) -> Tuple[Velocity, Velocity]:
+        """Applies 2D rigid-body linear and angular impulse with restitution and Coulomb surface friction."""
+        m1_inv, i1_inv = (0.0, 0.0) if e1_static else self._get_entity_inv_mass_inertia(e1)
+        m2_inv, i2_inv = (0.0, 0.0) if e2_static else self._get_entity_inv_mass_inertia(e2)
+
+        w1 = getattr(e1.velocity, "omega", 0.0)
+        w2 = getattr(e2.velocity, "omega", 0.0)
+
+        r1x = cx - e1.position.x
+        r1y = cy - e1.position.y
+        r2x = cx - e2.position.x
+        r2y = cy - e2.position.y
+
+        v1x = e1.velocity.vx - w1 * r1y
+        v1y = e1.velocity.vy + w1 * r1x
+        v2x = e2.velocity.vx - w2 * r2y
+        v2y = e2.velocity.vy + w2 * r2x
+
+        rvx = v1x - v2x
+        rvy = v1y - v2y
+
+        vn = rvx * nx + rvy * ny
+        if vn >= 0.0:
+            return e1.velocity, e2.velocity
+
+        if m1_inv == 0.0 and m2_inv == 0.0:
+            rest = min(float(e1.properties.get("restitution", 1.0)), float(e2.properties.get("restitution", 1.0)))
+            new_v1x = e1.velocity.vx - (1.0 + rest) * vn * nx
+            new_v1y = e1.velocity.vy - (1.0 + rest) * vn * ny
+            return Velocity(vx=new_v1x, vy=new_v1y, omega=w1), e2.velocity
+
+        rn1 = r1x * ny - r1y * nx
+        rn2 = r2x * ny - r2y * nx
+        kn = m1_inv + m2_inv + (rn1 * rn1) * i1_inv + (rn2 * rn2) * i2_inv
+        if kn <= 1e-12:
+            return e1.velocity, e2.velocity
+
+        rest1 = float(e1.properties.get("restitution", 1.0))
+        rest2 = float(e2.properties.get("restitution", 1.0))
+        e_coeff = min(rest1, rest2)
+        jn = -(1.0 + e_coeff) * vn / kn
+
+        tx = -ny
+        ty = nx
+        vt = rvx * tx + rvy * ty
+
+        fric1 = float(e1.properties.get("friction", 0.0))
+        fric2 = float(e2.properties.get("friction", 0.0))
+        mu = math.sqrt(fric1 * fric2) if (fric1 > 0.0 and fric2 > 0.0) else max(fric1, fric2)
+
+        jt = 0.0
+        if mu > 0.0:
+            rt1 = r1x * ty - r1y * tx
+            rt2 = r2x * ty - r2y * tx
+            kt = m1_inv + m2_inv + (rt1 * rt1) * i1_inv + (rt2 * rt2) * i2_inv
+            if kt > 1e-12:
+                desired_jt = -vt / kt
+                max_fric = mu * jn
+                jt = max(-max_fric, min(max_fric, desired_jt))
+
+        jx = jn * nx + jt * tx
+        jy = jn * ny + jt * ty
+
+        new_v1x = e1.velocity.vx + m1_inv * jx
+        new_v1y = e1.velocity.vy + m1_inv * jy
+        new_w1 = w1 + i1_inv * (r1x * jy - r1y * jx)
+
+        new_v2x = e2.velocity.vx - m2_inv * jx
+        new_v2y = e2.velocity.vy - m2_inv * jy
+        new_w2 = w2 - i2_inv * (r2x * jy - r2y * jx)
+
+        return (
+            Velocity(vx=new_v1x, vy=new_v1y, omega=new_w1),
+            Velocity(vx=new_v2x, vy=new_v2y, omega=new_w2),
+        )
 
     def _resolve_circle_box_collision(
         self, circle: Entity, box: Entity, env: Environment
     ) -> Tuple[Entity, Entity, bool]:
-        """Resolves pairwise collision between a Circle and a Box."""
+        """Resolves pairwise collision between a Circle and a Box with rotation support."""
         cx = circle.position.x
         cy = circle.position.y
         rx, ry = self._get_entity_extents(circle, env)
@@ -452,42 +634,106 @@ class MLUEEngine:
         bx = box.position.x
         by = box.position.y
         hw, hh = self._get_entity_extents(box, env)
+        box_ang = box.angle
 
-        # Clamped closest point on Box
-        px = max(bx - hw, min(cx, bx + hw))
-        py = max(by - hh, min(cy, by + hh))
+        if box_ang == 0.0:
+            if abs(cx - bx) >= (rx + hw) or abs(cy - by) >= (ry + hh):
+                return circle, box, False
 
-        dx = cx - px
-        dy = cy - py
+        if abs(box_ang) > 1e-9:
+            cos_b = math.cos(-box_ang)
+            sin_b = math.sin(-box_ang)
+            dx_rel = cx - bx
+            dy_rel = cy - by
+            local_cx = dx_rel * cos_b - dy_rel * sin_b
+            local_cy = dx_rel * sin_b + dy_rel * cos_b
 
-        # Normalized distance squared
+            local_px = max(-hw, min(local_cx, hw))
+            local_py = max(-hh, min(local_cy, hh))
+
+            cos_f = math.cos(box_ang)
+            sin_f = math.sin(box_ang)
+            px = bx + (local_px * cos_f - local_py * sin_f)
+            py = by + (local_px * sin_f + local_py * cos_f)
+
+            dx = cx - px
+            dy = cy - py
+        else:
+            px = max(bx - hw, min(cx, bx + hw))
+            py = max(by - hh, min(cy, by + hh))
+            dx = cx - px
+            dy = cy - py
+
         norm_dist_sq = (dx / rx) ** 2 + (dy / ry) ** 2 if (rx > 0 and ry > 0) else 0.0
 
         if norm_dist_sq < 1.0 or (dx == 0.0 and dy == 0.0):
-            # Collision detected. Compute contact normal
             if dx == 0.0 and dy == 0.0:
-                dist_left = cx - (bx - hw)
-                dist_right = (bx + hw) - cx
-                dist_top = cy - (by - hh)
-                dist_bottom = (by + hh) - cy
-                min_d = min(dist_left, dist_right, dist_top, dist_bottom)
-
-                if min_d == dist_left:
-                    nx, ny = -1.0, 0.0
-                    new_cx = bx - hw - rx
-                    new_cy = cy
-                elif min_d == dist_right:
-                    nx, ny = 1.0, 0.0
-                    new_cx = bx + hw + rx
-                    new_cy = cy
-                elif min_d == dist_top:
-                    nx, ny = 0.0, -1.0
-                    new_cx = cx
-                    new_cy = by - hh - ry
+                if abs(box_ang) > 1e-9:
+                    d_left = local_cx - (-hw)
+                    d_right = hw - local_cx
+                    d_top = local_cy - (-hh)
+                    d_bottom = hh - local_cy
+                    min_d = min(d_left, d_right, d_top, d_bottom)
+                    if min_d == d_left:
+                        lnx, lny = -1.0, 0.0
+                        local_new_cx = -hw - rx
+                        local_new_cy = local_cy
+                        local_px = -hw
+                        local_py = local_cy
+                    elif min_d == d_right:
+                        lnx, lny = 1.0, 0.0
+                        local_new_cx = hw + rx
+                        local_new_cy = local_cy
+                        local_px = hw
+                        local_py = local_cy
+                    elif min_d == d_top:
+                        lnx, lny = 0.0, -1.0
+                        local_new_cx = local_cx
+                        local_new_cy = -hh - ry
+                        local_px = local_cx
+                        local_py = -hh
+                    else:
+                        lnx, lny = 0.0, 1.0
+                        local_new_cx = local_cx
+                        local_new_cy = hh + ry
+                        local_px = local_cx
+                        local_py = hh
+                    nx = lnx * cos_f - lny * sin_f
+                    ny = lnx * sin_f + lny * cos_f
+                    new_cx = bx + (local_new_cx * cos_f - local_new_cy * sin_f)
+                    new_cy = by + (local_new_cx * sin_f + local_new_cy * cos_f)
+                    px = bx + (local_px * cos_f - local_py * sin_f)
+                    py = by + (local_px * sin_f + local_py * cos_f)
                 else:
-                    nx, ny = 0.0, 1.0
-                    new_cx = cx
-                    new_cy = by + hh + ry
+                    dist_left = cx - (bx - hw)
+                    dist_right = (bx + hw) - cx
+                    dist_top = cy - (by - hh)
+                    dist_bottom = (by + hh) - cy
+                    min_d = min(dist_left, dist_right, dist_top, dist_bottom)
+                    if min_d == dist_left:
+                        nx, ny = -1.0, 0.0
+                        new_cx = bx - hw - rx
+                        new_cy = cy
+                        px = bx - hw
+                        py = cy
+                    elif min_d == dist_right:
+                        nx, ny = 1.0, 0.0
+                        new_cx = bx + hw + rx
+                        new_cy = cy
+                        px = bx + hw
+                        py = cy
+                    elif min_d == dist_top:
+                        nx, ny = 0.0, -1.0
+                        new_cx = cx
+                        new_cy = by - hh - ry
+                        px = cx
+                        py = by - hh
+                    else:
+                        nx, ny = 0.0, 1.0
+                        new_cx = cx
+                        new_cy = by + hh + ry
+                        px = cx
+                        py = by + hh
             else:
                 dist = math.hypot(dx, dy)
                 nx = dx / dist
@@ -495,45 +741,57 @@ class MLUEEngine:
                 new_cx = px + nx * rx
                 new_cy = py + ny * ry
 
-            # Reflect circle relative velocity
-            rel_vx = circle.velocity.vx - box.velocity.vx
-            rel_vy = circle.velocity.vy - box.velocity.vy
-            v_dot = rel_vx * nx + rel_vy * ny
-
-            new_cvx = circle.velocity.vx
-            new_cvy = circle.velocity.vy
-
-            if v_dot < 0.0:
-                new_cvx = circle.velocity.vx - 2.0 * v_dot * nx
-                new_cvy = circle.velocity.vy - 2.0 * v_dot * ny
+            box_static = not box.properties.get("dynamic", False)
+            new_cvel, new_bvel = self._apply_contact_impulse(
+                circle, box, px, py, nx, ny, e2_static=box_static
+            )
 
             updated_circle = Entity(
                 id=circle.id,
                 type=circle.type,
                 position=Position(x=new_cx, y=new_cy),
                 size=circle.size,
-                velocity=Velocity(vx=new_cvx, vy=new_cvy),
+                velocity=new_cvel,
                 properties=circle.properties,
                 active=circle.active,
                 parent_id=circle.parent_id,
                 clip_bounds=circle.clip_bounds,
                 layout=circle.layout,
                 template=circle.template,
+                angle=getattr(circle, "angle", 0.0),
             )
-            return updated_circle, box, True
+            updated_box = Entity(
+                id=box.id,
+                type=box.type,
+                position=box.position,
+                size=box.size,
+                velocity=new_bvel,
+                properties=box.properties,
+                active=box.active,
+                parent_id=box.parent_id,
+                clip_bounds=box.clip_bounds,
+                layout=box.layout,
+                template=box.template,
+                angle=box_ang,
+            )
+            return updated_circle, updated_box, True
 
         return circle, box, False
 
     def _resolve_circle_circle_collision(
         self, c1: Entity, c2: Entity, env: Environment
     ) -> Tuple[Entity, Entity, bool]:
-        """Resolves pairwise collision between two Circles."""
+        """Resolves pairwise collision between two Circles with impulse dynamics."""
         r1x, _ = self._get_entity_extents(c1, env)
         r2x, _ = self._get_entity_extents(c2, env)
         target_dist = r1x + r2x
 
         dx = c1.position.x - c2.position.x
+        if abs(dx) >= target_dist:
+            return c1, c2, False
         dy = c1.position.y - c2.position.y
+        if abs(dy) >= target_dist:
+            return c1, c2, False
         dist = math.hypot(dx, dy)
 
         if dist < target_dist:
@@ -549,44 +807,38 @@ class MLUEEngine:
             new_c2x = c2.position.x - nx * (overlap / 2.0)
             new_c2y = c2.position.y - ny * (overlap / 2.0)
 
-            rel_vx = c1.velocity.vx - c2.velocity.vx
-            rel_vy = c1.velocity.vy - c2.velocity.vy
-            v_dot = rel_vx * nx + rel_vy * ny
+            cx = new_c1x - nx * r1x
+            cy = new_c1y - ny * r1x
 
-            new_v1x, new_v1y = c1.velocity.vx, c1.velocity.vy
-            new_v2x, new_v2y = c2.velocity.vx, c2.velocity.vy
-
-            if v_dot < 0.0:
-                new_v1x -= v_dot * nx
-                new_v1y -= v_dot * ny
-                new_v2x += v_dot * nx
-                new_v2y += v_dot * ny
+            new_v1, new_v2 = self._apply_contact_impulse(c1, c2, cx, cy, nx, ny)
 
             u1 = Entity(
                 id=c1.id,
                 type=c1.type,
                 position=Position(x=new_c1x, y=new_c1y),
                 size=c1.size,
-                velocity=Velocity(vx=new_v1x, vy=new_v1y),
+                velocity=new_v1,
                 properties=c1.properties,
                 active=c1.active,
                 parent_id=c1.parent_id,
                 clip_bounds=c1.clip_bounds,
                 layout=c1.layout,
                 template=c1.template,
+                angle=getattr(c1, "angle", 0.0),
             )
             u2 = Entity(
                 id=c2.id,
                 type=c2.type,
                 position=Position(x=new_c2x, y=new_c2y),
                 size=c2.size,
-                velocity=Velocity(vx=new_v2x, vy=new_v2y),
+                velocity=new_v2,
                 properties=c2.properties,
                 active=c2.active,
                 parent_id=c2.parent_id,
                 clip_bounds=c2.clip_bounds,
                 layout=c2.layout,
                 template=c2.template,
+                angle=getattr(c2, "angle", 0.0),
             )
             return u1, u2, True
 
@@ -595,17 +847,21 @@ class MLUEEngine:
     def _resolve_box_box_collision(
         self, b1: Entity, b2: Entity, env: Environment
     ) -> Tuple[Entity, Entity, bool]:
-        """Resolves pairwise collision between two Boxes."""
+        """Resolves pairwise collision between two Boxes with impulse dynamics."""
         hw1, hh1 = self._get_entity_extents(b1, env)
         hw2, hh2 = self._get_entity_extents(b2, env)
 
         dx = b1.position.x - b2.position.x
-        dy = b1.position.y - b2.position.y
-
         overlap_x = (hw1 + hw2) - abs(dx)
-        overlap_y = (hh1 + hh2) - abs(dy)
+        if overlap_x <= 0.0:
+            return b1, b2, False
 
-        if overlap_x > 0.0 and overlap_y > 0.0:
+        dy = b1.position.y - b2.position.y
+        overlap_y = (hh1 + hh2) - abs(dy)
+        if overlap_y <= 0.0:
+            return b1, b2, False
+
+        if True:
             if overlap_x < overlap_y:
                 nx = 1.0 if dx > 0.0 else -1.0
                 ny = 0.0
@@ -621,44 +877,38 @@ class MLUEEngine:
                 new_b2x = b2.position.x
                 new_b2y = b2.position.y - ny * (overlap_y / 2.0)
 
-            rel_vx = b1.velocity.vx - b2.velocity.vx
-            rel_vy = b1.velocity.vy - b2.velocity.vy
-            v_dot = rel_vx * nx + rel_vy * ny
+            cx = (new_b1x + new_b2x) / 2.0
+            cy = (new_b1y + new_b2y) / 2.0
 
-            new_v1x, new_v1y = b1.velocity.vx, b1.velocity.vy
-            new_v2x, new_v2y = b2.velocity.vx, b2.velocity.vy
-
-            if v_dot < 0.0:
-                new_v1x -= v_dot * nx
-                new_v1y -= v_dot * ny
-                new_v2x += v_dot * nx
-                new_v2y += v_dot * ny
+            new_v1, new_v2 = self._apply_contact_impulse(b1, b2, cx, cy, nx, ny)
 
             u1 = Entity(
                 id=b1.id,
                 type=b1.type,
                 position=Position(x=new_b1x, y=new_b1y),
                 size=b1.size,
-                velocity=Velocity(vx=new_v1x, vy=new_v1y),
+                velocity=new_v1,
                 properties=b1.properties,
                 active=b1.active,
                 parent_id=b1.parent_id,
                 clip_bounds=b1.clip_bounds,
                 layout=b1.layout,
                 template=b1.template,
+                angle=getattr(b1, "angle", 0.0),
             )
             u2 = Entity(
                 id=b2.id,
                 type=b2.type,
                 position=Position(x=new_b2x, y=new_b2y),
                 size=b2.size,
-                velocity=Velocity(vx=new_v2x, vy=new_v2y),
+                velocity=new_v2,
                 properties=b2.properties,
                 active=b2.active,
                 parent_id=b2.parent_id,
                 clip_bounds=b2.clip_bounds,
                 layout=b2.layout,
                 template=b2.template,
+                angle=getattr(b2, "angle", 0.0),
             )
             return u1, u2, True
 
@@ -695,25 +945,23 @@ class MLUEEngine:
             new_cx = circle.position.x + nx * (pen / scale_x)
             new_cy = circle.position.y + ny * (pen / scale_y)
 
-            v_dot = circle.velocity.vx * nx + circle.velocity.vy * ny
-            new_cvx = circle.velocity.vx
-            new_cvy = circle.velocity.vy
-            if v_dot < 0.0:
-                new_cvx = circle.velocity.vx - 2.0 * v_dot * nx
-                new_cvy = circle.velocity.vy - 2.0 * v_dot * ny
+            contact_x = qx / scale_x
+            contact_y = qy / scale_y
+            new_cvel, _ = self._apply_contact_impulse(circle, segment, contact_x, contact_y, nx, ny)
 
             updated_circle = Entity(
                 id=circle.id,
                 type=circle.type,
                 position=Position(x=new_cx, y=new_cy),
                 size=circle.size,
-                velocity=Velocity(vx=new_cvx, vy=new_cvy),
+                velocity=new_cvel,
                 properties=circle.properties,
                 active=circle.active,
                 parent_id=circle.parent_id,
                 clip_bounds=circle.clip_bounds,
                 layout=circle.layout,
                 template=circle.template,
+                angle=getattr(circle, "angle", 0.0),
             )
             return updated_circle, segment, True
 
@@ -735,8 +983,9 @@ class MLUEEngine:
         cx = capsule.position.x * scale_x
         cy = capsule.position.y * scale_y
         hl = capsule.size.length / 2.0
-        dx_core = hl * math.cos(capsule.size.angle)
-        dy_core = hl * math.sin(capsule.size.angle)
+        total_ang = capsule.size.angle + getattr(capsule, "angle", 0.0)
+        dx_core = hl * math.cos(total_ang)
+        dy_core = hl * math.sin(total_ang)
         cax, cay = cx - dx_core, cy - dy_core
         cbx, cby = cx + dx_core, cy + dy_core
 
@@ -753,32 +1002,26 @@ class MLUEEngine:
             new_cap_x = capsule.position.x - nx * (pen * 0.5 / scale_x)
             new_cap_y = capsule.position.y - ny * (pen * 0.5 / scale_y)
 
-            rel_vx = circle.velocity.vx - capsule.velocity.vx
-            rel_vy = circle.velocity.vy - capsule.velocity.vy
-            v_dot = rel_vx * nx + rel_vy * ny
+            contact_x = (new_circle_x + new_cap_x) / 2.0
+            contact_y = (new_circle_y + new_cap_y) / 2.0
 
-            new_cvx, new_cvy = circle.velocity.vx, circle.velocity.vy
-            new_cap_vx, new_cap_vy = capsule.velocity.vx, capsule.velocity.vy
-
-            if v_dot < 0.0:
-                new_cvx -= v_dot * nx
-                new_cvy -= v_dot * ny
-                new_cap_vx += v_dot * nx
-                new_cap_vy += v_dot * ny
+            new_circ_vel, new_cap_vel = self._apply_contact_impulse(circle, capsule, contact_x, contact_y, nx, ny)
 
             upd_circle = Entity(
                 id=circle.id, type=circle.type, position=Position(x=new_circle_x, y=new_circle_y),
-                size=circle.size, velocity=Velocity(vx=new_cvx, vy=new_cvy),
+                size=circle.size, velocity=new_circ_vel,
                 properties=circle.properties, active=circle.active,
                 parent_id=circle.parent_id, clip_bounds=circle.clip_bounds,
                 layout=circle.layout, template=circle.template,
+                angle=getattr(circle, "angle", 0.0),
             )
             upd_cap = Entity(
                 id=capsule.id, type=capsule.type, position=Position(x=new_cap_x, y=new_cap_y),
-                size=capsule.size, velocity=Velocity(vx=new_cap_vx, vy=new_cap_vy),
+                size=capsule.size, velocity=new_cap_vel,
                 properties=capsule.properties, active=capsule.active,
                 parent_id=capsule.parent_id, clip_bounds=capsule.clip_bounds,
                 layout=capsule.layout, template=capsule.template,
+                angle=getattr(capsule, "angle", 0.0),
             )
             return upd_cap, upd_circle, True
 
@@ -800,8 +1043,9 @@ class MLUEEngine:
         cx = capsule.position.x * scale_x
         cy = capsule.position.y * scale_y
         hl = capsule.size.length / 2.0
-        dx_core = hl * math.cos(capsule.size.angle)
-        dy_core = hl * math.sin(capsule.size.angle)
+        total_ang = capsule.size.angle + getattr(capsule, "angle", 0.0)
+        dx_core = hl * math.cos(total_ang)
+        dy_core = hl * math.sin(total_ang)
         cax, cay = cx - dx_core, cy - dy_core
         cbx, cby = cx + dx_core, cy + dy_core
 
@@ -820,19 +1064,17 @@ class MLUEEngine:
             new_cx = capsule.position.x + nx * (pen / scale_x)
             new_cy = capsule.position.y + ny * (pen / scale_y)
 
-            v_dot = capsule.velocity.vx * nx + capsule.velocity.vy * ny
-            new_vx = capsule.velocity.vx
-            new_vy = capsule.velocity.vy
-            if v_dot < 0.0:
-                new_vx = capsule.velocity.vx - 2.0 * v_dot * nx
-                new_vy = capsule.velocity.vy - 2.0 * v_dot * ny
+            contact_x = c2x / scale_x
+            contact_y = c2y / scale_y
+            new_cap_vel, _ = self._apply_contact_impulse(capsule, segment, contact_x, contact_y, nx, ny)
 
             upd_cap = Entity(
                 id=capsule.id, type=capsule.type, position=Position(x=new_cx, y=new_cy),
-                size=capsule.size, velocity=Velocity(vx=new_vx, vy=new_vy),
+                size=capsule.size, velocity=new_cap_vel,
                 properties=capsule.properties, active=capsule.active,
                 parent_id=capsule.parent_id, clip_bounds=capsule.clip_bounds,
                 layout=capsule.layout, template=capsule.template,
+                angle=getattr(capsule, "angle", 0.0),
             )
             return upd_cap, segment, True
 
@@ -854,17 +1096,19 @@ class MLUEEngine:
         c1x = cap1.position.x * scale_x
         c1y = cap1.position.y * scale_y
         hl1 = cap1.size.length / 2.0
-        dx1 = hl1 * math.cos(cap1.size.angle)
-        dy1 = hl1 * math.sin(cap1.size.angle)
+        ang1 = cap1.size.angle + getattr(cap1, "angle", 0.0)
+        dx1 = hl1 * math.cos(ang1)
+        dy1 = hl1 * math.sin(ang1)
 
         c2x = cap2.position.x * scale_x
         c2y = cap2.position.y * scale_y
         hl2 = cap2.size.length / 2.0
-        dx2 = hl2 * math.cos(cap2.size.angle)
-        dy2 = hl2 * math.sin(cap2.size.angle)
+        ang2 = cap2.size.angle + getattr(cap2, "angle", 0.0)
+        dx2 = hl2 * math.cos(ang2)
+        dy2 = hl2 * math.sin(ang2)
 
         target_dist = cap1.size.radius + cap2.size.radius
-        _, _, _, _, dist, nx, ny = _analytical_segment_to_segment(
+        c1_cx, c1_cy, c2_cx, c2_cy, dist, nx, ny = _analytical_segment_to_segment(
             c1x - dx1, c1y - dy1, c1x + dx1, c1y + dy1,
             c2x - dx2, c2y - dy2, c2x + dx2, c2y + dy2,
         )
@@ -885,31 +1129,26 @@ class MLUEEngine:
             new_c2x = cap2.position.x - nx * (pen * 0.5 / scale_x)
             new_c2y = cap2.position.y - ny * (pen * 0.5 / scale_y)
 
-            rel_vx = cap1.velocity.vx - cap2.velocity.vx
-            rel_vy = cap1.velocity.vy - cap2.velocity.vy
-            v_dot = rel_vx * nx + rel_vy * ny
+            contact_x = (new_c1x + new_c2x) / 2.0
+            contact_y = (new_c1y + new_c2y) / 2.0
 
-            new_v1x, new_v1y = cap1.velocity.vx, cap1.velocity.vy
-            new_v2x, new_v2y = cap2.velocity.vx, cap2.velocity.vy
-            if v_dot < 0.0:
-                new_v1x -= v_dot * nx
-                new_v1y -= v_dot * ny
-                new_v2x += v_dot * nx
-                new_v2y += v_dot * ny
+            new_v1, new_v2 = self._apply_contact_impulse(cap1, cap2, contact_x, contact_y, nx, ny)
 
             u1 = Entity(
                 id=cap1.id, type=cap1.type, position=Position(x=new_c1x, y=new_c1y),
-                size=cap1.size, velocity=Velocity(vx=new_v1x, vy=new_v1y),
+                size=cap1.size, velocity=new_v1,
                 properties=cap1.properties, active=cap1.active,
                 parent_id=cap1.parent_id, clip_bounds=cap1.clip_bounds,
                 layout=cap1.layout, template=cap1.template,
+                angle=getattr(cap1, "angle", 0.0),
             )
             u2 = Entity(
                 id=cap2.id, type=cap2.type, position=Position(x=new_c2x, y=new_c2y),
-                size=cap2.size, velocity=Velocity(vx=new_v2x, vy=new_v2y),
+                size=cap2.size, velocity=new_v2,
                 properties=cap2.properties, active=cap2.active,
                 parent_id=cap2.parent_id, clip_bounds=cap2.clip_bounds,
                 layout=cap2.layout, template=cap2.template,
+                angle=getattr(cap2, "angle", 0.0),
             )
             return u1, u2, True
 
@@ -931,8 +1170,9 @@ class MLUEEngine:
         cx = capsule.position.x * scale_x
         cy = capsule.position.y * scale_y
         hl = capsule.size.length / 2.0
-        dx_core = hl * math.cos(capsule.size.angle)
-        dy_core = hl * math.sin(capsule.size.angle)
+        total_ang = capsule.size.angle + getattr(capsule, "angle", 0.0)
+        dx_core = hl * math.cos(total_ang)
+        dy_core = hl * math.sin(total_ang)
         cax, cay = cx - dx_core, cy - dy_core
         cbx, cby = cx + dx_core, cy + dy_core
 
@@ -971,24 +1211,30 @@ class MLUEEngine:
             new_cap_x = capsule.position.x + nx * (pen / scale_x)
             new_cap_y = capsule.position.y + ny * (pen / scale_y)
 
-            rel_vx = capsule.velocity.vx - box.velocity.vx
-            rel_vy = capsule.velocity.vy - box.velocity.vy
-            v_dot = rel_vx * nx + rel_vy * ny
-
-            new_vx = capsule.velocity.vx
-            new_vy = capsule.velocity.vy
-            if v_dot < 0.0:
-                new_vx -= 2.0 * v_dot * nx
-                new_vy -= 2.0 * v_dot * ny
+            contact_x = new_cap_x
+            contact_y = new_cap_y
+            box_static = not box.properties.get("dynamic", False)
+            new_cap_vel, new_box_vel = self._apply_contact_impulse(
+                capsule, box, contact_x, contact_y, nx, ny, e2_static=box_static
+            )
 
             upd_cap = Entity(
                 id=capsule.id, type=capsule.type, position=Position(x=new_cap_x, y=new_cap_y),
-                size=capsule.size, velocity=Velocity(vx=new_vx, vy=new_vy),
+                size=capsule.size, velocity=new_cap_vel,
                 properties=capsule.properties, active=capsule.active,
                 parent_id=capsule.parent_id, clip_bounds=capsule.clip_bounds,
                 layout=capsule.layout, template=capsule.template,
+                angle=getattr(capsule, "angle", 0.0),
             )
-            return upd_cap, box, True
+            upd_box = Entity(
+                id=box.id, type=box.type, position=box.position,
+                size=box.size, velocity=new_box_vel,
+                properties=box.properties, active=box.active,
+                parent_id=box.parent_id, clip_bounds=box.clip_bounds,
+                layout=box.layout, template=box.template,
+                angle=getattr(box, "angle", 0.0),
+            )
+            return upd_cap, upd_box, True
 
         return capsule, box, False
 
@@ -1002,6 +1248,10 @@ class MLUEEngine:
             return entity.velocity.vx
         elif prop_path == "velocity.vy":
             return entity.velocity.vy
+        elif prop_path in ("velocity.omega", "angular_velocity"):
+            return getattr(entity.velocity, "omega", 0.0)
+        elif prop_path == "angle":
+            return getattr(entity, "angle", 0.0)
         return 0.0
 
     def _integrate_entity_motion(
@@ -1018,6 +1268,8 @@ class MLUEEngine:
         ex, ey = self._get_entity_extents(entity, env)
         x, y = entity.position.x, entity.position.y
         vx, vy = entity.velocity.vx, entity.velocity.vy
+        omega = entity.velocity.omega
+        curr_angle = entity.angle
         is_controlled = False
 
         if "control" in entity.properties:
@@ -1033,14 +1285,19 @@ class MLUEEngine:
                     vy = signal * speed
                 elif axis == "x":
                     vx = signal * speed
+                elif axis in ("omega", "angle", "rotation"):
+                    omega = signal * speed
             else:
                 if axis == "y":
                     vy = 0.0
                 elif axis == "x":
                     vx = 0.0
+                elif axis in ("omega", "angle", "rotation"):
+                    omega = 0.0
 
         new_x = x + vx * dt
         new_y = y + vy * dt
+        new_angle = (curr_angle + omega * dt) % 6.283185307179586 if omega != 0.0 else curr_angle
         new_vx, new_vy = vx, vy
 
         if is_controlled:
@@ -1061,69 +1318,74 @@ class MLUEEngine:
             if new_x - ex <= 0.0:
                 new_x = ex
                 if new_vx < 0.0:
-                    new_vx = -new_vx
+                    e_rest = float(entity.properties.get("restitution", 1.0))
+                    new_vx = -new_vx * e_rest
             elif new_x + ex >= 1.0:
                 new_x = 1.0 - ex
                 if new_vx > 0.0:
-                    new_vx = -new_vx
+                    e_rest = float(entity.properties.get("restitution", 1.0))
+                    new_vx = -new_vx * e_rest
 
             if new_y - ey <= 0.0:
                 new_y = ey
                 if new_vy < 0.0:
-                    new_vy = -new_vy
+                    e_rest = float(entity.properties.get("restitution", 1.0))
+                    new_vy = -new_vy * e_rest
             elif new_y + ey >= 1.0:
                 new_y = 1.0 - ey
                 if new_vy > 0.0:
-                    new_vy = -new_vy
+                    e_rest = float(entity.properties.get("restitution", 1.0))
+                    new_vy = -new_vy * e_rest
 
         return Entity(
             id=entity.id,
             type=entity.type,
             position=Position(x=new_x, y=new_y),
             size=entity.size,
-            velocity=Velocity(vx=new_vx, vy=new_vy),
-            properties=dict(entity.properties),
+            velocity=Velocity(vx=new_vx, vy=new_vy, omega=omega),
+            properties=entity.properties,
             active=entity.active,
             parent_id=entity.parent_id,
             clip_bounds=entity.clip_bounds,
             layout=entity.layout,
             template=entity.template,
+            angle=new_angle,
         )
 
     def _resolve_pair_collision(
         self, e1: Entity, e2: Entity, env: Environment
     ) -> Tuple[Entity, Entity, bool]:
         """Dispatches pairwise collision resolution across supported geometric types."""
-        t1, t2 = e1.type, e2.type
-        if t1 == "circle" and t2 == "box":
+        pair = (e1.type, e2.type)
+        if pair == ("circle", "box"):
             return self._resolve_circle_box_collision(e1, e2, env)
-        if t1 == "box" and t2 == "circle":
+        if pair == ("box", "circle"):
             r2, r1, hit = self._resolve_circle_box_collision(e2, e1, env)
             return r1, r2, hit
-        if t1 == "circle" and t2 == "circle":
+        if pair == ("circle", "circle"):
             return self._resolve_circle_circle_collision(e1, e2, env)
-        if t1 == "box" and t2 == "box":
+        if pair == ("box", "box"):
             return self._resolve_box_box_collision(e1, e2, env)
-        if t1 == "circle" and t2 == "segment":
+        if pair == ("circle", "segment"):
             return self._resolve_circle_segment_collision(e1, e2, env)
-        if t1 == "segment" and t2 == "circle":
+        if pair == ("segment", "circle"):
             r2, r1, hit = self._resolve_circle_segment_collision(e2, e1, env)
             return r1, r2, hit
-        if t1 == "capsule" and t2 == "circle":
+        if pair == ("capsule", "circle"):
             return self._resolve_capsule_circle_collision(e1, e2, env)
-        if t1 == "circle" and t2 == "capsule":
+        if pair == ("circle", "capsule"):
             r2, r1, hit = self._resolve_capsule_circle_collision(e2, e1, env)
             return r1, r2, hit
-        if t1 == "capsule" and t2 == "segment":
+        if pair == ("capsule", "segment"):
             return self._resolve_capsule_segment_collision(e1, e2, env)
-        if t1 == "segment" and t2 == "capsule":
+        if pair == ("segment", "capsule"):
             r2, r1, hit = self._resolve_capsule_segment_collision(e2, e1, env)
             return r1, r2, hit
-        if t1 == "capsule" and t2 == "capsule":
+        if pair == ("capsule", "capsule"):
             return self._resolve_capsule_capsule_collision(e1, e2, env)
-        if t1 == "capsule" and t2 == "box":
+        if pair == ("capsule", "box"):
             return self._resolve_capsule_box_collision(e1, e2, env)
-        if t1 == "box" and t2 == "capsule":
+        if pair == ("box", "capsule"):
             r2, r1, hit = self._resolve_capsule_box_collision(e2, e1, env)
             return r1, r2, hit
         return e1, e2, False
@@ -1139,7 +1401,7 @@ class MLUEEngine:
 
         # 1. Broadphase: Generate candidate collision pairs
         if n <= 6:
-            candidate_pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
+            candidate_pairs = _SMALL_PAIRS.get(n, ())
         else:
             grid = SpatialHashGrid2D()
             aabbs = grid.build(entities, env)
@@ -1333,6 +1595,7 @@ class MLUEEngine:
                         clip_bounds=curr.clip_bounds,
                         layout=curr.layout,
                         template=curr.template,
+                        angle=curr.angle,
                     )
             elif action.type == "set_property":
                 t_idx = entity_map.get(action.target)
@@ -1348,6 +1611,7 @@ class MLUEEngine:
                         clip_bounds=curr.clip_bounds,
                         layout=curr.layout,
                         template=curr.template,
+                        angle=curr.angle,
                     )
             elif action.type == "increment" and action.target in state_variables:
                 amt = action.amount if action.amount is not None else 1.0
@@ -1380,6 +1644,7 @@ class MLUEEngine:
                         clip_bounds=curr.clip_bounds,
                         layout=curr.layout,
                         template=curr.template,
+                        angle=curr.angle,
                     )
         return delta_reward, is_terminated, is_truncated
 

@@ -115,6 +115,8 @@ class WALWriter:
                 "y": e.position.y,
                 "vx": e.velocity.vx,
                 "vy": e.velocity.vy,
+                "omega": getattr(e.velocity, "omega", 0.0),
+                "angle": getattr(e, "angle", 0.0),
                 "active": e.active,
             }
             for e in state.entities

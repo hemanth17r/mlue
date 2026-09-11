@@ -60,8 +60,17 @@ def compute_entity_aabb(entity: Entity, env: Environment) -> AABB2D:
         ey = r * (min_dim / h)
         return AABB2D(min_x=px - ex, min_y=py - ey, max_x=px + ex, max_y=py + ey)
     elif entity.type == "box" and isinstance(entity.size, BoxSize):
-        ex = entity.size.width / 2.0
-        ey = entity.size.height / 2.0
+        ang = getattr(entity, "angle", 0.0)
+        hw = entity.size.width / 2.0
+        hh = entity.size.height / 2.0
+        if abs(ang) > 1e-9:
+            c = abs(math.cos(ang))
+            s = abs(math.sin(ang))
+            ex = hw * c + hh * s
+            ey = hw * s + hh * c
+        else:
+            ex = hw
+            ey = hh
         return AABB2D(min_x=px - ex, min_y=py - ey, max_x=px + ex, max_y=py + ey)
     elif entity.type == "segment" and isinstance(entity.size, SegmentSize):
         x1, y1 = px, py
@@ -79,8 +88,9 @@ def compute_entity_aabb(entity: Entity, env: Environment) -> AABB2D:
         rx = r * (min_dim / w)
         ry = r * (min_dim / h)
         hl = entity.size.length / 2.0
-        dx = hl * math.cos(entity.size.angle)
-        dy = hl * math.sin(entity.size.angle)
+        total_angle = entity.size.angle + getattr(entity, "angle", 0.0)
+        dx = hl * math.cos(total_angle)
+        dy = hl * math.sin(total_angle)
         return AABB2D(
             min_x=min(px - dx, px + dx) - rx,
             min_y=min(py - dy, py + dy) - ry,
@@ -604,11 +614,19 @@ def point_in_circle(
 
 
 def point_in_box(
-    px: float, py: float, bx: float, by: float, width: float, height: float
+    px: float, py: float, bx: float, by: float, width: float, height: float, angle: float = 0.0
 ) -> bool:
-    """Evaluates if point (px, py) lies inside axis-aligned box centered at (bx, by)."""
+    """Evaluates if point (px, py) lies inside box centered at (bx, by) with optional rotation angle."""
     hw = width / 2.0
     hh = height / 2.0
+    if abs(angle) > 1e-9:
+        dx = px - bx
+        dy = py - by
+        cos_a = math.cos(-angle)
+        sin_a = math.sin(-angle)
+        local_x = dx * cos_a - dy * sin_a
+        local_y = dx * sin_a + dy * cos_a
+        return (-hw - 1e-9 <= local_x <= hw + 1e-9) and (-hh - 1e-9 <= local_y <= hh + 1e-9)
     return (bx - hw - 1e-9 <= px <= bx + hw + 1e-9) and (by - hh - 1e-9 <= py <= by + hh + 1e-9)
 
 
@@ -706,10 +724,13 @@ def hit_test_entity(
     if entity.type == "circle" and isinstance(entity.size, CircleSize):
         return point_in_circle(px, py, entity.position.x, entity.position.y, entity.size.radius, env)
     elif entity.type == "box" and isinstance(entity.size, BoxSize):
-        return point_in_box(px, py, entity.position.x, entity.position.y, entity.size.width, entity.size.height)
+        return point_in_box(
+            px, py, entity.position.x, entity.position.y, entity.size.width, entity.size.height, angle=getattr(entity, "angle", 0.0)
+        )
     elif entity.type == "capsule" and isinstance(entity.size, CapsuleSize):
+        total_ang = entity.size.angle + getattr(entity, "angle", 0.0)
         return point_in_capsule(
-            px, py, entity.position.x, entity.position.y, entity.size.length, entity.size.radius, entity.size.angle, env
+            px, py, entity.position.x, entity.position.y, entity.size.length, entity.size.radius, total_ang, env
         )
     elif entity.type == "segment" and isinstance(entity.size, SegmentSize):
         return point_near_segment(

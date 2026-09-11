@@ -50,6 +50,7 @@ class TextSize:
 class Velocity:
     vx: float = 0.0
     vy: float = 0.0
+    omega: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -65,6 +66,7 @@ class Entity:
     clip_bounds: bool = False
     layout: Optional[Dict[str, Any]] = None
     template: Optional[str] = None
+    angle: float = 0.0
 
 
 @dataclass(frozen=True)

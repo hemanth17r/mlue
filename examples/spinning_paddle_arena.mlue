@@ -1,0 +1,113 @@
+{
+  "mlue_version": "1.6",
+  "environment": {
+    "dimensions": [800, 800],
+    "background": "#090D16"
+  },
+  "entities": [
+    {
+      "id": "arena_top",
+      "type": "segment",
+      "position": { "x": 0.05, "y": 0.05 },
+      "end": { "x": 0.95, "y": 0.05 },
+      "thickness": 0.015,
+      "properties": { "color": "#334155", "solid": true, "restitution": 0.9 }
+    },
+    {
+      "id": "arena_bottom",
+      "type": "segment",
+      "position": { "x": 0.05, "y": 0.95 },
+      "end": { "x": 0.95, "y": 0.95 },
+      "thickness": 0.015,
+      "properties": { "color": "#334155", "solid": true, "restitution": 0.9 }
+    },
+    {
+      "id": "arena_left",
+      "type": "segment",
+      "position": { "x": 0.05, "y": 0.05 },
+      "end": { "x": 0.05, "y": 0.95 },
+      "thickness": 0.015,
+      "properties": { "color": "#334155", "solid": true, "restitution": 0.9 }
+    },
+    {
+      "id": "arena_right",
+      "type": "segment",
+      "position": { "x": 0.95, "y": 0.05 },
+      "end": { "x": 0.95, "y": 0.95 },
+      "thickness": 0.015,
+      "properties": { "color": "#334155", "solid": true, "restitution": 0.9 }
+    },
+    {
+      "id": "center_rotor",
+      "type": "box",
+      "position": { "x": 0.5, "y": 0.5 },
+      "size": { "width": 0.35, "height": 0.04 },
+      "angle": 0.0,
+      "velocity": { "vx": 0.0, "vy": 0.0, "omega": 3.14159 },
+      "properties": {
+        "color": "#F59E0B",
+        "solid": true,
+        "static": true,
+        "restitution": 0.95,
+        "friction": 0.4
+      }
+    },
+    {
+      "id": "dynamic_spinner",
+      "type": "box",
+      "position": { "x": 0.3, "y": 0.3 },
+      "size": { "width": 0.12, "height": 0.04 },
+      "angle": 0.785,
+      "velocity": { "vx": 0.05, "vy": 0.02, "omega": 1.5 },
+      "properties": {
+        "color": "#8B5CF6",
+        "solid": true,
+        "dynamic": true,
+        "mass": 2.0,
+        "restitution": 0.8,
+        "friction": 0.3
+      }
+    },
+    {
+      "id": "ball_1",
+      "type": "circle",
+      "position": { "x": 0.5, "y": 0.25 },
+      "size": { "radius": 0.025 },
+      "velocity": { "vx": 0.08, "vy": 0.25 },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": true,
+        "mass": 0.5,
+        "restitution": 0.9,
+        "friction": 0.2
+      }
+    },
+    {
+      "id": "ball_2",
+      "type": "circle",
+      "position": { "x": 0.65, "y": 0.65 },
+      "size": { "radius": 0.025 },
+      "velocity": { "vx": -0.15, "vy": -0.2 },
+      "properties": {
+        "color": "#10B981",
+        "solid": true,
+        "mass": 0.5,
+        "restitution": 0.9,
+        "friction": 0.2
+      }
+    }
+  ],
+  "state_variables": {
+    "deflections": 0
+  },
+  "rules": [
+    {
+      "trigger": "rotor_deflect",
+      "event": "collision",
+      "entities": ["ball_1", "center_rotor"],
+      "actions": [
+        { "type": "increment", "target": "deflections", "amount": 1 }
+      ]
+    }
+  ]
+}

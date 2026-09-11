@@ -348,12 +348,21 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
 
         vx = vel_raw.get("vx", 0.0)
         vy = vel_raw.get("vy", 0.0)
+        omega = vel_raw.get("omega", ent_raw.get("angular_velocity", 0.0))
         if not (isinstance(vx, (int, float)) and not math.isnan(vx) and not math.isinf(vx)):
             raise MLUEValidationError(f"Entity '{ent_id}' velocity.vx must be a finite number (got {vx}).")
         if not (isinstance(vy, (int, float)) and not math.isnan(vy) and not math.isinf(vy)):
             raise MLUEValidationError(f"Entity '{ent_id}' velocity.vy must be a finite number (got {vy}).")
+        if not (isinstance(omega, (int, float)) and not math.isnan(omega) and not math.isinf(omega)):
+            raise MLUEValidationError(f"Entity '{ent_id}' velocity.omega must be a finite number (got {omega}).")
 
-        velocity = Velocity(vx=float(vx), vy=float(vy))
+        velocity = Velocity(vx=float(vx), vy=float(vy), omega=float(omega))
+
+        # Angle (Optional, in radians)
+        angle = ent_raw.get("angle", 0.0)
+        if not (isinstance(angle, (int, float)) and not math.isnan(angle) and not math.isinf(angle)):
+            raise MLUEValidationError(f"Entity '{ent_id}' angle must be a finite number (got {angle}).")
+        angle = float(angle)
 
         # Properties
         properties = ent_raw.get("properties", {})
@@ -362,6 +371,16 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
 
         if "solid" in properties and not isinstance(properties["solid"], bool):
             raise MLUEValidationError(f"Entity '{ent_id}' properties.solid must be a boolean.")
+
+        if "restitution" in properties:
+            rest = properties["restitution"]
+            if not (isinstance(rest, (int, float)) and not math.isnan(rest) and 0.0 <= rest <= 1.0):
+                raise MLUEValidationError(f"Entity '{ent_id}' properties.restitution must be a number between 0.0 and 1.0 (got {rest}).")
+
+        if "friction" in properties:
+            fric = properties["friction"]
+            if not (isinstance(fric, (int, float)) and not math.isnan(fric) and fric >= 0.0):
+                raise MLUEValidationError(f"Entity '{ent_id}' properties.friction must be a non-negative number (got {fric}).")
 
         # Control Configuration
         if "control" in properties:
@@ -416,6 +435,7 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             clip_bounds=clip_bounds,
             layout=layout,
             template=template_val,
+            angle=angle,
         )
         entities.append(entity)
 

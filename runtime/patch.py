@@ -228,7 +228,8 @@ def apply_patch_to_session(
             "id": e.id,
             "type": e.type,
             "position": {"x": e.position.x, "y": e.position.y},
-            "velocity": {"vx": e.velocity.vx, "vy": e.velocity.vy},
+            "velocity": {"vx": e.velocity.vx, "vy": e.velocity.vy, "omega": getattr(e.velocity, "omega", 0.0)},
+            "angle": getattr(e, "angle", 0.0),
             "properties": dict(e.properties),
             "active": e.active,
         }

@@ -286,7 +286,8 @@ class MLUEAIInterface:
                 "id": e.id,
                 "type": e.type,
                 "position": {"x": round(e.position.x, 5), "y": round(e.position.y, 5)},
-                "velocity": {"vx": round(e.velocity.vx, 5), "vy": round(e.velocity.vy, 5)},
+                "velocity": {"vx": round(e.velocity.vx, 5), "vy": round(e.velocity.vy, 5), "omega": round(getattr(e.velocity, "omega", 0.0), 5)},
+                "angle": round(getattr(e, "angle", 0.0), 5),
                 "active": e.active,
                 "properties": e.properties,
             })
