@@ -10,8 +10,8 @@ export default function Hero({ latestRun }) {
   const speed = b.find((item) => item.id === 'B6')?.value_display || '21.5k t/s';
   const drift = b.find((item) => item.id === 'B4')?.drift_ppb || '0.0 PPB';
   const precision = b.find((item) => item.id === 'B3')?.log_precision_decades || '>16.0 Decades';
-  const passedCount = latestRun?.passed_count || 12;
-  const totalCount = latestRun?.total_count || 12;
+  const passedCount = latestRun?.passed_count || 13;
+  const totalCount = latestRun?.total_count || 13;
 
   const metrics = [
     { label: 'Simulation Speed', value: speed, color: 'text-amber-400' },

@@ -17,6 +17,9 @@ from runtime.model import (
     Velocity,
     CircleSize,
     BoxSize,
+    SegmentSize,
+    CapsuleSize,
+    TextSize,
     Rule,
     Condition,
     Action,
@@ -140,7 +143,18 @@ def encode_mlueb(doc: MLUEDocument) -> bytes:
     for e in doc.entities:
         id_idx = str_builder.get_or_add(e.id)
         color_rgba = _hex_to_rgba32(e.properties.get("color", "#FFFFFF"))
-        etype = 1 if e.type == "circle" else 2
+        if e.type == "circle":
+            etype = 1
+        elif e.type == "box":
+            etype = 2
+        elif e.type == "segment":
+            etype = 3
+        elif e.type == "capsule":
+            etype = 4
+        elif e.type == "text":
+            etype = 5
+        else:
+            etype = 2
         flags = 0
         if e.properties.get("solid", False):
             flags |= 0x01
@@ -171,6 +185,15 @@ def encode_mlueb(doc: MLUEDocument) -> bytes:
         elif e.type == "box" and isinstance(e.size, BoxSize):
             p1 = float(e.size.width)
             p2 = float(e.size.height)
+        elif e.type == "segment" and isinstance(e.size, SegmentSize):
+            p1 = float(e.size.end_x)
+            p2 = float(e.size.end_y)
+        elif e.type == "capsule" and isinstance(e.size, CapsuleSize):
+            p1 = float(e.size.radius)
+            p2 = float(e.size.length)
+        elif e.type == "text" and isinstance(e.size, TextSize):
+            p1 = float(e.size.font_scale)
+            p2 = 0.0
         else:
             p1, p2 = 0.0, 0.0
 
@@ -364,7 +387,19 @@ def decode_mlueb(data: bytes) -> MLUEDocument:
 
         if etype == 1:
             type_str = "circle"
-            size_obj: Union[CircleSize, BoxSize] = CircleSize(radius=p1)
+            size_obj: Union[CircleSize, BoxSize, SegmentSize, CapsuleSize, TextSize] = CircleSize(radius=p1)
+        elif etype == 2:
+            type_str = "box"
+            size_obj = BoxSize(width=p1, height=p2)
+        elif etype == 3:
+            type_str = "segment"
+            size_obj = SegmentSize(end_x=p1, end_y=p2)
+        elif etype == 4:
+            type_str = "capsule"
+            size_obj = CapsuleSize(radius=p1, length=p2)
+        elif etype == 5:
+            type_str = "text"
+            size_obj = TextSize(font_scale=p1)
         else:
             type_str = "box"
             size_obj = BoxSize(width=p1, height=p2)

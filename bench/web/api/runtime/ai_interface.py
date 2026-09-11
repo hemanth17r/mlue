@@ -5,6 +5,7 @@ statically validate scene representations, initialize in-memory simulation sessi
 step physical trajectories with action vectors, inspect live states, and mutate entities.
 """
 
+import time
 import uuid
 from typing import Dict, Any, Optional, Union, List
 from .model import (
@@ -18,6 +19,14 @@ from .model import (
 )
 from .loader import validate_and_parse, load_mlue, MLUEValidationError
 from .engine import MLUEEngine
+from .patch import (
+    apply_patch_to_document,
+    apply_patch_to_session,
+    SessionCheckpointManager,
+    compute_state_hash,
+    compute_document_hash,
+    MLUEPatchError,
+)
 
 
 class MLUEAIInterface:
@@ -26,6 +35,7 @@ class MLUEAIInterface:
     def __init__(self):
         self.engine = MLUEEngine()
         self._sessions: Dict[str, SimulationState] = {}
+        self._checkpoints = SessionCheckpointManager()
 
     def get_schema(self) -> Dict[str, Any]:
         """Returns the machine-readable schema definition and spatial invariant constraints."""
@@ -89,7 +99,10 @@ class MLUEAIInterface:
                             {"type": "push", "target": "array keypath", "value": "item_value"},
                             {"type": "pop", "target": "array keypath", "index": "optional int (default -1)"},
                             {"type": "delete_key", "target": "object keypath", "key": "optional string"},
-                            {"type": "reset_entity", "target": "entity ID", "position": {"x": "float", "y": "float"}, "velocity": {"vx": "float", "vy": "float"}}
+                            {"type": "reset_entity", "target": "entity ID", "position": {"x": "float", "y": "float"}, "velocity": {"vx": "float", "vy": "float"}},
+                            {"type": "reward", "amount": "number (optional, default 1.0)"},
+                            {"type": "terminate"},
+                            {"type": "truncate"}
                         ]
                     }
                 }
@@ -289,7 +302,96 @@ class MLUEAIInterface:
 
         return {
             "time": round(state.time, 5),
+            "step_reward": round(state.step_reward, 5),
+            "terminated": state.terminated,
+            "truncated": state.truncated,
             "state_variables": state.state_variables,
             "entities": entities_data,
             "rendered_shapes": shapes_data,
         }
+
+    def patch_document(self, document: Dict[str, Any], operations: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Applies micro-delta patch operations to an MLUE document and verifies invariants in < 1ms."""
+        try:
+            t0 = time.perf_counter_ns()
+            patched_dict, validated_doc = apply_patch_to_document(document, operations)
+            elapsed_us = (time.perf_counter_ns() - t0) / 1000.0
+            digest = compute_document_hash(patched_dict)
+            return {
+                "success": True,
+                "latency_us": round(elapsed_us, 2),
+                "sha256_digest": digest,
+                "entity_count": len(validated_doc.entities),
+                "rule_count": len(validated_doc.rules),
+                "document": patched_dict,
+            }
+        except MLUEPatchError as e:
+            return {"success": False, "error": str(e)}
+        except Exception as e:
+            return {"success": False, "error": f"Unexpected patch error: {str(e)}"}
+
+    def patch_session(self, session_id: str, operations: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Hot-patches an active simulation session in-memory using micro-delta operations without stopping execution."""
+        state = self._sessions.get(session_id)
+        if state is None:
+            return {"success": False, "error": f"Session '{session_id}' not found."}
+
+        try:
+            t0 = time.perf_counter_ns()
+            new_state = apply_patch_to_session(self.engine, state, operations)
+            elapsed_us = (time.perf_counter_ns() - t0) / 1000.0
+            self._sessions[session_id] = new_state
+            digest = compute_state_hash(new_state)
+            return {
+                "success": True,
+                "session_id": session_id,
+                "latency_us": round(elapsed_us, 2),
+                "sha256_digest": digest,
+                "state": self._serialize_state(new_state),
+            }
+        except MLUEPatchError as e:
+            return {"success": False, "error": str(e)}
+        except Exception as e:
+            return {"success": False, "error": f"Unexpected session patch error: {str(e)}"}
+
+    def create_checkpoint(self, session_id: str, checkpoint_id: Optional[str] = None) -> Dict[str, Any]:
+        """Creates an immutable, bit-exact cryptographic snapshot of an active simulation session."""
+        state = self._sessions.get(session_id)
+        if state is None:
+            return {"success": False, "error": f"Session '{session_id}' not found."}
+
+        try:
+            res = self._checkpoints.create_checkpoint(session_id, state, checkpoint_id=checkpoint_id)
+            res["success"] = True
+            return res
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def restore_checkpoint(self, session_id: str, checkpoint_id: str) -> Dict[str, Any]:
+        """Restores an active simulation session back to a previously saved checkpoint (time-travel)."""
+        if session_id not in self._sessions:
+            return {"success": False, "error": f"Session '{session_id}' not found."}
+
+        try:
+            restored_state = self._checkpoints.restore_checkpoint(session_id, checkpoint_id)
+            self._sessions[session_id] = restored_state
+            digest = compute_state_hash(restored_state)
+            return {
+                "success": True,
+                "session_id": session_id,
+                "checkpoint_id": checkpoint_id,
+                "sha256_digest": digest,
+                "state": self._serialize_state(restored_state),
+            }
+        except MLUEPatchError as e:
+            return {"success": False, "error": str(e)}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def list_checkpoints(self, session_id: str) -> Dict[str, Any]:
+        """Returns all saved checkpoints for an active session."""
+        if session_id not in self._sessions:
+            return {"success": False, "error": f"Session '{session_id}' not found."}
+        cps = self._checkpoints.list_checkpoints(session_id)
+        return {"success": True, "session_id": session_id, "checkpoints": cps}
+

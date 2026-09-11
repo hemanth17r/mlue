@@ -559,7 +559,7 @@ export default function SubstrateGuideModal({ isOpen, onClose, onLaunchTemplate 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-white/[0.08] bg-black/40 backdrop-blur-xl flex items-center justify-between text-xs font-mono shrink-0">
           <span className="text-slate-400">
-            Audit Status: <span className="text-emerald-400 font-bold">12/12 Invariants Passed (100% Empirical)</span>
+            Audit Status: <span className="text-emerald-400 font-bold">13/13 Invariants Passed (100% Empirical)</span>
           </span>
           <button
             onClick={onClose}

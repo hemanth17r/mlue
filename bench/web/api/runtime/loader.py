@@ -16,6 +16,9 @@ from .model import (
     Position,
     CircleSize,
     BoxSize,
+    SegmentSize,
+    CapsuleSize,
+    TextSize,
     Velocity,
     Environment,
     Condition,
@@ -169,6 +172,14 @@ def _get_entity_half_extents(entity: Entity, env: Environment) -> Tuple[float, f
         return r * (min_dim / w), r * (min_dim / h)
     elif entity.type == "box" and isinstance(entity.size, BoxSize):
         return entity.size.width / 2.0, entity.size.height / 2.0
+    elif entity.type == "capsule" and isinstance(entity.size, CapsuleSize):
+        r = entity.size.radius
+        l = entity.size.length
+        return r * (min_dim / w), (l / 2.0 + r) * (min_dim / h)
+    elif entity.type == "segment" and isinstance(entity.size, SegmentSize):
+        dx = abs(entity.size.end_x - entity.position.x) / 2.0
+        dy = abs(entity.size.end_y - entity.position.y) / 2.0
+        return dx, dy
     return 0.0, 0.0
 
 
@@ -178,9 +189,9 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         raise MLUEValidationError("MLUE document root must be a dictionary/object.")
 
     version = data.get("mlue_version")
-    if version not in ("0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6"):
+    if version not in ("0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "2.1"):
         raise MLUEValidationError(
-            f"Unsupported MLUE version '{version}'. Expected '0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '1.1', '1.2', '1.3', '1.4', '1.5', or '1.6'."
+            f"Unsupported MLUE version '{version}'. Expected '0.1', '0.2', '0.3', '0.4', '0.5', '0.6', '0.7', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6', or '2.1'."
         )
 
     # Environment
@@ -225,9 +236,9 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         seen_ids.add(ent_id)
 
         ent_type = ent_raw.get("type")
-        if ent_type not in ("circle", "box"):
+        if ent_type not in ("circle", "box", "segment", "capsule", "text"):
             raise MLUEValidationError(
-                f"Entity '{ent_id}' has unsupported type '{ent_type}'. Supported types: 'circle', 'box'."
+                f"Entity '{ent_id}' has unsupported type '{ent_type}'. Supported types: 'circle', 'box', 'segment', 'capsule', 'text'."
             )
 
         # Active state (default True)
@@ -235,21 +246,40 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
 
         # Position
         pos_raw = ent_raw.get("position")
-        if not isinstance(pos_raw, dict):
-            raise MLUEValidationError(f"Entity '{ent_id}' requires a 'position' object.")
+        if pos_raw is None and ent_raw.get("parent_id") is not None:
+            pos_raw = {"x": 0.5, "y": 0.5}
 
-        x = pos_raw.get("x")
-        y = pos_raw.get("y")
-        if not (isinstance(x, (int, float)) and not math.isnan(x) and 0.0 <= x <= 1.0):
-            raise MLUEValidationError(f"Entity '{ent_id}' position.x must be a number in range [0.0, 1.0] (got {x}).")
-        if not (isinstance(y, (int, float)) and not math.isnan(y) and 0.0 <= y <= 1.0):
-            raise MLUEValidationError(f"Entity '{ent_id}' position.y must be a number in range [0.0, 1.0] (got {y}).")
+        if ent_type != "segment":
+            if not isinstance(pos_raw, dict):
+                raise MLUEValidationError(f"Entity '{ent_id}' requires a 'position' object.")
+            x = pos_raw.get("x")
+            y = pos_raw.get("y")
+            if not (isinstance(x, (int, float)) and not math.isnan(x) and 0.0 <= x <= 1.0):
+                raise MLUEValidationError(f"Entity '{ent_id}' position.x must be a number in range [0.0, 1.0] (got {x}).")
+            if not (isinstance(y, (int, float)) and not math.isnan(y) and 0.0 <= y <= 1.0):
+                raise MLUEValidationError(f"Entity '{ent_id}' position.y must be a number in range [0.0, 1.0] (got {y}).")
+        else:
+            # For segment, position can come from 'start' or 'position'
+            start_raw = ent_raw.get("start", pos_raw)
+            if start_raw is None and ent_raw.get("parent_id") is not None:
+                start_raw = {"x": 0.05, "y": 0.5}
+            if not isinstance(start_raw, dict):
+                raise MLUEValidationError(f"Segment entity '{ent_id}' requires a 'start' or 'position' object.")
+            x = start_raw.get("x")
+            y = start_raw.get("y")
+            if not (isinstance(x, (int, float)) and not math.isnan(x) and 0.0 <= x <= 1.0):
+                raise MLUEValidationError(f"Segment entity '{ent_id}' start.x must be a number in range [0.0, 1.0] (got {x}).")
+            if not (isinstance(y, (int, float)) and not math.isnan(y) and 0.0 <= y <= 1.0):
+                raise MLUEValidationError(f"Segment entity '{ent_id}' start.y must be a number in range [0.0, 1.0] (got {y}).")
 
         # Size
         size_raw = ent_raw.get("size")
-        if not isinstance(size_raw, dict):
+        if ent_type not in ("segment", "text") and not isinstance(size_raw, dict):
             raise MLUEValidationError(f"Entity '{ent_id}' requires a 'size' object.")
+        if size_raw is None:
+            size_raw = {}
 
+        template_val = ent_raw.get("template", ent_raw.get("content"))
         if ent_type == "circle":
             radius = size_raw.get("radius")
             if not (isinstance(radius, (int, float)) and not math.isnan(radius) and 0.0 < radius <= 0.5):
@@ -269,6 +299,47 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
                     f"Entity '{ent_id}' size.height must be a number in range (0.0, 1.0] (got {height})."
                 )
             size = BoxSize(width=float(width), height=float(height))
+        elif ent_type == "segment":
+            end_raw = ent_raw.get("end", size_raw.get("end", size_raw))
+            if not isinstance(end_raw, dict):
+                raise MLUEValidationError(f"Segment entity '{ent_id}' requires an 'end' coordinate object.")
+            ex = end_raw.get("x")
+            ey = end_raw.get("y")
+            if not (isinstance(ex, (int, float)) and not math.isnan(ex) and 0.0 <= ex <= 1.0):
+                raise MLUEValidationError(f"Segment entity '{ent_id}' end.x must be in range [0.0, 1.0] (got {ex}).")
+            if not (isinstance(ey, (int, float)) and not math.isnan(ey) and 0.0 <= ey <= 1.0):
+                raise MLUEValidationError(f"Segment entity '{ent_id}' end.y must be in range [0.0, 1.0] (got {ey}).")
+            thickness = float(ent_raw.get("thickness", size_raw.get("thickness", 0.002)))
+            if thickness <= 0.0 or thickness > 0.1:
+                raise MLUEValidationError(f"Segment entity '{ent_id}' thickness must be in range (0.0, 0.1] (got {thickness}).")
+            size = SegmentSize(end_x=float(ex), end_y=float(ey), thickness=thickness)
+        elif ent_type == "capsule":
+            radius = size_raw.get("radius")
+            length = size_raw.get("length", 0.0)
+            angle = size_raw.get("angle", ent_raw.get("angle", 0.0))
+            if not (isinstance(radius, (int, float)) and not math.isnan(radius) and 0.0 < radius <= 0.5):
+                raise MLUEValidationError(
+                    f"Capsule entity '{ent_id}' size.radius must be in range (0.0, 0.5] (got {radius})."
+                )
+            if not (isinstance(length, (int, float)) and not math.isnan(length) and 0.0 <= length <= 1.0):
+                raise MLUEValidationError(
+                    f"Capsule entity '{ent_id}' size.length must be in range [0.0, 1.0] (got {length})."
+                )
+            if not (isinstance(angle, (int, float)) and not math.isnan(angle)):
+                raise MLUEValidationError(f"Capsule entity '{ent_id}' angle must be a valid number.")
+            size = CapsuleSize(radius=float(radius), length=float(length), angle=float(angle))
+        elif ent_type == "text":
+            font_scale = float(size_raw.get("font_scale", ent_raw.get("font_scale", 0.02)))
+            align = str(size_raw.get("align", ent_raw.get("align", "left"))).lower()
+            if align not in ("left", "center", "right"):
+                raise MLUEValidationError(f"Text entity '{ent_id}' align must be 'left', 'center', or 'right' (got '{align}').")
+            if font_scale <= 0.0 or font_scale > 0.5:
+                raise MLUEValidationError(f"Text entity '{ent_id}' font_scale must be in range (0.0, 0.5] (got {font_scale}).")
+            if template_val is None:
+                template_val = size_raw.get("template", "") if isinstance(size_raw, dict) else ""
+            if not isinstance(template_val, str):
+                raise MLUEValidationError(f"Text entity '{ent_id}' template must be a string.")
+            size = TextSize(font_scale=font_scale, align=align)
 
         # Velocity (Optional)
         vel_raw = ent_raw.get("velocity", {})
@@ -307,6 +378,32 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             if not (isinstance(speed, (int, float)) and not math.isnan(speed) and speed > 0.0):
                 raise MLUEValidationError(f"Entity '{ent_id}' control.speed must be a positive number (got {speed}).")
 
+        # Hierarchy & Layout
+        parent_id = ent_raw.get("parent_id")
+        if parent_id is not None and not (isinstance(parent_id, str) and parent_id.strip()):
+            raise MLUEValidationError(f"Entity '{ent_id}' parent_id must be a non-empty string.")
+
+        clip_bounds = bool(ent_raw.get("clip_bounds", False))
+
+        layout_raw = ent_raw.get("layout")
+        layout = None
+        if layout_raw is not None:
+            if not isinstance(layout_raw, dict):
+                raise MLUEValidationError(f"Entity '{ent_id}' layout must be a dictionary.")
+            direction = layout_raw.get("direction", "vertical").lower()
+            if direction not in ("vertical", "horizontal", "stack_y", "stack_x"):
+                raise MLUEValidationError(f"Entity '{ent_id}' layout.direction must be 'vertical' or 'horizontal'.")
+            gap = float(layout_raw.get("gap", 0.01))
+            if gap < 0.0 or gap > 1.0:
+                raise MLUEValidationError(f"Entity '{ent_id}' layout.gap must be in range [0.0, 1.0] (got {gap}).")
+            padding = float(layout_raw.get("padding", 0.0))
+            if padding < 0.0 or padding > 0.5:
+                raise MLUEValidationError(f"Entity '{ent_id}' layout.padding must be in range [0.0, 0.5] (got {padding}).")
+            align_items = layout_raw.get("align_items", "start").lower()
+            if align_items not in ("start", "center", "end", "stretch"):
+                raise MLUEValidationError(f"Entity '{ent_id}' layout.align_items must be 'start', 'center', 'end', or 'stretch'.")
+            layout = {"direction": direction, "gap": gap, "padding": padding, "align_items": align_items}
+
         entity = Entity(
             id=ent_id,
             type=ent_type,
@@ -315,8 +412,31 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             velocity=velocity,
             properties=dict(properties),
             active=active,
+            parent_id=parent_id,
+            clip_bounds=clip_bounds,
+            layout=layout,
+            template=template_val,
         )
         entities.append(entity)
+
+    # Post-entity validation: parent_id hierarchy and cycle detection
+    id_set = {e.id for e in entities}
+    for e in entities:
+        if e.parent_id is not None:
+            if e.parent_id not in id_set:
+                raise MLUEValidationError(f"Entity '{e.id}' references non-existent parent_id '{e.parent_id}'.")
+            if e.parent_id == e.id:
+                raise MLUEValidationError(f"Entity '{e.id}' cannot be its own parent.")
+
+    parent_map = {e.id: e.parent_id for e in entities if e.parent_id is not None}
+    for start_node in parent_map:
+        visited = set()
+        curr = start_node
+        while curr in parent_map:
+            if curr in visited:
+                raise MLUEValidationError(f"Cyclic parent_id hierarchy detected involving entity '{curr}'.")
+            visited.add(curr)
+            curr = parent_map[curr]
 
     # Rules Validation & Static Reachability Verification
     rules_data = data.get("rules", [])
@@ -515,6 +635,15 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
                 actions.append(
                     Action(type="reset_entity", target=target, position=reset_pos, velocity=reset_vel)
                 )
+            elif act_type == "reward":
+                amount = float(act_raw.get("amount", 1.0))
+                if math.isnan(amount) or math.isinf(amount):
+                    raise MLUEValidationError(f"Rule '{trigger}' reward action 'amount' must be a finite number.")
+                actions.append(Action(type="reward", amount=amount))
+            elif act_type == "terminate":
+                actions.append(Action(type="terminate"))
+            elif act_type == "truncate":
+                actions.append(Action(type="truncate"))
             else:
                 raise MLUEValidationError(
                     f"Rule '{trigger}' action type '{act_type}' is unsupported."

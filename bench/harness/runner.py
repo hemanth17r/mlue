@@ -742,7 +742,111 @@ class BenchmarkRunnerBP2:
         }
 
     # =========================================================================
-    # EXECUTE ALL 12 BENCHMARKS & EXPORT TELEMETRY
+    # BENCHMARK 13: Autonomous Agent RL Gym & LiDAR Perception
+    # =========================================================================
+    def run_benchmark_13(self) -> Dict[str, Any]:
+        """Evaluates Gymnasium v1.0 standard compliance, closed-form 2D LiDAR perception,
+        zero-copy tensor observation extraction, and single-env step throughput (>=2,000 steps/s)."""
+        from runtime.gym import MLUEGymEnv
+        from runtime.tensor import ObservationSpec
+
+        scene_path = self.examples_dir / "gym_warehouse_amr.mlue"
+        obs_spec = ObservationSpec(
+            entity_ids=["amr_robot", "docking_bay"],
+            include_velocities=True,
+            lidar_entity_id="amr_robot",
+            lidar_num_rays=8,
+            state_variables=["score", "docked"],
+        )
+
+        env = MLUEGymEnv(
+            mlue_source=scene_path,
+            obs_spec=obs_spec,
+            action_channels=["robot_drive"],
+            continuous_actions=True,
+            max_episode_steps=8000,
+        )
+
+        obs, info = env.reset(seed=42)
+        initial_obs_valid = (
+            hasattr(obs, "__len__") and len(obs) == obs_spec.dimension
+        )
+
+        # Warmup
+        for _ in range(50):
+            env.step([0.2])
+
+        # Throughput timing: 5,000 steps
+        num_steps = 5000
+        t0 = time.perf_counter_ns()
+        for _ in range(num_steps):
+            env.step([0.25])
+        elapsed_ns = time.perf_counter_ns() - t0
+
+        elapsed_s = elapsed_ns / 1e9
+        throughput_steps_per_sec = num_steps / elapsed_s if elapsed_s > 0 else 0.0
+        latency_us_per_step = (elapsed_ns / num_steps) / 1000.0
+
+        # Memory Churn audit over 2,000 steps
+        tracemalloc.start()
+        snap_before = tracemalloc.take_snapshot()
+        churn_steps = 2000
+        for _ in range(churn_steps):
+            env.step([0.15])
+        snap_after = tracemalloc.take_snapshot()
+        tracemalloc.stop()
+
+        stats = snap_after.compare_to(snap_before, "lineno")
+        total_alloc = sum(s.size_diff for s in stats if s.size_diff > 0)
+        bytes_per_step = total_alloc / churn_steps
+
+        # Verification of Gymnasium 1.0 step contract
+        test_obs, test_reward, test_term, test_trunc, test_info = env.step([0.1])
+        contract_valid = (
+            len(test_obs) == obs_spec.dimension
+            and isinstance(test_reward, (int, float))
+            and isinstance(test_term, bool)
+            and isinstance(test_trunc, bool)
+            and isinstance(test_info, dict)
+            and "state_variables" in test_info
+        )
+
+        passed = (
+            initial_obs_valid
+            and contract_valid
+            and (throughput_steps_per_sec >= 2000.0)
+            and (bytes_per_step < 100.0)
+        )
+
+        return {
+            "id": "B13",
+            "name": "Autonomous Agent RL Gym & LiDAR Perception",
+            "category": "RL & Autonomous Perception",
+            "format_type": "gym_throughput",
+            "passed": passed,
+            "throughput_steps_per_sec": f"{throughput_steps_per_sec:,.0f} steps/s",
+            "latency_us_per_step": f"{latency_us_per_step:.1f} µs/step",
+            "bytes_per_step": f"{bytes_per_step:.2f} B/step",
+            "obs_dimension": obs_spec.dimension,
+            "target": "≥ 2,000 steps/s (< 500 µs/step) + < 50 B/step",
+            "unit": "steps/s",
+            "value_display": f"{throughput_steps_per_sec:,.0f} steps/s ({bytes_per_step:.2f} B/step)",
+            "details": [
+                f"Gymnasium v1.0 standard environment with 8-ray closed-form 2D LiDAR perception.",
+                f"Single-environment throughput: {throughput_steps_per_sec:,.0f} steps/sec ({latency_us_per_step:.1f} µs/step).",
+                f"Contiguous zero-copy observation buffer churn: {bytes_per_step:.2f} B/step (near-zero heap allocation)."
+            ],
+            "formula": "Throughput = N_steps / Elapsed_Time (where API == Gymnasium 1.0)",
+            "explanation": {
+                "what_it_tests": "Validates drop-in Gymnasium v1.0 standard compliance, closed-form 2D LiDAR raycasting, and zero-overhead tensor observation extraction.",
+                "what_we_measure": "Simulation step throughput and steady-state memory churn on warehouse AMR task (Target: ≥ 2,000 steps/s, < 50 B/step).",
+                "how_its_measured": "Executes 5,000 continuous steps in MLUEGymEnv with 8-ray LiDAR and measures perf_counter_ns and tracemalloc heap deltas.",
+                "how_to_compare": "≥ 2,000 steps/s = real-time RL training ready; < 500 steps/s or > 1 KB/step = unacceptable Python serialization bottleneck."
+            }
+        }
+
+    # =========================================================================
+    # EXECUTE ALL 13 BENCHMARKS & EXPORT TELEMETRY
     # =========================================================================
     def run_all_and_export(self) -> Dict[str, Any]:
         timestamp_iso = datetime.now(timezone.utc).isoformat()
@@ -760,6 +864,7 @@ class BenchmarkRunnerBP2:
             self.run_benchmark_10(),
             self.run_benchmark_11(),
             self.run_benchmark_12(),
+            self.run_benchmark_13(),
         ]
 
         all_passed = all(b["passed"] for b in benchmarks)

@@ -24,7 +24,48 @@ class TkinterAdapter:
         if shape.type == "circle":
             return canvas.create_oval(x0, y0, x1, y1, fill=shape.color, outline="")
         elif shape.type == "box":
-            return canvas.create_rectangle(x0, y0, x1, y1, fill=shape.color, outline="")
+            outline_color = "#334155" if shape.color in ("#1E293B", "#161F30", "#0F172A") else ""
+            return canvas.create_rectangle(
+                x0, y0, x1, y1,
+                fill=shape.color,
+                outline=outline_color,
+                width=1 if outline_color else 0
+            )
+        elif shape.type == "segment":
+            cy = (y0 + y1) / 2.0
+            return canvas.create_line(x0, cy, x1, cy, fill=shape.color, width=2)
+        elif shape.type == "capsule":
+            w = max(1.0, x1 - x0)
+            h = max(1.0, y1 - y0)
+            if w >= h:
+                r = h / 2.0
+                canvas.create_oval(x0, y0, x0 + 2.0 * r, y1, fill=shape.color, outline="")
+                canvas.create_oval(x1 - 2.0 * r, y0, x1, y1, fill=shape.color, outline="")
+                rect_id = canvas.create_rectangle(x0 + r, y0, x1 - r, y1, fill=shape.color, outline="")
+                if shape.text:
+                    canvas.create_text(
+                        shape.center[0], shape.center[1],
+                        text=shape.text,
+                        fill="#FFFFFF",
+                        anchor="center",
+                        font=("Segoe UI", max(8, int(h * 0.48)), "bold")
+                    )
+                return rect_id
+            else:
+                r = w / 2.0
+                canvas.create_oval(x0, y0, x1, y0 + 2.0 * r, fill=shape.color, outline="")
+                canvas.create_oval(x0, y1 - 2.0 * r, x1, y1, fill=shape.color, outline="")
+                return canvas.create_rectangle(x0, y0 + r, x1, y1 - r, fill=shape.color, outline="")
+        elif shape.type == "text":
+            font_size = max(9, int((y1 - y0) * 0.85))
+            is_header = any(k in (shape.text or "") for k in ("TELEMETRY", "CLUSTER", "TITLE", "DASHBOARD"))
+            return canvas.create_text(
+                x0, shape.center[1],
+                text=shape.text or "",
+                fill=shape.color,
+                anchor="w",
+                font=("Segoe UI", font_size, "bold" if is_header else "normal")
+            )
         return None
 
     def present(self, result: EvaluationResult, block: bool = True) -> None:

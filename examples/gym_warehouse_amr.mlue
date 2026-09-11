@@ -1,0 +1,108 @@
+{
+  "mlue_version": "1.6",
+  "environment": {
+    "dimensions": [800, 600],
+    "background": "#0F172A"
+  },
+  "state_variables": {
+    "score": 0.0,
+    "docked": 0
+  },
+  "entities": [
+    {
+      "id": "amr_robot",
+      "type": "circle",
+      "position": { "x": 0.12, "y": 0.5 },
+      "size": { "radius": 0.04 },
+      "velocity": { "vx": 0.0, "vy": 0.0 },
+      "properties": {
+        "color": "#38BDF8",
+        "solid": true,
+        "control": {
+          "channel": "robot_drive",
+          "axis": "x",
+          "speed": 0.6
+        }
+      }
+    },
+    {
+      "id": "rack_alpha",
+      "type": "box",
+      "position": { "x": 0.38, "y": 0.32 },
+      "size": { "width": 0.1, "height": 0.32 },
+      "properties": {
+        "color": "#334155",
+        "solid": true
+      }
+    },
+    {
+      "id": "rack_beta",
+      "type": "box",
+      "position": { "x": 0.38, "y": 0.78 },
+      "size": { "width": 0.1, "height": 0.28 },
+      "properties": {
+        "color": "#334155",
+        "solid": true
+      }
+    },
+    {
+      "id": "rack_gamma",
+      "type": "box",
+      "position": { "x": 0.65, "y": 0.5 },
+      "size": { "width": 0.1, "height": 0.4 },
+      "properties": {
+        "color": "#334155",
+        "solid": true
+      }
+    },
+    {
+      "id": "docking_bay",
+      "type": "box",
+      "position": { "x": 0.88, "y": 0.5 },
+      "size": { "width": 0.08, "height": 0.16 },
+      "properties": {
+        "color": "#10B981",
+        "solid": true
+      }
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "dock_success",
+      "event": "collision",
+      "entities": ["amr_robot", "docking_bay"],
+      "actions": [
+        { "type": "reward", "amount": 100.0 },
+        { "type": "set", "target": "docked", "value": 1 },
+        { "type": "terminate" }
+      ]
+    },
+    {
+      "trigger": "crash_alpha",
+      "event": "collision",
+      "entities": ["amr_robot", "rack_alpha"],
+      "actions": [
+        { "type": "reward", "amount": -20.0 },
+        { "type": "terminate" }
+      ]
+    },
+    {
+      "trigger": "crash_beta",
+      "event": "collision",
+      "entities": ["amr_robot", "rack_beta"],
+      "actions": [
+        { "type": "reward", "amount": -20.0 },
+        { "type": "terminate" }
+      ]
+    },
+    {
+      "trigger": "crash_gamma",
+      "event": "collision",
+      "entities": ["amr_robot", "rack_gamma"],
+      "actions": [
+        { "type": "reward", "amount": -20.0 },
+        { "type": "terminate" }
+      ]
+    }
+  ]
+}

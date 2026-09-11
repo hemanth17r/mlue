@@ -9,7 +9,9 @@ Completely decoupled from any rendering or platform display subsystem.
 
 import copy
 import math
+import re
 from typing import List, Tuple, Dict, Any, Optional, Set, FrozenSet, Union
+from collections import defaultdict
 from .model import (
     MLUEDocument,
     Environment,
@@ -17,6 +19,9 @@ from .model import (
     Position,
     CircleSize,
     BoxSize,
+    SegmentSize,
+    CapsuleSize,
+    TextSize,
     Velocity,
     EvaluationResult,
     ComputedShape,
@@ -26,52 +31,331 @@ from .model import (
     Action,
 )
 from .loader import parse_keypath
-from .spatial import SpatialHashGrid2D
+from .spatial import SpatialHashGrid2D, Ray2D, RayHit, cast_ray_scene
+
+TEMPLATE_PATTERN = re.compile(r"\{([a-zA-Z0-9_\.\[\]]+)\}")
+
+
+def _analytical_point_to_segment(
+    px: float, py: float, ax: float, ay: float, bx: float, by: float
+) -> Tuple[float, float, float, float, float]:
+    """Calculates closest point on segment AB to point P.
+    Returns (qx, qy, dist, nx, ny) where (nx, ny) is unit normal pointing from Q to P."""
+    vx = bx - ax
+    vy = by - ay
+    v_len_sq = vx * vx + vy * vy
+    if v_len_sq <= 1e-12:
+        t = 0.0
+    else:
+        t = max(0.0, min(1.0, ((px - ax) * vx + (py - ay) * vy) / v_len_sq))
+    qx = ax + t * vx
+    qy = ay + t * vy
+    dx = px - qx
+    dy = py - qy
+    dist = math.hypot(dx, dy)
+    if dist > 1e-12:
+        nx = dx / dist
+        ny = dy / dist
+    else:
+        seg_len = math.hypot(vx, vy)
+        if seg_len > 1e-12:
+            nx = -vy / seg_len
+            ny = vx / seg_len
+        else:
+            nx, ny = 1.0, 0.0
+    return qx, qy, dist, nx, ny
+
+
+def _analytical_segment_to_segment(
+    p1x: float, p1y: float, p2x: float, p2y: float,
+    q1x: float, q1y: float, q2x: float, q2y: float
+) -> Tuple[float, float, float, float, float, float, float]:
+    """Calculates closest points between segment P1P2 and segment Q1Q2.
+    Returns (c1x, c1y, c2x, c2y, dist, nx, ny) where (nx, ny) points from C2 to C1."""
+    ux = p2x - p1x
+    uy = p2y - p1y
+    vx = q2x - q1x
+    vy = q2y - q1y
+    wx = p1x - q1x
+    wy = p1y - q1y
+
+    a = ux * ux + uy * uy
+    b = ux * vx + uy * vy
+    c = vx * vx + vy * vy
+    d = ux * wx + uy * wy
+    e = vx * wx + vy * wy
+    denom = a * c - b * b
+
+    if denom <= 1e-12:
+        best_dist = float("inf")
+        c1x, c1y, c2x, c2y = p1x, p1y, q1x, q1y
+        t1 = max(0.0, min(1.0, e / c)) if c > 1e-12 else 0.0
+        qx1, qy1 = q1x + t1 * vx, q1y + t1 * vy
+        d1 = math.hypot(p1x - qx1, p1y - qy1)
+        if d1 < best_dist:
+            best_dist, c1x, c1y, c2x, c2y = d1, p1x, p1y, qx1, qy1
+        e2 = vx * (p2x - q1x) + vy * (p2y - q1y)
+        t2 = max(0.0, min(1.0, e2 / c)) if c > 1e-12 else 0.0
+        qx2, qy2 = q1x + t2 * vx, q1y + t2 * vy
+        d2 = math.hypot(p2x - qx2, p2y - qy2)
+        if d2 < best_dist:
+            best_dist, c1x, c1y, c2x, c2y = d2, p2x, p2y, qx2, qy2
+        s3 = max(0.0, min(1.0, -d / a)) if a > 1e-12 else 0.0
+        px3, py3 = p1x + s3 * ux, p1y + s3 * uy
+        d3 = math.hypot(px3 - q1x, py3 - q1y)
+        if d3 < best_dist:
+            best_dist, c1x, c1y, c2x, c2y = d3, px3, py3, q1x, q1y
+        d4_val = ux * (q2x - p1x) + uy * (q2y - p1y)
+        s4 = max(0.0, min(1.0, d4_val / a)) if a > 1e-12 else 0.0
+        px4, py4 = p1x + s4 * ux, p1y + s4 * uy
+        d4 = math.hypot(px4 - q2x, py4 - q2y)
+        if d4 < best_dist:
+            best_dist, c1x, c1y, c2x, c2y = d4, px4, py4, q2x, q2y
+    else:
+        s = max(0.0, min(1.0, (b * e - c * d) / denom))
+        t = max(0.0, min(1.0, (b * s + e) / c)) if c > 1e-12 else 0.0
+        if a > 1e-12:
+            s = max(0.0, min(1.0, (b * t - d) / a))
+        c1x = p1x + s * ux
+        c1y = p1y + s * uy
+        c2x = q1x + t * vx
+        c2y = q1y + t * vy
+
+    dx = c1x - c2x
+    dy = c1y - c2y
+    dist = math.hypot(dx, dy)
+    if dist > 1e-12:
+        nx = dx / dist
+        ny = dy / dist
+    else:
+        nx, ny = 1.0, 0.0
+
+    return c1x, c1y, c2x, c2y, dist, nx, ny
 
 
 class MLUEEngine:
     """Deterministic computational engine for evaluating MLUE representations and simulations."""
 
-    def _compute_shapes(self, env: Environment, entities: List[Entity]) -> List[ComputedShape]:
-        """Resolves normalized entity coordinates and sizes into concrete screen-space geometry."""
-        w = env.width
-        h = env.height
-        min_dim = min(w, h)
+    def _interpolate_template(
+        self, template: Optional[str], state_vars: Optional[Dict[str, Any]]
+    ) -> str:
+        """Interpolates state variables into template string without regex recompilation."""
+        if not template:
+            return ""
+        if "{" not in template or not state_vars:
+            return template
 
-        computed_shapes: List[ComputedShape] = []
+        def repl(match):
+            path = match.group(1).strip()
+            val = self._get_path_value(state_vars, path)
+            return str(val) if val is not None else ""
 
-        for entity in entities:
-            if not entity.active:
+        return TEMPLATE_PATTERN.sub(repl, template)
+
+    def _get_stack_dimension(self, child: Entity, is_vertical: bool) -> float:
+        """Calculates child dimension along stacking axis."""
+        if child.type == "box" and isinstance(child.size, BoxSize):
+            return child.size.height if is_vertical else child.size.width
+        if child.type == "capsule" and isinstance(child.size, CapsuleSize):
+            return (child.size.radius * 2.0) if is_vertical else (child.size.length + child.size.radius * 2.0)
+        if child.type == "circle" and isinstance(child.size, CircleSize):
+            return child.size.radius * 2.0
+        if child.type == "segment" and isinstance(child.size, SegmentSize):
+            return child.size.thickness if is_vertical else abs(child.size.end_x - child.position.x)
+        if child.type == "text" and isinstance(child.size, TextSize):
+            return child.size.font_scale * 1.5 if is_vertical else 0.5
+        return 0.05 if is_vertical else 0.1
+
+    def _calculate_auto_stacking(
+        self,
+        entities: List[Entity],
+        children_by_parent: Dict[str, List[Entity]],
+    ) -> Dict[str, Tuple[float, float]]:
+        """Calculates normalized child positions for containers with auto-stacking layout."""
+        stacked_offsets: Dict[str, Tuple[float, float]] = {}
+        for container in entities:
+            if not container.layout or container.id not in children_by_parent:
                 continue
+            layout = container.layout
+            direction = layout.get("direction", "vertical")
+            gap = float(layout.get("gap", 0.01))
+            padding = float(layout.get("padding", 0.0))
+            align_items = layout.get("align_items")
+            children = children_by_parent[container.id]
+            is_vertical = direction in ("vertical", "stack_y")
+            cursor = padding if padding > 0.0 else gap
 
-            color = entity.properties.get("color", "#FFFFFF")
-            cx = entity.position.x * w
-            cy = entity.position.y * h
+            for child in children:
+                dim = self._get_stack_dimension(child, is_vertical)
+                if is_vertical:
+                    rel_y = cursor + dim / 2.0
+                    if align_items == "start":
+                        rel_x = padding if padding > 0.0 else 0.05
+                    elif align_items == "center":
+                        rel_x = 0.5
+                    elif align_items == "end":
+                        rel_x = 1.0 - (padding if padding > 0.0 else 0.05)
+                    else:
+                        rel_x = child.position.x if child.position.x != 0.0 else (padding if padding > 0.0 else 0.5)
+                    stacked_offsets[child.id] = (rel_x, rel_y)
+                else:
+                    rel_x = cursor + dim / 2.0
+                    if align_items == "start":
+                        rel_y = padding if padding > 0.0 else 0.05
+                    elif align_items == "center":
+                        rel_y = 0.5
+                    elif align_items == "end":
+                        rel_y = 1.0 - (padding if padding > 0.0 else 0.05)
+                    else:
+                        rel_y = child.position.y if child.position.y != 0.0 else (padding if padding > 0.0 else 0.5)
+                    stacked_offsets[child.id] = (rel_x, rel_y)
+                cursor += dim + gap
 
-            if entity.type == "circle" and isinstance(entity.size, CircleSize):
-                r = entity.size.radius * min_dim
-                bbox = (cx - r, cy - r, cx + r, cy + r)
-            elif entity.type == "box" and isinstance(entity.size, BoxSize):
-                hw = (entity.size.width / 2.0) * w
-                hh = (entity.size.height / 2.0) * h
-                bbox = (cx - hw, cy - hh, cx + hw, cy + hh)
+        return stacked_offsets
+
+    def _compute_entity_geometry(
+        self,
+        entity: Entity,
+        pw: float,
+        ph: float,
+        p_min: float,
+        cx: float,
+        cy: float,
+        px0: float,
+        py0: float,
+        state_vars: Optional[Dict[str, Any]],
+        is_stacked: bool = False,
+    ) -> Tuple[Tuple[float, float, float, float], Optional[str]]:
+        """Computes concrete bounding box and text content for a single entity."""
+        etype = entity.type
+        if etype == "circle" and isinstance(entity.size, CircleSize):
+            r = entity.size.radius * p_min
+            return (cx - r, cy - r, cx + r, cy + r), None
+        if etype == "box" and isinstance(entity.size, BoxSize):
+            hw = (entity.size.width / 2.0) * pw
+            hh = (entity.size.height / 2.0) * ph
+            return (cx - hw, cy - hh, cx + hw, cy + hh), None
+        if etype == "segment" and isinstance(entity.size, SegmentSize):
+            if is_stacked:
+                sx1 = px0 + entity.position.x * pw
+                sx2 = px0 + entity.size.end_x * pw
+                sy1 = cy
+                sy2 = cy
+                cx = (sx1 + sx2) / 2.0
             else:
-                continue
+                sx1 = px0 + entity.position.x * pw
+                sy1 = py0 + entity.position.y * ph
+                sx2 = px0 + entity.size.end_x * pw
+                sy2 = py0 + entity.size.end_y * ph
+                cx = (sx1 + sx2) / 2.0
+                cy = (sy1 + sy2) / 2.0
+            th = (entity.size.thickness / 2.0) * p_min
+            return (
+                min(sx1, sx2) - th, min(sy1, sy2) - th,
+                max(sx1, sx2) + th, max(sy1, sy2) + th,
+            ), None
+        if etype == "capsule" and isinstance(entity.size, CapsuleSize):
+            text_content = self._interpolate_template(entity.template, state_vars) if entity.template else None
+            r = entity.size.radius * p_min
+            hl = (entity.size.length / 2.0) * p_min
+            dx = hl * math.cos(entity.size.angle)
+            dy = hl * math.sin(entity.size.angle)
+            if is_stacked and (cx - dx - r) < (px0 + (0.01 * pw)):
+                cx = cx + dx + r
+            return (
+                min(cx - dx, cx + dx) - r, min(cy - dy, cy + dy) - r,
+                max(cx - dx, cx + dx) + r, max(cy - dy, cy + dy) + r,
+            ), text_content
+        if etype == "text" and isinstance(entity.size, TextSize):
+            text_content = self._interpolate_template(entity.template, state_vars)
+            fs = entity.size.font_scale * p_min
+            t_len = len(text_content) if text_content else 0
+            if entity.size.align == "center":
+                return (cx - (t_len * fs * 0.3), cy - fs / 2.0, cx + (t_len * fs * 0.3), cy + fs / 2.0), text_content
+            if entity.size.align == "right":
+                return (cx - (t_len * fs * 0.6), cy - fs / 2.0, cx, cy + fs / 2.0), text_content
+            return (cx, cy - fs / 2.0, cx + (t_len * fs * 0.6), cy + fs / 2.0), text_content
+        return (cx, cy, cx, cy), None
 
-            shape = ComputedShape(
-                id=entity.id,
-                type=entity.type,
-                bbox=bbox,
-                center=(cx, cy),
-                color=color,
-            )
-            computed_shapes.append(shape)
+    def _compute_shapes(
+        self,
+        env: Environment,
+        entities: List[Entity],
+        state_vars: Optional[Dict[str, Any]] = None,
+    ) -> List[ComputedShape]:
+        """Resolves normalized entity coordinates, layout hierarchy, and sizes into concrete screen-space geometry."""
+        w = float(env.width)
+        h = float(env.height)
 
-        return computed_shapes
+        children_by_parent: Dict[str, List[Entity]] = defaultdict(list)
+        for entity in entities:
+            if entity.parent_id is not None:
+                children_by_parent[entity.parent_id].append(entity)
+
+        stacked_offsets = self._calculate_auto_stacking(entities, children_by_parent)
+
+        resolved_bboxes: Dict[str, Tuple[float, float, float, float]] = {}
+        shape_dict: Dict[str, ComputedShape] = {}
+        entity_map = {e.id: e for e in entities}
+        remaining = [e for e in entities if e.active]
+
+        while remaining:
+            progress = False
+            next_remaining = []
+            for entity in remaining:
+                parent_id = entity.parent_id
+                if parent_id is not None and parent_id not in resolved_bboxes and parent_id in entity_map:
+                    next_remaining.append(entity)
+                    continue
+
+                progress = True
+                if parent_id is not None and parent_id in resolved_bboxes:
+                    px0, py0, px1, py1 = resolved_bboxes[parent_id]
+                else:
+                    px0, py0, px1, py1 = 0.0, 0.0, w, h
+
+                pw = max(1.0, px1 - px0)
+                ph = max(1.0, py1 - py0)
+                p_min = min(pw, ph)
+
+                is_stacked = entity.id in stacked_offsets
+                rx, ry = stacked_offsets.get(entity.id, (entity.position.x, entity.position.y))
+                cx = px0 + rx * pw
+                cy = py0 + ry * ph
+
+                bbox, text_content = self._compute_entity_geometry(
+                    entity, pw, ph, p_min, cx, cy, px0, py0, state_vars, is_stacked
+                )
+
+                if entity.clip_bounds and parent_id is not None and parent_id in resolved_bboxes:
+                    bbox = (
+                        max(px0, min(px1, bbox[0])),
+                        max(py0, min(py1, bbox[1])),
+                        max(px0, min(px1, bbox[2])),
+                        max(py0, min(py1, bbox[3])),
+                    )
+
+                resolved_bboxes[entity.id] = bbox
+                shape_dict[entity.id] = ComputedShape(
+                    id=entity.id,
+                    type=entity.type,
+                    bbox=bbox,
+                    center=(cx, cy),
+                    color=entity.properties.get("color", "#FFFFFF"),
+                    text=text_content,
+                )
+
+            if not progress and remaining:
+                for e in remaining:
+                    resolved_bboxes[e.id] = (0.0, 0.0, w, h)
+                break
+            remaining = next_remaining
+
+        return [shape_dict[e.id] for e in entities if e.id in shape_dict]
 
     def evaluate(self, doc: MLUEDocument) -> EvaluationResult:
         """Evaluates an MLUEDocument into resolved computational entity states (instantaneous snapshot)."""
-        shapes = self._compute_shapes(doc.environment, doc.entities)
+        shapes = self._compute_shapes(doc.environment, doc.entities, doc.state_variables)
         return EvaluationResult(
             width=doc.environment.width,
             height=doc.environment.height,
@@ -91,6 +375,44 @@ class MLUEEngine:
             rules=list(doc.rules),
         )
 
+    def cast_ray(
+        self,
+        state: SimulationState,
+        origin: Tuple[float, float],
+        angle_rad: float,
+        max_range: float = 1.0,
+        ignore_ids: Optional[Set[str]] = None,
+    ) -> RayHit:
+        """Casts an analytical 2D ray from origin (x, y) at angle_rad, returning the closest RayHit."""
+        ray = Ray2D.from_angle(origin[0], origin[1], angle_rad, max_range=max_range)
+        return cast_ray_scene(state.entities, state.environment, ray, ignore_ids=ignore_ids)
+
+    def cast_lidar(
+        self,
+        state: SimulationState,
+        origin: Tuple[float, float],
+        num_rays: int = 8,
+        fov_rad: float = 2.0 * math.pi,
+        start_angle_rad: float = 0.0,
+        max_range: float = 1.0,
+        ignore_ids: Optional[Set[str]] = None,
+    ) -> List[float]:
+        """Casts a multi-directional LiDAR sweep of analytical rays, returning a list of normalized hit distances."""
+        if num_rays <= 0:
+            return []
+
+        is_full_circle = abs(fov_rad - (2.0 * math.pi)) < 1e-6
+        angle_step = (fov_rad / num_rays) if is_full_circle else (fov_rad / max(1, num_rays - 1))
+
+        distances: List[float] = []
+        for i in range(num_rays):
+            angle = start_angle_rad + i * angle_step
+            ray = Ray2D.from_angle(origin[0], origin[1], angle, max_range=max_range)
+            hit = cast_ray_scene(state.entities, state.environment, ray, ignore_ids=ignore_ids)
+            distances.append(hit.distance)
+
+        return distances
+
     def _get_entity_extents(self, entity: Entity, env: Environment) -> Tuple[float, float]:
         """Returns normalized half-extents (ex, ey) for an entity."""
         w = env.width
@@ -99,11 +421,22 @@ class MLUEEngine:
 
         if entity.type == "circle" and isinstance(entity.size, CircleSize):
             r = entity.size.radius
-            ex = r * (min_dim / w)
-            ey = r * (min_dim / h)
-            return ex, ey
+            return (r * (min_dim / w), r * (min_dim / h))
         elif entity.type == "box" and isinstance(entity.size, BoxSize):
-            return entity.size.width / 2.0, entity.size.height / 2.0
+            return (entity.size.width / 2.0, entity.size.height / 2.0)
+        elif entity.type == "segment" and isinstance(entity.size, SegmentSize):
+            dx = abs(entity.size.end_x - entity.position.x) / 2.0
+            dy = abs(entity.size.end_y - entity.position.y) / 2.0
+            th_x = (entity.size.thickness / 2.0) * (min_dim / w)
+            th_y = (entity.size.thickness / 2.0) * (min_dim / h)
+            return (dx + th_x, dy + th_y)
+        elif entity.type == "capsule" and isinstance(entity.size, CapsuleSize):
+            hl = entity.size.length / 2.0
+            dx = abs(hl * math.cos(entity.size.angle))
+            dy = abs(hl * math.sin(entity.size.angle))
+            rx = entity.size.radius * (min_dim / w)
+            ry = entity.size.radius * (min_dim / h)
+            return (dx + rx, dy + ry)
         return 0.0, 0.0
 
     def _resolve_circle_box_collision(
@@ -180,6 +513,10 @@ class MLUEEngine:
                 velocity=Velocity(vx=new_cvx, vy=new_cvy),
                 properties=circle.properties,
                 active=circle.active,
+                parent_id=circle.parent_id,
+                clip_bounds=circle.clip_bounds,
+                layout=circle.layout,
+                template=circle.template,
             )
             return updated_circle, box, True
 
@@ -197,9 +534,12 @@ class MLUEEngine:
         dy = c1.position.y - c2.position.y
         dist = math.hypot(dx, dy)
 
-        if dist < target_dist and dist > 0.0:
-            nx = dx / dist
-            ny = dy / dist
+        if dist < target_dist:
+            if dist > 1e-12:
+                nx = dx / dist
+                ny = dy / dist
+            else:
+                nx, ny = 1.0, 0.0
 
             overlap = target_dist - dist
             new_c1x = c1.position.x + nx * (overlap / 2.0)
@@ -228,6 +568,10 @@ class MLUEEngine:
                 velocity=Velocity(vx=new_v1x, vy=new_v1y),
                 properties=c1.properties,
                 active=c1.active,
+                parent_id=c1.parent_id,
+                clip_bounds=c1.clip_bounds,
+                layout=c1.layout,
+                template=c1.template,
             )
             u2 = Entity(
                 id=c2.id,
@@ -237,6 +581,10 @@ class MLUEEngine:
                 velocity=Velocity(vx=new_v2x, vy=new_v2y),
                 properties=c2.properties,
                 active=c2.active,
+                parent_id=c2.parent_id,
+                clip_bounds=c2.clip_bounds,
+                layout=c2.layout,
+                template=c2.template,
             )
             return u1, u2, True
 
@@ -292,6 +640,10 @@ class MLUEEngine:
                 velocity=Velocity(vx=new_v1x, vy=new_v1y),
                 properties=b1.properties,
                 active=b1.active,
+                parent_id=b1.parent_id,
+                clip_bounds=b1.clip_bounds,
+                layout=b1.layout,
+                template=b1.template,
             )
             u2 = Entity(
                 id=b2.id,
@@ -301,10 +653,342 @@ class MLUEEngine:
                 velocity=Velocity(vx=new_v2x, vy=new_v2y),
                 properties=b2.properties,
                 active=b2.active,
+                parent_id=b2.parent_id,
+                clip_bounds=b2.clip_bounds,
+                layout=b2.layout,
+                template=b2.template,
             )
             return u1, u2, True
 
         return b1, b2, False
+
+    def _resolve_circle_segment_collision(
+        self, circle: Entity, segment: Entity, env: Environment
+    ) -> Tuple[Entity, Entity, bool]:
+        """Resolves pairwise collision between a moving Circle and a static Segment boundary."""
+        if not isinstance(circle.size, CircleSize) or not isinstance(segment.size, SegmentSize):
+            return circle, segment, False
+
+        w = float(env.width)
+        h = float(env.height)
+        min_dim = min(w, h)
+        scale_x = w / min_dim
+        scale_y = h / min_dim
+
+        px = circle.position.x * scale_x
+        py = circle.position.y * scale_y
+        ax = segment.position.x * scale_x
+        ay = segment.position.y * scale_y
+        bx = segment.size.end_x * scale_x
+        by = segment.size.end_y * scale_y
+
+        r = circle.size.radius
+        th = segment.size.thickness / 2.0
+        target_dist = r + th
+
+        qx, qy, dist, nx, ny = _analytical_point_to_segment(px, py, ax, ay, bx, by)
+
+        if dist < target_dist and target_dist > 0.0:
+            pen = target_dist - dist
+            new_cx = circle.position.x + nx * (pen / scale_x)
+            new_cy = circle.position.y + ny * (pen / scale_y)
+
+            v_dot = circle.velocity.vx * nx + circle.velocity.vy * ny
+            new_cvx = circle.velocity.vx
+            new_cvy = circle.velocity.vy
+            if v_dot < 0.0:
+                new_cvx = circle.velocity.vx - 2.0 * v_dot * nx
+                new_cvy = circle.velocity.vy - 2.0 * v_dot * ny
+
+            updated_circle = Entity(
+                id=circle.id,
+                type=circle.type,
+                position=Position(x=new_cx, y=new_cy),
+                size=circle.size,
+                velocity=Velocity(vx=new_cvx, vy=new_cvy),
+                properties=circle.properties,
+                active=circle.active,
+                parent_id=circle.parent_id,
+                clip_bounds=circle.clip_bounds,
+                layout=circle.layout,
+                template=circle.template,
+            )
+            return updated_circle, segment, True
+
+        return circle, segment, False
+
+    def _resolve_capsule_circle_collision(
+        self, capsule: Entity, circle: Entity, env: Environment
+    ) -> Tuple[Entity, Entity, bool]:
+        """Resolves pairwise collision between a Capsule and a Circle."""
+        if not isinstance(capsule.size, CapsuleSize) or not isinstance(circle.size, CircleSize):
+            return capsule, circle, False
+
+        w = float(env.width)
+        h = float(env.height)
+        min_dim = min(w, h)
+        scale_x = w / min_dim
+        scale_y = h / min_dim
+
+        cx = capsule.position.x * scale_x
+        cy = capsule.position.y * scale_y
+        hl = capsule.size.length / 2.0
+        dx_core = hl * math.cos(capsule.size.angle)
+        dy_core = hl * math.sin(capsule.size.angle)
+        cax, cay = cx - dx_core, cy - dy_core
+        cbx, cby = cx + dx_core, cy + dy_core
+
+        px = circle.position.x * scale_x
+        py = circle.position.y * scale_y
+
+        target_dist = capsule.size.radius + circle.size.radius
+        qx, qy, dist, nx, ny = _analytical_point_to_segment(px, py, cax, cay, cbx, cby)
+
+        if dist < target_dist and target_dist > 0.0:
+            pen = target_dist - dist
+            new_circle_x = circle.position.x + nx * (pen * 0.5 / scale_x)
+            new_circle_y = circle.position.y + ny * (pen * 0.5 / scale_y)
+            new_cap_x = capsule.position.x - nx * (pen * 0.5 / scale_x)
+            new_cap_y = capsule.position.y - ny * (pen * 0.5 / scale_y)
+
+            rel_vx = circle.velocity.vx - capsule.velocity.vx
+            rel_vy = circle.velocity.vy - capsule.velocity.vy
+            v_dot = rel_vx * nx + rel_vy * ny
+
+            new_cvx, new_cvy = circle.velocity.vx, circle.velocity.vy
+            new_cap_vx, new_cap_vy = capsule.velocity.vx, capsule.velocity.vy
+
+            if v_dot < 0.0:
+                new_cvx -= v_dot * nx
+                new_cvy -= v_dot * ny
+                new_cap_vx += v_dot * nx
+                new_cap_vy += v_dot * ny
+
+            upd_circle = Entity(
+                id=circle.id, type=circle.type, position=Position(x=new_circle_x, y=new_circle_y),
+                size=circle.size, velocity=Velocity(vx=new_cvx, vy=new_cvy),
+                properties=circle.properties, active=circle.active,
+                parent_id=circle.parent_id, clip_bounds=circle.clip_bounds,
+                layout=circle.layout, template=circle.template,
+            )
+            upd_cap = Entity(
+                id=capsule.id, type=capsule.type, position=Position(x=new_cap_x, y=new_cap_y),
+                size=capsule.size, velocity=Velocity(vx=new_cap_vx, vy=new_cap_vy),
+                properties=capsule.properties, active=capsule.active,
+                parent_id=capsule.parent_id, clip_bounds=capsule.clip_bounds,
+                layout=capsule.layout, template=capsule.template,
+            )
+            return upd_cap, upd_circle, True
+
+        return capsule, circle, False
+
+    def _resolve_capsule_segment_collision(
+        self, capsule: Entity, segment: Entity, env: Environment
+    ) -> Tuple[Entity, Entity, bool]:
+        """Resolves pairwise collision between a moving Capsule and a static Segment."""
+        if not isinstance(capsule.size, CapsuleSize) or not isinstance(segment.size, SegmentSize):
+            return capsule, segment, False
+
+        w = float(env.width)
+        h = float(env.height)
+        min_dim = min(w, h)
+        scale_x = w / min_dim
+        scale_y = h / min_dim
+
+        cx = capsule.position.x * scale_x
+        cy = capsule.position.y * scale_y
+        hl = capsule.size.length / 2.0
+        dx_core = hl * math.cos(capsule.size.angle)
+        dy_core = hl * math.sin(capsule.size.angle)
+        cax, cay = cx - dx_core, cy - dy_core
+        cbx, cby = cx + dx_core, cy + dy_core
+
+        sax = segment.position.x * scale_x
+        say = segment.position.y * scale_y
+        sbx = segment.size.end_x * scale_x
+        sby = segment.size.end_y * scale_y
+
+        target_dist = capsule.size.radius + segment.size.thickness / 2.0
+        c1x, c1y, c2x, c2y, dist, nx, ny = _analytical_segment_to_segment(
+            cax, cay, cbx, cby, sax, say, sbx, sby
+        )
+
+        if dist < target_dist and target_dist > 0.0:
+            pen = target_dist - dist
+            new_cx = capsule.position.x + nx * (pen / scale_x)
+            new_cy = capsule.position.y + ny * (pen / scale_y)
+
+            v_dot = capsule.velocity.vx * nx + capsule.velocity.vy * ny
+            new_vx = capsule.velocity.vx
+            new_vy = capsule.velocity.vy
+            if v_dot < 0.0:
+                new_vx = capsule.velocity.vx - 2.0 * v_dot * nx
+                new_vy = capsule.velocity.vy - 2.0 * v_dot * ny
+
+            upd_cap = Entity(
+                id=capsule.id, type=capsule.type, position=Position(x=new_cx, y=new_cy),
+                size=capsule.size, velocity=Velocity(vx=new_vx, vy=new_vy),
+                properties=capsule.properties, active=capsule.active,
+                parent_id=capsule.parent_id, clip_bounds=capsule.clip_bounds,
+                layout=capsule.layout, template=capsule.template,
+            )
+            return upd_cap, segment, True
+
+        return capsule, segment, False
+
+    def _resolve_capsule_capsule_collision(
+        self, cap1: Entity, cap2: Entity, env: Environment
+    ) -> Tuple[Entity, Entity, bool]:
+        """Resolves pairwise collision between two dynamic Capsules."""
+        if not isinstance(cap1.size, CapsuleSize) or not isinstance(cap2.size, CapsuleSize):
+            return cap1, cap2, False
+
+        w = float(env.width)
+        h = float(env.height)
+        min_dim = min(w, h)
+        scale_x = w / min_dim
+        scale_y = h / min_dim
+
+        c1x = cap1.position.x * scale_x
+        c1y = cap1.position.y * scale_y
+        hl1 = cap1.size.length / 2.0
+        dx1 = hl1 * math.cos(cap1.size.angle)
+        dy1 = hl1 * math.sin(cap1.size.angle)
+
+        c2x = cap2.position.x * scale_x
+        c2y = cap2.position.y * scale_y
+        hl2 = cap2.size.length / 2.0
+        dx2 = hl2 * math.cos(cap2.size.angle)
+        dy2 = hl2 * math.sin(cap2.size.angle)
+
+        target_dist = cap1.size.radius + cap2.size.radius
+        _, _, _, _, dist, nx, ny = _analytical_segment_to_segment(
+            c1x - dx1, c1y - dy1, c1x + dx1, c1y + dy1,
+            c2x - dx2, c2y - dy2, c2x + dx2, c2y + dy2,
+        )
+
+        if dist < target_dist and target_dist > 0.0:
+            pen = target_dist - dist
+            if dist <= 1e-12:
+                cdx = cap1.position.x - cap2.position.x
+                cdy = cap1.position.y - cap2.position.y
+                c_dist = math.hypot(cdx, cdy)
+                if c_dist > 1e-12:
+                    nx, ny = cdx / c_dist, cdy / c_dist
+                else:
+                    nx, ny = -1.0, 0.0
+
+            new_c1x = cap1.position.x + nx * (pen * 0.5 / scale_x)
+            new_c1y = cap1.position.y + ny * (pen * 0.5 / scale_y)
+            new_c2x = cap2.position.x - nx * (pen * 0.5 / scale_x)
+            new_c2y = cap2.position.y - ny * (pen * 0.5 / scale_y)
+
+            rel_vx = cap1.velocity.vx - cap2.velocity.vx
+            rel_vy = cap1.velocity.vy - cap2.velocity.vy
+            v_dot = rel_vx * nx + rel_vy * ny
+
+            new_v1x, new_v1y = cap1.velocity.vx, cap1.velocity.vy
+            new_v2x, new_v2y = cap2.velocity.vx, cap2.velocity.vy
+            if v_dot < 0.0:
+                new_v1x -= v_dot * nx
+                new_v1y -= v_dot * ny
+                new_v2x += v_dot * nx
+                new_v2y += v_dot * ny
+
+            u1 = Entity(
+                id=cap1.id, type=cap1.type, position=Position(x=new_c1x, y=new_c1y),
+                size=cap1.size, velocity=Velocity(vx=new_v1x, vy=new_v1y),
+                properties=cap1.properties, active=cap1.active,
+                parent_id=cap1.parent_id, clip_bounds=cap1.clip_bounds,
+                layout=cap1.layout, template=cap1.template,
+            )
+            u2 = Entity(
+                id=cap2.id, type=cap2.type, position=Position(x=new_c2x, y=new_c2y),
+                size=cap2.size, velocity=Velocity(vx=new_v2x, vy=new_v2y),
+                properties=cap2.properties, active=cap2.active,
+                parent_id=cap2.parent_id, clip_bounds=cap2.clip_bounds,
+                layout=cap2.layout, template=cap2.template,
+            )
+            return u1, u2, True
+
+        return cap1, cap2, False
+
+    def _resolve_capsule_box_collision(
+        self, capsule: Entity, box: Entity, env: Environment
+    ) -> Tuple[Entity, Entity, bool]:
+        """Resolves pairwise collision between a Capsule and a Box."""
+        if not isinstance(capsule.size, CapsuleSize) or not isinstance(box.size, BoxSize):
+            return capsule, box, False
+
+        w = float(env.width)
+        h = float(env.height)
+        min_dim = min(w, h)
+        scale_x = w / min_dim
+        scale_y = h / min_dim
+
+        cx = capsule.position.x * scale_x
+        cy = capsule.position.y * scale_y
+        hl = capsule.size.length / 2.0
+        dx_core = hl * math.cos(capsule.size.angle)
+        dy_core = hl * math.sin(capsule.size.angle)
+        cax, cay = cx - dx_core, cy - dy_core
+        cbx, cby = cx + dx_core, cy + dy_core
+
+        bx = box.position.x * scale_x
+        by = box.position.y * scale_y
+        hw = (box.size.width / 2.0) * scale_x
+        hh = (box.size.height / 2.0) * scale_y
+
+        segments = [
+            (bx - hw, by - hh, bx + hw, by - hh),
+            (bx - hw, by + hh, bx + hw, by + hh),
+            (bx - hw, by - hh, bx - hw, by + hh),
+            (bx + hw, by - hh, bx + hw, by + hh),
+        ]
+
+        min_d = float("inf")
+        best_nx, best_ny = 0.0, 0.0
+
+        for sx1, sy1, sx2, sy2 in segments:
+            _, _, _, _, dist, nx, ny = _analytical_segment_to_segment(
+                cax, cay, cbx, cby, sx1, sy1, sx2, sy2
+            )
+            if dist < min_d:
+                min_d = dist
+                best_nx, best_ny = nx, ny
+
+        target_dist = capsule.size.radius
+        inside = (bx - hw <= cx <= bx + hw) and (by - hh <= cy <= by + hh)
+
+        if min_d < target_dist or inside:
+            pen = (target_dist - min_d) if not inside else (target_dist + min_d)
+            nx, ny = best_nx, best_ny
+            if nx == 0.0 and ny == 0.0:
+                nx, ny = 0.0, -1.0
+
+            new_cap_x = capsule.position.x + nx * (pen / scale_x)
+            new_cap_y = capsule.position.y + ny * (pen / scale_y)
+
+            rel_vx = capsule.velocity.vx - box.velocity.vx
+            rel_vy = capsule.velocity.vy - box.velocity.vy
+            v_dot = rel_vx * nx + rel_vy * ny
+
+            new_vx = capsule.velocity.vx
+            new_vy = capsule.velocity.vy
+            if v_dot < 0.0:
+                new_vx -= 2.0 * v_dot * nx
+                new_vy -= 2.0 * v_dot * ny
+
+            upd_cap = Entity(
+                id=capsule.id, type=capsule.type, position=Position(x=new_cap_x, y=new_cap_y),
+                size=capsule.size, velocity=Velocity(vx=new_vx, vy=new_vy),
+                properties=capsule.properties, active=capsule.active,
+                parent_id=capsule.parent_id, clip_bounds=capsule.clip_bounds,
+                layout=capsule.layout, template=capsule.template,
+            )
+            return upd_cap, box, True
+
+        return capsule, box, False
 
     def _get_entity_property_value(self, entity: Entity, prop_path: str) -> float:
         """Extracts a numerical property from an Entity (e.g. 'position.x')."""
@@ -326,7 +1010,7 @@ class MLUEEngine:
         env: Environment,
     ) -> Entity:
         """Applies input control modulation, time integration, and boundary constraints to a single entity."""
-        if not entity.active:
+        if not entity.active or entity.type in ("segment", "text"):
             return entity
 
         ex, ey = self._get_entity_extents(entity, env)
@@ -398,7 +1082,49 @@ class MLUEEngine:
             velocity=Velocity(vx=new_vx, vy=new_vy),
             properties=dict(entity.properties),
             active=entity.active,
+            parent_id=entity.parent_id,
+            clip_bounds=entity.clip_bounds,
+            layout=entity.layout,
+            template=entity.template,
         )
+
+    def _resolve_pair_collision(
+        self, e1: Entity, e2: Entity, env: Environment
+    ) -> Tuple[Entity, Entity, bool]:
+        """Dispatches pairwise collision resolution across supported geometric types."""
+        t1, t2 = e1.type, e2.type
+        if t1 == "circle" and t2 == "box":
+            return self._resolve_circle_box_collision(e1, e2, env)
+        if t1 == "box" and t2 == "circle":
+            r2, r1, hit = self._resolve_circle_box_collision(e2, e1, env)
+            return r1, r2, hit
+        if t1 == "circle" and t2 == "circle":
+            return self._resolve_circle_circle_collision(e1, e2, env)
+        if t1 == "box" and t2 == "box":
+            return self._resolve_box_box_collision(e1, e2, env)
+        if t1 == "circle" and t2 == "segment":
+            return self._resolve_circle_segment_collision(e1, e2, env)
+        if t1 == "segment" and t2 == "circle":
+            r2, r1, hit = self._resolve_circle_segment_collision(e2, e1, env)
+            return r1, r2, hit
+        if t1 == "capsule" and t2 == "circle":
+            return self._resolve_capsule_circle_collision(e1, e2, env)
+        if t1 == "circle" and t2 == "capsule":
+            r2, r1, hit = self._resolve_capsule_circle_collision(e2, e1, env)
+            return r1, r2, hit
+        if t1 == "capsule" and t2 == "segment":
+            return self._resolve_capsule_segment_collision(e1, e2, env)
+        if t1 == "segment" and t2 == "capsule":
+            r2, r1, hit = self._resolve_capsule_segment_collision(e2, e1, env)
+            return r1, r2, hit
+        if t1 == "capsule" and t2 == "capsule":
+            return self._resolve_capsule_capsule_collision(e1, e2, env)
+        if t1 == "capsule" and t2 == "box":
+            return self._resolve_capsule_box_collision(e1, e2, env)
+        if t1 == "box" and t2 == "capsule":
+            r2, r1, hit = self._resolve_capsule_box_collision(e2, e1, env)
+            return r1, r2, hit
+        return e1, e2, False
 
     def _resolve_pairwise_collisions(
         self, entities: List[Entity], env: Environment
@@ -425,21 +1151,9 @@ class MLUEEngine:
                 continue
 
             if e1.properties.get("solid", False) and e2.properties.get("solid", False):
-                has_collided = False
-                if e1.type == "circle" and e2.type == "box":
-                    e1_res, e2_res, has_collided = self._resolve_circle_box_collision(e1, e2, env)
-                    entities[i], entities[j] = e1_res, e2_res
-                elif e1.type == "box" and e2.type == "circle":
-                    e2_res, e1_res, has_collided = self._resolve_circle_box_collision(e2, e1, env)
-                    entities[i], entities[j] = e1_res, e2_res
-                elif e1.type == "circle" and e2.type == "circle":
-                    e1_res, e2_res, has_collided = self._resolve_circle_circle_collision(e1, e2, env)
-                    entities[i], entities[j] = e1_res, e2_res
-                elif e1.type == "box" and e2.type == "box":
-                    e1_res, e2_res, has_collided = self._resolve_box_box_collision(e1, e2, env)
-                    entities[i], entities[j] = e1_res, e2_res
-
+                e1_res, e2_res, has_collided = self._resolve_pair_collision(e1, e2, env)
                 if has_collided:
+                    entities[i], entities[j] = e1_res, e2_res
                     collision_events.add(frozenset([e1.id, e2.id]))
 
         return entities, collision_events
@@ -592,10 +1306,20 @@ class MLUEEngine:
         entities: List[Entity],
         entity_map: Dict[str, int],
         state_variables: Dict[str, Any],
-    ) -> None:
-        """Executes a list of state mutation actions."""
+    ) -> Tuple[float, bool, bool]:
+        """Executes a list of state mutation actions. Returns (delta_reward, is_terminated, is_truncated)."""
+        delta_reward = 0.0
+        is_terminated = False
+        is_truncated = False
         for action in actions:
-            if action.type in ("destroy_entity", "deactivate_entity"):
+            if action.type == "reward":
+                amt = float(action.amount) if action.amount is not None else 1.0
+                delta_reward += amt
+            elif action.type == "terminate":
+                is_terminated = True
+            elif action.type == "truncate":
+                is_truncated = True
+            elif action.type in ("destroy_entity", "deactivate_entity"):
                 t_idx = entity_map.get(action.target)
                 if t_idx is not None:
                     curr = entities[t_idx]
@@ -603,6 +1327,10 @@ class MLUEEngine:
                         id=curr.id, type=curr.type, position=curr.position,
                         size=curr.size, velocity=curr.velocity, properties=curr.properties,
                         active=False,
+                        parent_id=curr.parent_id,
+                        clip_bounds=curr.clip_bounds,
+                        layout=curr.layout,
+                        template=curr.template,
                     )
             elif action.type == "set_property":
                 t_idx = entity_map.get(action.target)
@@ -614,6 +1342,10 @@ class MLUEEngine:
                         id=curr.id, type=curr.type, position=curr.position,
                         size=curr.size, velocity=curr.velocity, properties=props,
                         active=curr.active,
+                        parent_id=curr.parent_id,
+                        clip_bounds=curr.clip_bounds,
+                        layout=curr.layout,
+                        template=curr.template,
                     )
             elif action.type == "increment" and action.target in state_variables:
                 amt = action.amount if action.amount is not None else 1.0
@@ -642,7 +1374,12 @@ class MLUEEngine:
                         id=curr.id, type=curr.type, position=new_pos,
                         size=curr.size, velocity=new_vel, properties=curr.properties,
                         active=True,
+                        parent_id=curr.parent_id,
+                        clip_bounds=curr.clip_bounds,
+                        layout=curr.layout,
+                        template=curr.template,
                     )
+        return delta_reward, is_terminated, is_truncated
 
     def _clone_state_variables(self, state_dict: Dict[str, Any]) -> Dict[str, Any]:
         """Ultra-fast deterministic deep cloning of hierarchical state variables without copy.deepcopy overhead."""
@@ -683,6 +1420,10 @@ class MLUEEngine:
         # 2. Resolve pairwise solid collisions
         moved_entities, collision_events = self._resolve_pairwise_collisions(moved_entities, env)
 
+        step_reward = 0.0
+        terminated = state.terminated
+        truncated = state.truncated
+
         # 3. Evaluate declarative rules and execute actions
         entity_map: Dict[str, int] = {e.id: idx for idx, e in enumerate(moved_entities)}
         for rule in state.rules:
@@ -695,10 +1436,15 @@ class MLUEEngine:
                 )
 
             if is_triggered:
-                self._execute_rule_actions(rule.actions, moved_entities, entity_map, state_variables)
+                r, term, trunc = self._execute_rule_actions(rule.actions, moved_entities, entity_map, state_variables)
+                step_reward += r
+                if term:
+                    terminated = True
+                if trunc:
+                    truncated = True
 
         # 4. Compute concrete shape coordinates for active entities
-        new_shapes = self._compute_shapes(env, moved_entities)
+        new_shapes = self._compute_shapes(env, moved_entities, state_variables)
         new_result = EvaluationResult(
             width=env.width,
             height=env.height,
@@ -713,5 +1459,8 @@ class MLUEEngine:
             result=new_result,
             state_variables=state_variables,
             rules=state.rules,
+            step_reward=step_reward,
+            terminated=terminated,
+            truncated=truncated,
         )
 

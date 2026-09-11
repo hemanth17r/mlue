@@ -80,6 +80,11 @@ const GROUNDING_DATA = {
     rationale: 'AI rollouts across x86-64, ARM64, and WebAssembly must produce bit-exact identical trajectory hashes.',
     targetRule: '100% Bit-Exact Parity Across CPU Architectures',
   },
+  B13: {
+    standardName: 'Gymnasium v1.0 & PettingZoo Multi-Agent RL Protocol',
+    rationale: 'Autonomous agent training requires zero-overhead vectorized stepping, closed-form LiDAR perception, and standardized gym interfaces.',
+    targetRule: 'Gymnasium API Compliant + LiDAR Raycasting (> 2,000 steps/s)',
+  },
 };
 
 export default function BenchmarkCard({ benchmark, allRuns, currentRunIdx, compareRunIdx, compareMode }) {
@@ -99,6 +104,7 @@ export default function BenchmarkCard({ benchmark, allRuns, currentRunIdx, compa
       case 'B10': return ShieldAlert;
       case 'B11': return Compass;
       case 'B12': return Lock;
+      case 'B13': return Zap;
       default: return Activity;
     }
   };
@@ -121,6 +127,7 @@ export default function BenchmarkCard({ benchmark, allRuns, currentRunIdx, compa
       case 'B10': return parseFloat(b.max_containment_speed) || 2.5;
       case 'B11': return parseFloat(b.cull_efficiency) || 100.0;
       case 'B12': return 100;
+      case 'B13': return parseFloat((b.throughput_steps_per_sec || b.value_display || '0').replace(/[^0-9.]/g, '')) || 4000;
       default: return 1;
     }
   };

@@ -9,7 +9,17 @@ import sys
 import ctypes
 from pathlib import Path
 from typing import List, Tuple, Optional, Set, FrozenSet
-from runtime.model import Entity, Position, Velocity, CircleSize, BoxSize, Environment
+from runtime.model import (
+    Entity,
+    Position,
+    Velocity,
+    CircleSize,
+    BoxSize,
+    SegmentSize,
+    CapsuleSize,
+    TextSize,
+    Environment,
+)
 from runtime.fixed_point import FixedPointEngine
 
 
@@ -175,12 +185,23 @@ class NativeCore:
             if e.active:
                 flags |= 2
 
-            etype = 1 if e.type == "circle" else 2
             if e.type == "circle" and isinstance(e.size, CircleSize):
+                etype = 1
                 p1, p2 = e.size.radius, 0.0
             elif e.type == "box" and isinstance(e.size, BoxSize):
+                etype = 2
                 p1, p2 = e.size.width, e.size.height
+            elif e.type == "segment" and isinstance(e.size, SegmentSize):
+                etype = 3
+                p1, p2 = e.size.end_x, e.size.end_y
+            elif e.type == "capsule" and isinstance(e.size, CapsuleSize):
+                etype = 4
+                p1, p2 = e.size.radius, e.size.length
+            elif e.type == "text" and isinstance(e.size, TextSize):
+                etype = 5
+                p1, p2 = e.size.font_scale, 0.0
             else:
+                etype = 1
                 p1, p2 = 0.0, 0.0
 
             records_array[i] = EntityRecordC(
@@ -195,8 +216,8 @@ class NativeCore:
                 pos_y=float(e.position.y),
                 vel_vx=float(e.velocity.vx),
                 vel_vy=float(e.velocity.vy),
-                size_p1=p1,
-                size_p2=p2,
+                size_p1=float(p1),
+                size_p2=float(p2),
             )
 
         env_c = EnvironmentC(
@@ -221,6 +242,10 @@ class NativeCore:
                     velocity=Velocity(vx=rec.vel_vx, vy=rec.vel_vy),
                     properties=dict(e.properties),
                     active=bool(rec.flags & 2),
+                    parent_id=e.parent_id,
+                    clip_bounds=e.clip_bounds,
+                    layout=e.layout,
+                    template=e.template,
                 )
             )
 

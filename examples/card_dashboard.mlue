@@ -1,0 +1,116 @@
+{
+  "mlue_version": "2.1",
+  "environment": {
+    "dimensions": [800, 600],
+    "background": "#0B0F19"
+  },
+  "state_variables": {
+    "system": {
+      "status": "HEALTHY",
+      "uptime": "99.98%",
+      "active_nodes": 42
+    },
+    "metrics": {
+      "throughput": 12850,
+      "latency_us": 28.4
+    }
+  },
+  "entities": [
+    {
+      "id": "card_container",
+      "type": "box",
+      "position": { "x": 0.5, "y": 0.5 },
+      "size": { "width": 0.75, "height": 0.55 },
+      "layout": {
+        "direction": "vertical",
+        "gap": 0.035,
+        "padding": 0.05,
+        "align_items": "start"
+      },
+      "properties": {
+        "color": "#161F30",
+        "solid": false
+      }
+    },
+    {
+      "id": "header_title",
+      "type": "text",
+      "parent_id": "card_container",
+      "template": "CLUSTER TELEMETRY | SYSTEM MONITOR",
+      "size": {
+        "font_scale": 0.030,
+        "align": "left"
+      },
+      "properties": {
+        "color": "#F8FAFC"
+      }
+    },
+    {
+      "id": "header_divider",
+      "type": "segment",
+      "parent_id": "card_container",
+      "start": { "x": 0.05, "y": 0.0 },
+      "end": { "x": 0.95, "y": 0.0 },
+      "thickness": 0.003,
+      "properties": {
+        "color": "#283548",
+        "solid": false
+      }
+    },
+    {
+      "id": "status_pill",
+      "type": "capsule",
+      "parent_id": "card_container",
+      "template": "STATUS: {system.status}",
+      "size": {
+        "radius": 0.024,
+        "length": 0.22,
+        "angle": 0.0
+      },
+      "properties": {
+        "color": "#059669",
+        "solid": false
+      }
+    },
+    {
+      "id": "metric_text_nodes",
+      "type": "text",
+      "parent_id": "card_container",
+      "template": "Active Nodes: {system.active_nodes}    |    Cluster Uptime: {system.uptime}",
+      "size": {
+        "font_scale": 0.022,
+        "align": "left"
+      },
+      "properties": {
+        "color": "#94A3B8"
+      }
+    },
+    {
+      "id": "metric_text_perf",
+      "type": "text",
+      "parent_id": "card_container",
+      "template": "Throughput: {metrics.throughput} req/s    |    Step Latency: {metrics.latency_us} us",
+      "size": {
+        "font_scale": 0.022,
+        "align": "left"
+      },
+      "properties": {
+        "color": "#38BDF8"
+      }
+    },
+    {
+      "id": "footer_text",
+      "type": "text",
+      "parent_id": "card_container",
+      "template": "Protocol: MLUE Universal Spatial Substrate v2.1 (Deterministic Execution)",
+      "size": {
+        "font_scale": 0.016,
+        "align": "left"
+      },
+      "properties": {
+        "color": "#475569"
+      }
+    }
+  ],
+  "rules": []
+}

@@ -143,6 +143,99 @@ TOOLS_DEFINITIONS = [
             "additionalProperties": False,
         },
     },
+    {
+        "name": "mlue_patch_document",
+        "description": "Applies a compact array of micro-delta operations (insert_entity, update_entity, delete_entity, insert_rule, delete_rule, set_state, delete_state) to an MLUE document dictionary and verifies invariants in < 1ms.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "document": {
+                    "type": "object",
+                    "description": "The MLUE document dictionary to patch."
+                },
+                "operations": {
+                    "type": "array",
+                    "description": "List of micro-delta patch operations.",
+                    "items": {"type": "object"}
+                }
+            },
+            "required": ["document", "operations"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "mlue_patch_session",
+        "description": "Hot-patches an active in-memory simulation session using micro-delta operations without interrupting the simulation clock.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string",
+                    "description": "The active simulation session ID."
+                },
+                "operations": {
+                    "type": "array",
+                    "description": "List of micro-delta patch operations to apply.",
+                    "items": {"type": "object"}
+                }
+            },
+            "required": ["session_id", "operations"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "mlue_create_checkpoint",
+        "description": "Creates an immutable, bit-exact cryptographic snapshot of an active session for zero-latency time-travel or branching.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string",
+                    "description": "The active simulation session ID."
+                },
+                "checkpoint_id": {
+                    "type": "string",
+                    "description": "Optional custom identifier for the checkpoint."
+                }
+            },
+            "required": ["session_id"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "mlue_restore_checkpoint",
+        "description": "Restores an active simulation session back to a previously saved checkpoint.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string",
+                    "description": "The active simulation session ID."
+                },
+                "checkpoint_id": {
+                    "type": "string",
+                    "description": "The checkpoint ID to restore."
+                }
+            },
+            "required": ["session_id", "checkpoint_id"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "mlue_list_checkpoints",
+        "description": "Lists all active cryptographic checkpoints for a session.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "session_id": {
+                    "type": "string",
+                    "description": "The active simulation session ID."
+                }
+            },
+            "required": ["session_id"],
+            "additionalProperties": False,
+        },
+    },
 ]
 
 
@@ -182,6 +275,35 @@ def handle_tool_call(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         entity_id = arguments.get("entity_id", "")
         updates = arguments.get("updates", {})
         result = ai_interface.mutate_entity(session_id, entity_id, updates)
+        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
+    elif name == "mlue_patch_document":
+        doc = arguments.get("document", {})
+        ops = arguments.get("operations", [])
+        result = ai_interface.patch_document(doc, ops)
+        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
+    elif name == "mlue_patch_session":
+        session_id = arguments.get("session_id", "")
+        ops = arguments.get("operations", [])
+        result = ai_interface.patch_session(session_id, ops)
+        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
+    elif name == "mlue_create_checkpoint":
+        session_id = arguments.get("session_id", "")
+        cid = arguments.get("checkpoint_id")
+        result = ai_interface.create_checkpoint(session_id, cid)
+        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
+    elif name == "mlue_restore_checkpoint":
+        session_id = arguments.get("session_id", "")
+        cid = arguments.get("checkpoint_id", "")
+        result = ai_interface.restore_checkpoint(session_id, cid)
+        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
+    elif name == "mlue_list_checkpoints":
+        session_id = arguments.get("session_id", "")
+        result = ai_interface.list_checkpoints(session_id)
         return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
 
     elif name == "mlue_close_simulation":

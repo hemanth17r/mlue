@@ -27,6 +27,26 @@ class BoxSize:
 
 
 @dataclass(frozen=True)
+class SegmentSize:
+    end_x: float
+    end_y: float
+    thickness: float = 0.002
+
+
+@dataclass(frozen=True)
+class CapsuleSize:
+    radius: float
+    length: float
+    angle: float = 0.0
+
+
+@dataclass(frozen=True)
+class TextSize:
+    font_scale: float = 0.02
+    align: str = "left"
+
+
+@dataclass(frozen=True)
 class Velocity:
     vx: float = 0.0
     vy: float = 0.0
@@ -37,10 +57,14 @@ class Entity:
     id: str
     type: str
     position: Position
-    size: Union[CircleSize, BoxSize]
+    size: Union[CircleSize, BoxSize, SegmentSize, CapsuleSize, TextSize, Any]
     velocity: Velocity = field(default_factory=Velocity)
     properties: Dict[str, Any] = field(default_factory=dict)
     active: bool = True
+    parent_id: Optional[str] = None
+    clip_bounds: bool = False
+    layout: Optional[Dict[str, Any]] = None
+    template: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -63,7 +87,7 @@ class Condition:
 @dataclass(frozen=True)
 class Action:
     type: str
-    target: str
+    target: Optional[str] = None
     amount: Optional[float] = None
     value: Optional[Any] = None
     property: Optional[str] = None
@@ -91,6 +115,7 @@ class ComputedShape:
     # Center position in concrete coordinate units (cx, cy)
     center: Tuple[float, float]
     color: str
+    text: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -118,3 +143,6 @@ class SimulationState:
     result: EvaluationResult
     state_variables: Dict[str, Any] = field(default_factory=dict)
     rules: List[Rule] = field(default_factory=list)
+    step_reward: float = 0.0
+    terminated: bool = False
+    truncated: bool = False

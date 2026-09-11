@@ -14,7 +14,8 @@
 >
 > MLUE is a **first-principles universal software, state, and simulation substrate** engineered specifically for machine intelligence. It eliminates 50 years of legacy human-centric scaffolding (HTML, CSS, React, Virtual DOMs, SQL engines, ORMs) and gives AI agents a single, unified mathematical language to construct, inspect, validate, and execute **interactive software applications, control dashboards, state databases, physical simulations, and multi-agent environments** in microseconds.
 >
-> 📜 **[Read the Master Foundational Thesis & 5-Phase Roadmap →](docs/FOUNDATIONAL_THESIS.md)**
+> 📜 **[Read the Master Foundational Thesis & 5-Phase Roadmap →](docs/FOUNDATIONAL_THESIS.md)**  
+> 🎯 **[Read the "Moon-to-Mars" Strategic Wedge & Vision Guardrail →](docs/STRATEGIC_WEDGE_AND_VISION_GUARD.md)**
 
 👉 **[Explore the Live Interactive Benchmark & Telemetry Dashboard →](https://mlue-bench.vercel.app)**
 

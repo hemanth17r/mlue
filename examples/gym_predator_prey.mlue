@@ -1,0 +1,77 @@
+{
+  "mlue_version": "1.6",
+  "environment": {
+    "dimensions": [600, 600],
+    "background": "#020617"
+  },
+  "state_variables": {
+    "captures": 0
+  },
+  "entities": [
+    {
+      "id": "predator_1",
+      "type": "circle",
+      "position": { "x": 0.2, "y": 0.3 },
+      "size": { "radius": 0.045 },
+      "velocity": { "vx": 0.0, "vy": 0.0 },
+      "properties": {
+        "color": "#EF4444",
+        "solid": true,
+        "control": {
+          "channel": "p1_drive",
+          "axis": "x",
+          "speed": 0.5
+        }
+      }
+    },
+    {
+      "id": "predator_2",
+      "type": "circle",
+      "position": { "x": 0.2, "y": 0.7 },
+      "size": { "radius": 0.045 },
+      "velocity": { "vx": 0.0, "vy": 0.0 },
+      "properties": {
+        "color": "#F97316",
+        "solid": true,
+        "control": {
+          "channel": "p2_drive",
+          "axis": "x",
+          "speed": 0.5
+        }
+      }
+    },
+    {
+      "id": "prey",
+      "type": "circle",
+      "position": { "x": 0.75, "y": 0.5 },
+      "size": { "radius": 0.035 },
+      "velocity": { "vx": -0.15, "vy": 0.0 },
+      "properties": {
+        "color": "#10B981",
+        "solid": true
+      }
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "capture_p1",
+      "event": "collision",
+      "entities": ["predator_1", "prey"],
+      "actions": [
+        { "type": "reward", "amount": 50.0 },
+        { "type": "increment", "target": "captures", "amount": 1 },
+        { "type": "terminate" }
+      ]
+    },
+    {
+      "trigger": "capture_p2",
+      "event": "collision",
+      "entities": ["predator_2", "prey"],
+      "actions": [
+        { "type": "reward", "amount": 50.0 },
+        { "type": "increment", "target": "captures", "amount": 1 },
+        { "type": "terminate" }
+      ]
+    }
+  ]
+}

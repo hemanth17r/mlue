@@ -20,12 +20,15 @@ extern "C" {
   #define MLUE_API
 #endif
 
-#define MLUE_CORE_VERSION_MAJOR 1
-#define MLUE_CORE_VERSION_MINOR 5
+#define MLUE_CORE_VERSION_MAJOR 2
+#define MLUE_CORE_VERSION_MINOR 1
 #define MLUE_CORE_VERSION_PATCH 0
 
-#define MLUE_ENTITY_TYPE_CIRCLE 1
-#define MLUE_ENTITY_TYPE_BOX    2
+#define MLUE_ENTITY_TYPE_CIRCLE  1
+#define MLUE_ENTITY_TYPE_BOX     2
+#define MLUE_ENTITY_TYPE_SEGMENT 3
+#define MLUE_ENTITY_TYPE_CAPSULE 4
+#define MLUE_ENTITY_TYPE_TEXT    5
 
 #define MLUE_FLAG_SOLID      (1 << 0)
 #define MLUE_FLAG_ACTIVE     (1 << 1)
@@ -39,17 +42,17 @@ extern "C" {
 typedef struct {
     uint32_t id_idx;           /* Offset into string dictionary */
     uint32_t color_rgba;       /* Packed 32-bit RGBA integer */
-    uint8_t  entity_type;      /* 1 = circle, 2 = box */
+    uint8_t  entity_type;      /* 1=circle, 2=box, 3=segment, 4=capsule, 5=text */
     uint8_t  flags;            /* bit 0: solid, bit 1: active, bit 2: controlled */
     uint8_t  ctrl_axis;        /* 0 = none, 1 = x, 2 = y */
     uint8_t  reserved_1;       /* 8-bit alignment padding */
     uint32_t ctrl_channel_idx; /* Offset into string dictionary for control channel */
-    double   pos_x;            /* Normalized X position [0.0, 1.0] */
-    double   pos_y;            /* Normalized Y position [0.0, 1.0] */
+    double   pos_x;            /* Center X (circle/box/capsule/text) or Start X (segment) */
+    double   pos_y;            /* Center Y (circle/box/capsule/text) or Start Y (segment) */
     double   vel_vx;           /* Normalized X velocity */
     double   vel_vy;           /* Normalized Y velocity */
-    double   size_p1;          /* Radius (circle) or Width (box) */
-    double   size_p2;          /* Height (box) or 0.0 (circle) */
+    double   size_p1;          /* Circle r | Box w | Segment End X | Capsule r | Text font_scale */
+    double   size_p2;          /* Box h | Segment End Y | Capsule len | Text align */
 } MLUE_EntityRecord;
 
 typedef struct {
