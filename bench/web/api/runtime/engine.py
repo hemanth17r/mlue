@@ -1399,29 +1399,6 @@ class MLUEEngine:
                 res[k] = v
         return res
 
-    def step(
-        self,
-        state: SimulationState,
-        dt: float,
-        inputs: Optional[Dict[str, float]] = None,
-    ) -> SimulationState:
-        """Advances simulation by time step dt >= 0 deterministically."""
-        if dt < 0:
-            raise ValueError(f"Time step dt must be non-negative (got {dt}).")
-
-        env = state.environment
-        input_map = inputs or {}
-        state_variables = self._clone_state_variables(state.state_variables)
-
-        # 1. Integrate motion & environment boundary constraints
-        moved_entities = [
-            self._integrate_entity_motion(e, dt, input_map, env)
-            for e in state.entities
-        ]
-
-        # 2. Resolve pairwise solid collisions
-        moved_entities, collision_events = self._resolve_pairwise_collisions(moved_entities, env)
-
     def _process_pointer_input(
         self,
         state: SimulationState,
@@ -1432,6 +1409,11 @@ class MLUEEngine:
         """Resolves pointer state transitions and generates discrete interaction events."""
         old_ptr = state.pointer
         pointer_input = input_map.get("pointer")
+        has_flat_pointer = "pointer_x" in input_map or "pointer_y" in input_map
+
+        # Fast path: No pointer input and no active drag/hover state
+        if pointer_input is None and not has_flat_pointer and not old_ptr.pressed and old_ptr.hovered_entity_id is None:
+            return old_ptr, {}
         if isinstance(pointer_input, dict):
             new_px = float(pointer_input.get("x", old_ptr.x))
             new_py = float(pointer_input.get("y", old_ptr.y))
