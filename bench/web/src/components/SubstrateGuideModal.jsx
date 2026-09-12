@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -20,7 +20,7 @@ import {
   Box,
   Circle
 } from 'lucide-react';
-import { springJelly, springSnappy, tapScale } from '../lib/motion';
+import { springJelly, springSnappy, springModal, tapScale, backdropVariants, modalVariants } from '../lib/motion';
 
 export const DOMAIN_TEMPLATES = {
   dashboards: [
@@ -397,7 +397,14 @@ export default function SubstrateGuideModal({ isOpen, onClose, onLaunchTemplate 
   const [activeTab, setActiveTab] = useState('domains'); // 'domains' | 'thesis' | 'spec' | 'mcp'
   const [selectedDomain, setSelectedDomain] = useState('all');
 
-  if (!isOpen) return null;
+  // Big-Tech Standard: Escape key dismisses modal
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   const allTemplates = Object.values(DOMAIN_TEMPLATES).flat();
   const filteredTemplates = selectedDomain === 'all' 
@@ -414,13 +421,26 @@ export default function SubstrateGuideModal({ isOpen, onClose, onLaunchTemplate 
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0, transition: springJelly }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative w-full max-w-5xl bg-[#070D18] border border-cyan-500/20 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col"
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="guide-modal-backdrop"
+          variants={backdropVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          onClick={onClose}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto"
+        >
+          <motion.div
+            key="guide-modal-card"
+            variants={modalVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-5xl bg-[#070D18] border border-cyan-500/20 rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col"
+          >
         {/* Top Header */}
         <div className="px-6 py-5 border-b border-white/[0.08] flex items-center justify-between bg-black/40 backdrop-blur-xl shrink-0">
           <div className="flex items-center space-x-3">
@@ -498,17 +518,19 @@ export default function SubstrateGuideModal({ isOpen, onClose, onLaunchTemplate 
               {/* Category Filter Pills */}
               <div className="flex flex-wrap items-center gap-1.5 font-mono text-xs">
                 {domains.map(dom => (
-                  <button
+                  <motion.button
+                    {...tapScale.pill}
                     key={dom.id}
+                    type="button"
                     onClick={() => setSelectedDomain(dom.id)}
                     className={`px-3 py-1 rounded-full cursor-pointer transition text-xs font-semibold ${
                       selectedDomain === dom.id 
-                        ? 'bg-cyan-400 text-slate-950' 
+                        ? 'bg-cyan-400 text-slate-950 font-bold shadow-md shadow-cyan-500/20' 
                         : 'bg-slate-900/80 text-slate-400 hover:text-white border border-white/[0.06]'
                     }`}
                   >
                     {dom.label} ({dom.count})
-                  </button>
+                  </motion.button>
                 ))}
               </div>
 
@@ -690,15 +712,19 @@ export default function SubstrateGuideModal({ isOpen, onClose, onLaunchTemplate 
           <span className="text-slate-400">
             Audit Status: <span className="text-emerald-400 font-bold">13/13 Invariants Passed (100% Empirical)</span>
           </span>
-          <button
+          <motion.button
+            {...tapScale.button}
+            type="button"
             onClick={onClose}
             className="px-4 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold cursor-pointer transition"
           >
             Close Guide
-          </button>
+          </motion.button>
         </div>
 
-      </motion.div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

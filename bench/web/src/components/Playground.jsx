@@ -405,6 +405,15 @@ export default function Playground({ onOpenBenchmarks }) {
   // Keyboard Event Handlers
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Big-Tech Standard: Escape key dismisses modals and drawers even if focus was in input
+      if (e.key === 'Escape') {
+        setShowGuideModal(false);
+        setShowCode(false);
+        setShowInspector(false);
+        setSelectedEntityId(null);
+        return;
+      }
+
       const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
       if (isInput) return;
 
@@ -1563,14 +1572,15 @@ export default function Playground({ onOpenBenchmarks }) {
             <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
             <span>AI INTERACTIVE RUNTIME</span>
           </span>
-          <button
+          <motion.button
+            {...tapScale.pill}
             type="button"
             onClick={() => setShowGuideModal(true)}
-            className="px-3 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-white/[0.1] text-slate-300 hover:text-white font-bold flex items-center space-x-1.5 transition cursor-pointer"
+            className="px-3 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 border border-white/[0.1] hover:border-cyan-500/40 text-slate-300 hover:text-white font-bold flex items-center space-x-1.5 transition cursor-pointer"
           >
-            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+            <BookOpen className="w-3.5 h-3.5 text-amber-400 shrink-0" />
             <span>Architectural Guide</span>
-          </button>
+          </motion.button>
         </div>
 
         {/* Hero Title */}
@@ -1689,7 +1699,8 @@ export default function Playground({ onOpenBenchmarks }) {
             <div className="flex items-center gap-1.5 font-mono text-xs">
               
               {/* Overlay Toggles */}
-              <button
+              <motion.button
+                {...tapScale.button}
                 type="button"
                 onClick={() => setShowGrid(!showGrid)}
                 aria-label={showGrid ? "Disable grid overlay" : "Enable grid overlay"}
@@ -1700,8 +1711,9 @@ export default function Playground({ onOpenBenchmarks }) {
                 title="Toggle Grid Overlay"
               >
                 <Grid className="w-3.5 h-3.5" />
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                {...tapScale.button}
                 type="button"
                 onClick={() => setShowVectors(!showVectors)}
                 aria-label={showVectors ? "Disable velocity vectors" : "Enable velocity vectors"}
@@ -1712,7 +1724,7 @@ export default function Playground({ onOpenBenchmarks }) {
                 title="Toggle Velocity Vectors"
               >
                 <Radio className="w-3.5 h-3.5" />
-              </button>
+              </motion.button>
 
               {/* Playback Controls */}
               <motion.button
@@ -1848,7 +1860,8 @@ export default function Playground({ onOpenBenchmarks }) {
                     </p>
                   )}
                 </div>
-                <button
+                <motion.button
+                  {...tapScale.button}
                   type="button"
                   onClick={() => {
                     try {
@@ -1859,7 +1872,7 @@ export default function Playground({ onOpenBenchmarks }) {
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Play Again</span>
-                </button>
+                </motion.button>
               </div>
             )}
 
@@ -1877,7 +1890,8 @@ export default function Playground({ onOpenBenchmarks }) {
                     </p>
                   )}
                 </div>
-                <button
+                <motion.button
+                  {...tapScale.button}
                   type="button"
                   onClick={() => {
                     try {
@@ -1888,7 +1902,7 @@ export default function Playground({ onOpenBenchmarks }) {
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Play Again</span>
-                </button>
+                </motion.button>
               </div>
             )}
           </div>
@@ -1928,15 +1942,16 @@ export default function Playground({ onOpenBenchmarks }) {
             <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1 font-mono text-xs">
               <span className="text-[11px] text-slate-500 font-semibold mr-1">Presets:</span>
               {[
-                { title: 'Breakout', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'breakout')?.json },
-                { title: '2-Player Pong', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'pong')?.json },
-                { title: 'Spinning Arena', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'spinning_paddle_arena')?.json },
-                { title: 'Telemetry Monitor', json: DOMAIN_TEMPLATES.dashboards[0].json },
-                { title: 'Hydraulic Valve', json: DOMAIN_TEMPLATES.control[0].json }
+                { title: 'Breakout', icon: '🧱', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'breakout')?.json },
+                { title: '2-Player Pong', icon: '🏓', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'pong')?.json },
+                { title: 'Spinning Arena', icon: '🌀', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'spinning_paddle_arena')?.json },
+                { title: 'Telemetry Monitor', icon: '📊', json: DOMAIN_TEMPLATES.dashboards[0].json },
+                { title: 'Hydraulic Valve', icon: '⚙️', json: DOMAIN_TEMPLATES.control[0].json }
               ].map((preset) => {
                 const isActive = activeTitle.toLowerCase().includes(preset.title.toLowerCase());
                 return (
-                  <button
+                  <motion.button
+                    {...tapScale.pill}
                     key={preset.title}
                     type="button"
                     onClick={() => {
@@ -1945,14 +1960,15 @@ export default function Playground({ onOpenBenchmarks }) {
                       setJsonText(JSON.stringify(preset.json, null, 2));
                       initSimulation(preset.json, true, preset.title);
                     }}
-                    className={`px-3 py-1 rounded-full border text-xs transition cursor-pointer ${
+                    className={`px-3 py-1 rounded-full border text-xs transition cursor-pointer flex items-center gap-1.5 ${
                       isActive
                         ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50 font-bold shadow-sm shadow-cyan-500/10'
                         : 'bg-slate-900/70 text-slate-400 hover:text-white border-white/[0.06] hover:border-white/[0.15]'
                     }`}
                   >
-                    {preset.title}
-                  </button>
+                    <span>{preset.icon}</span>
+                    <span>{preset.title}</span>
+                  </motion.button>
                 );
               })}
             </div>
