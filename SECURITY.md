@@ -38,7 +38,7 @@ If you discover a security vulnerability or potential containment escape in MLUE
 
 Instead, please report it privately:
 
-- **Email**: `security@mlue.ai` (or directly to the core maintainer at `hemanth@example.com`)
+- **Email**: Directly to the core maintainer at `hemanth17r@gmail.com`
 - **Subject**: `[SECURITY] Potential vulnerability in MLUE <component>`
 
 Please include:
