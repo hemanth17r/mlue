@@ -871,7 +871,7 @@ class BenchmarkRunnerBP2:
         run_record = {
             "run_id": f"RUN_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}",
             "timestamp": timestamp_iso,
-            "mlue_phase": "Phase 1.6 (v1.6.0 SIMD Multi-Agent Vectorized Rollout Engine)",
+            "mlue_phase": "v2.5.0: Interactive Substrate & Physics (Phase 2 Capstone)",
             "environment": {
                 "python_version": platform.python_version(),
                 "os": f"{platform.system()} {platform.release()}",
@@ -919,7 +919,7 @@ def main():
     record = runner.run_all_and_export()
 
     print("=" * 84)
-    print("           MLUE 10-PILLAR BENCHMARK TELEMETRY RUNNER (BP2) -- 100% RIGOR        ")
+    print("           MLUE 13-PILLAR BENCHMARK TELEMETRY RUNNER (BP2) -- 100% RIGOR        ")
     print("=" * 84)
     print(f"Run ID    : {record['run_id']}")
     print(f"Timestamp : {record['timestamp']}")

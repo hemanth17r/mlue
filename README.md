@@ -25,7 +25,7 @@
 
 In an ecosystem crowded with high-level prompt wrappers and legacy human-centric application stacks, MLUE is positioned specifically as a foundational, zero-dependency computational substrate:
 
-| Architectural Dimension | Legacy Web/App Stack (React / SQL / Electron) | Heavy Game Engines (Unity / Godot / Unreal) | **MLUE Substrate (v1.6.0)** |
+| Architectural Dimension | Legacy Web/App Stack (React / SQL / Electron) | Heavy Game Engines (Unity / Godot / Unreal) | **MLUE Substrate (v2.5.0)** |
 | :--- | :--- | :--- | :--- |
 | **Primary Purpose** | Human typing & DOM component scaffolding | 3D visual rendering & player games | **Unified software, state database, and simulation substrate for AI agents** |
 | **External Dependencies**| 50+ third-party packages & 500MB runtime | Multi-gigabyte binaries & runtimes | **0 (Pure Python Standard Library + Pure C Native Core)** |
@@ -333,7 +333,7 @@ If you use MLUE in your research or project, please cite:
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/hemanth17r/mlue}},
-  version = {1.6.0}
+  version = {2.5.0}
 }
 ```
 

@@ -1,4 +1,4 @@
-"""MLUE Runtime Package — Native AI Computational & Spatial Simulation Substrate (v1.6.0)"""
+"""MLUE Runtime Package — Native AI Computational & Spatial Simulation Substrate (v2.5.0)"""
 
 from .model import (
     Position,
@@ -32,7 +32,7 @@ from .spatial import SpatialGrid, BVHTree2D, AABB2D
 from .fixed_point import FixedPointEngine, FixedVector
 from .batch import BatchSimulator
 
-__version__ = "1.6.0"
+__version__ = "2.5.0"
 
 __all__ = [
     "Position",
