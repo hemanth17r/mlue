@@ -258,8 +258,9 @@ To guarantee zero-defect manufacturing, MLUE enforces a strict **3-Tier Verifica
 │ Tier 2: Automated Silicon│ 13 Non-Overlapping Empirical Benchmarks (B1–B13) │
 │         Telemetry Gate   │ (0.0 PPB drift, <1 B/step churn, >10k ticks/s)   │
 ├──────────────────────────┼──────────────────────────────────────────────────┤
-│ Tier 3: Human-in-the-Loop│ The Stop-and-Ask Law for subjective or physical  │
-│         Intervention     │ human perception (ergonomics, optical feel, UI)  │
+│ Tier 3: Human-in-the-Loop│ Escalate ONLY when automation is impossible:     │
+│         Intervention     │ 1. Sensory/biological (thumb reach, optics)      │
+│                          │ 2. Irreversible boundaries (real payments, auth) │
 └──────────────────────────┴──────────────────────────────────────────────────┘
 ```
 
@@ -278,16 +279,36 @@ To guarantee zero-defect manufacturing, MLUE enforces a strict **3-Tier Verifica
   * **B8:** Bounded cyclomatic complexity ($\le 30$ NIST limit, observed $27$).
   * **B13:** Autonomous RL Gym & LiDAR perception ($> 2,000$ steps/s, observed $> 5,000$ steps/s).
 
-### Pillar C: The Human Intervention Protocol (The Stop-and-Ask Law)
-Autonomous AI agents possess vast computational reasoning but **zero biological sensory hardware**:
-* An AI cannot physically hold a smartphone to evaluate whether a button is comfortably within thumb reach.
-* An AI cannot look at an OLED panel in bright sunlight to judge optical contrast or eye fatigue.
-* An AI cannot subjectively feel whether a tactile spring interaction feels "weighty" or "sluggish."
+### Pillar C: The Human Intervention Protocol (The Exhaustion Principle)
 
-**The Gating Rules for Agents:**
-1. **Never Hallucinate Human Feedback:** When an evaluation criterion is subjective, visual, or physiological, the agent is strictly prohibited from guessing or fabricating a pass.
-2. **Explicit Stop-and-Ask Halt:** The agent must explicitly halt execution, surface the exact trade-off, present the rendered visual artifact or interactive options, and prompt the human operator for direct tactile or visual verification.
-3. **Deterministic Codification:** Once the human provides qualitative sign-off (e.g., approving a spring curve or layout anchor), the agent codifies that decision into deterministic tokens and automated unit tests to prevent future regressions.
+Human attention is the most expensive and scarce resource in software manufacturing. Autonomous agents must treat human intervention not as an everyday crutch, but as a **strictly gated final safety valve**.
+
+#### 1. The Exhaustion Mandate: Automate First, Escalate Last
+An agent is **strictly forbidden from requesting human intervention** if an automated verification path exists:
+* **Payments & Billing:** Never ask a human to test checkout if Stripe test cards (`tok_visa`), webhook mockers, or sandbox keys can simulate the flow.
+* **Authentication & Permissions:** Never ask a human to log in if mock JWTs, synthetic bearer tokens, or local auth providers can verify the session.
+* **Database & Destruction:** Never ask a human to test schema drops if ephemeral SQLite or in-memory containers can verify the migration.
+
+#### 2. The Only Two Legitimate Escalation Triggers
+Human intervention is triggered **only** when crossing one of two impassable boundaries:
+
+* **Trigger 1: Biological & Sensory Perception (No AI Sensory Hardware)**
+  * An AI cannot physically hold a smartphone to evaluate thumb-reach ergonomics on physical glass.
+  * An AI cannot look at a screen in direct sunlight to judge optical glare, readability, or eye fatigue.
+  * An AI cannot feel whether a tactile spring animation feels "weighty" or "sluggish" to human motor reflexes.
+* **Trigger 2: Irreversible Real-World & Security Boundaries**
+  * Crossing into live production financial transactions (charging a real credit card with real money).
+  * High-privilege production infrastructure operations (dropping a live database, issuing non-reversible DNS or SSL changes).
+  * Entering physical credentials, 2FA hardware keys, or confidential production API tokens that an AI must never handle autonomously.
+
+#### 3. The 3-Step Human Escalation Protocol
+When an agent hits a legitimate escalation trigger, it must follow this structured protocol:
+1. **Halt & Contextualize:** Stop execution immediately. Do not attempt to guess or hallucinate success.
+2. **Present Clear Verification Artifacts:** Present the human operator with:
+   * What was *already verified* automatically via Tier 1 & Tier 2 tests.
+   * The *exact, isolated question or action* requiring human intervention.
+   * Clear interactive choices or visual previews (no ambiguous open-ended prompts).
+3. **Deterministic Codification:** Once the human provides sign-off or completes the action, the agent immediately codifies that decision into deterministic tokens, mock fixtures, or unit tests so the human never has to intervene on that exact item again.
 
 ---
 
