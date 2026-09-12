@@ -30,6 +30,7 @@ from .model import (
     Rule,
     Condition,
     Action,
+    Constraint,
 )
 from .loader import parse_keypath
 from .spatial import SpatialHashGrid2D, Ray2D, RayHit, cast_ray_scene, hit_test_scene, hit_test_entity
@@ -423,6 +424,7 @@ class MLUEEngine:
             state_variables=dict(doc.state_variables),
             rules=list(doc.rules),
             pointer=PointerState(),
+            constraints=list(doc.constraints),
         )
 
     def cast_ray(
@@ -1760,6 +1762,320 @@ class MLUEEngine:
             )
         return triggered
 
+    def _compute_anchor_world(self, entity: Entity, anchor: Position) -> Tuple[float, float, float, float]:
+        """Returns (world_x, world_y, lever_rx, lever_ry) for an entity anchor."""
+        ang = entity.angle
+        ca = math.cos(ang)
+        sa = math.sin(ang)
+        rx = anchor.x * ca - anchor.y * sa
+        ry = anchor.x * sa + anchor.y * ca
+        return entity.position.x + rx, entity.position.y + ry, rx, ry
+
+    def _update_entity_kinematics(
+        self,
+        e: Entity,
+        x: float,
+        y: float,
+        vx: float,
+        vy: float,
+        omega: float,
+        angle: float,
+    ) -> Entity:
+        """Constructs an updated Entity instance with modified kinematic state."""
+        return Entity(
+            id=e.id,
+            type=e.type,
+            position=Position(x=x, y=y),
+            size=e.size,
+            velocity=Velocity(vx=vx, vy=vy, omega=omega),
+            properties=e.properties,
+            active=e.active,
+            parent_id=e.parent_id,
+            clip_bounds=e.clip_bounds,
+            layout=e.layout,
+            template=e.template,
+            angle=angle,
+        )
+
+    def _get_constraint_inv_mass_inertia(self, entity: Entity) -> Tuple[float, float]:
+        """Calculates (inv_mass, inv_inertia) for constraint dynamics."""
+        props = entity.properties
+        if props.get("static", False) or entity.type == "segment" or "control" in props:
+            return 0.0, 0.0
+        mass = float(props.get("mass", 1.0))
+        if mass <= 0.0 or math.isinf(mass) or math.isnan(mass):
+            return 0.0, 0.0
+        m_inv = 1.0 / mass
+        if props.get("fixed_rotation", False):
+            return m_inv, 0.0
+        inertia = 1.0
+        if entity.type == "circle" and isinstance(entity.size, CircleSize):
+            r = entity.size.radius
+            inertia = 0.5 * mass * (r * r)
+        elif entity.type == "box" and isinstance(entity.size, BoxSize):
+            w = entity.size.width
+            h = entity.size.height
+            inertia = (1.0 / 12.0) * mass * (w * w + h * h)
+        elif entity.type == "capsule" and isinstance(entity.size, CapsuleSize):
+            L = entity.size.length
+            r = entity.size.radius
+            inertia = mass * ((L * L) / 12.0 + 0.5 * (r * r))
+        if inertia <= 1e-9 or math.isnan(inertia) or math.isinf(inertia):
+            return m_inv, 0.0
+        return m_inv, 1.0 / inertia
+
+    def _solve_spring_constraint(
+        self,
+        e_a: Entity,
+        e_b: Optional[Entity],
+        constraint: Constraint,
+        dt: float,
+    ) -> Tuple[Entity, Optional[Entity]]:
+        """Applies Hookean and damping impulses between entity A and entity B (or world)."""
+        if dt <= 0.0:
+            return e_a, e_b
+
+        p_ax, p_ay, r_ax, r_ay = self._compute_anchor_world(e_a, constraint.anchor_a)
+        v_ax = e_a.velocity.vx - e_a.velocity.omega * r_ay
+        v_ay = e_a.velocity.vy + e_a.velocity.omega * r_ax
+        m_a_inv, i_a_inv = self._get_constraint_inv_mass_inertia(e_a)
+
+        if e_b is not None:
+            p_bx, p_by, r_bx, r_by = self._compute_anchor_world(e_b, constraint.anchor_b)
+            v_bx = e_b.velocity.vx - e_b.velocity.omega * r_by
+            v_by = e_b.velocity.vy + e_b.velocity.omega * r_bx
+            m_b_inv, i_b_inv = self._get_constraint_inv_mass_inertia(e_b)
+        else:
+            p_bx, p_by, r_bx, r_by = constraint.anchor_b.x, constraint.anchor_b.y, 0.0, 0.0
+            v_bx, v_by = 0.0, 0.0
+            m_b_inv, i_b_inv = 0.0, 0.0
+
+        dx = p_bx - p_ax
+        dy = p_by - p_ay
+        dist = math.hypot(dx, dy)
+        if dist < 1e-9:
+            ux, uy = 1.0, 0.0
+        else:
+            ux = dx / dist
+            uy = dy / dist
+
+        rest_len = constraint.length if constraint.length is not None else 0.0
+        delta_l = dist - rest_len
+        v_rel = (v_bx - v_ax) * ux + (v_by - v_ay) * uy
+
+        f_spring = constraint.stiffness * delta_l + constraint.damping * v_rel
+        jx = f_spring * dt * ux
+        jy = f_spring * dt * uy
+
+        new_e_a = e_a
+        if m_a_inv > 0.0 or i_a_inv > 0.0:
+            new_vax = e_a.velocity.vx + m_a_inv * jx
+            new_vay = e_a.velocity.vy + m_a_inv * jy
+            new_w_a = e_a.velocity.omega + i_a_inv * (r_ax * jy - r_ay * jx)
+            new_e_a = self._update_entity_kinematics(
+                e_a, e_a.position.x, e_a.position.y, new_vax, new_vay, new_w_a, e_a.angle
+            )
+
+        new_e_b = e_b
+        if e_b is not None and (m_b_inv > 0.0 or i_b_inv > 0.0):
+            new_vbx = e_b.velocity.vx - m_b_inv * jx
+            new_vby = e_b.velocity.vy - m_b_inv * jy
+            new_w_b = e_b.velocity.omega - i_b_inv * (r_bx * jy - r_by * jx)
+            new_e_b = self._update_entity_kinematics(
+                e_b, e_b.position.x, e_b.position.y, new_vbx, new_vby, new_w_b, e_b.angle
+            )
+
+        return new_e_a, new_e_b
+
+    def _solve_distance_constraint(
+        self,
+        e_a: Entity,
+        e_b: Optional[Entity],
+        constraint: Constraint,
+        dt: float,
+    ) -> Tuple[Entity, Optional[Entity]]:
+        """Applies Baumgarte-stabilized impulse to maintain exact distance between anchors."""
+        p_ax, p_ay, r_ax, r_ay = self._compute_anchor_world(e_a, constraint.anchor_a)
+        v_ax = e_a.velocity.vx - e_a.velocity.omega * r_ay
+        v_ay = e_a.velocity.vy + e_a.velocity.omega * r_ax
+        m_a_inv, i_a_inv = self._get_constraint_inv_mass_inertia(e_a)
+
+        if e_b is not None:
+            p_bx, p_by, r_bx, r_by = self._compute_anchor_world(e_b, constraint.anchor_b)
+            v_bx = e_b.velocity.vx - e_b.velocity.omega * r_by
+            v_by = e_b.velocity.vy + e_b.velocity.omega * r_bx
+            m_b_inv, i_b_inv = self._get_constraint_inv_mass_inertia(e_b)
+        else:
+            p_bx, p_by, r_bx, r_by = constraint.anchor_b.x, constraint.anchor_b.y, 0.0, 0.0
+            v_bx, v_by = 0.0, 0.0
+            m_b_inv, i_b_inv = 0.0, 0.0
+
+        dx = p_bx - p_ax
+        dy = p_by - p_ay
+        dist = math.hypot(dx, dy)
+        if dist < 1e-9:
+            ux, uy = 1.0, 0.0
+        else:
+            ux = dx / dist
+            uy = dy / dist
+
+        target_dist = constraint.length if constraint.length is not None else dist
+        c_pos = dist - target_dist
+        v_rel = (v_bx - v_ax) * ux + (v_by - v_ay) * uy
+
+        rn_a = r_ax * uy - r_ay * ux
+        rn_b = r_bx * uy - r_by * ux
+        inv_mass_total = m_a_inv + m_b_inv + (rn_a * rn_a) * i_a_inv + (rn_b * rn_b) * i_b_inv
+        if inv_mass_total <= 1e-12:
+            return e_a, e_b
+
+        beta = 0.25
+        bias = (beta / max(dt, 1e-6)) * c_pos if dt > 0.0 else 0.0
+        j = -(v_rel + bias) / inv_mass_total
+
+        jx = j * ux
+        jy = j * uy
+
+        m_sum = m_a_inv + m_b_inv
+        pos_corr = 0.9 * c_pos / m_sum if m_sum > 1e-12 else 0.0
+        px_corr = pos_corr * ux
+        py_corr = pos_corr * uy
+
+        new_e_a = e_a
+        if m_a_inv > 0.0 or i_a_inv > 0.0:
+            new_vax = e_a.velocity.vx - m_a_inv * jx
+            new_vay = e_a.velocity.vy - m_a_inv * jy
+            new_w_a = e_a.velocity.omega - i_a_inv * (r_ax * jy - r_ay * jx)
+            new_pos_ax = e_a.position.x + m_a_inv * px_corr
+            new_pos_ay = e_a.position.y + m_a_inv * py_corr
+            new_e_a = self._update_entity_kinematics(
+                e_a, new_pos_ax, new_pos_ay, new_vax, new_vay, new_w_a, e_a.angle
+            )
+
+        new_e_b = e_b
+        if e_b is not None and (m_b_inv > 0.0 or i_b_inv > 0.0):
+            new_vbx = e_b.velocity.vx + m_b_inv * jx
+            new_vby = e_b.velocity.vy + m_b_inv * jy
+            new_w_b = e_b.velocity.omega + i_b_inv * (r_bx * jy - r_by * jx)
+            new_pos_bx = e_b.position.x - m_b_inv * px_corr
+            new_pos_by = e_b.position.y - m_b_inv * py_corr
+            new_e_b = self._update_entity_kinematics(
+                e_b, new_pos_bx, new_pos_by, new_vbx, new_vby, new_w_b, e_b.angle
+            )
+
+        return new_e_a, new_e_b
+
+    def _solve_pin_constraint(
+        self,
+        e_a: Entity,
+        e_b: Optional[Entity],
+        constraint: Constraint,
+        dt: float,
+    ) -> Tuple[Entity, Optional[Entity]]:
+        """Applies 2D point-to-point constraint locking anchor A to anchor B."""
+        p_ax, p_ay, r_ax, r_ay = self._compute_anchor_world(e_a, constraint.anchor_a)
+        v_ax = e_a.velocity.vx - e_a.velocity.omega * r_ay
+        v_ay = e_a.velocity.vy + e_a.velocity.omega * r_ax
+        m_a_inv, i_a_inv = self._get_constraint_inv_mass_inertia(e_a)
+
+        if e_b is not None:
+            p_bx, p_by, r_bx, r_by = self._compute_anchor_world(e_b, constraint.anchor_b)
+            v_bx = e_b.velocity.vx - e_b.velocity.omega * r_by
+            v_by = e_b.velocity.vy + e_b.velocity.omega * r_bx
+            m_b_inv, i_b_inv = self._get_constraint_inv_mass_inertia(e_b)
+        else:
+            p_bx, p_by, r_bx, r_by = constraint.anchor_b.x, constraint.anchor_b.y, 0.0, 0.0
+            v_bx, v_by = 0.0, 0.0
+            m_b_inv, i_b_inv = 0.0, 0.0
+
+        cx = p_bx - p_ax
+        cy = p_by - p_ay
+        vrx = v_bx - v_ax
+        vry = v_by - v_ay
+
+        k_xx = m_a_inv + m_b_inv + r_ay * r_ay * i_a_inv + r_by * r_by * i_b_inv
+        k_xy = -r_ax * r_ay * i_a_inv - r_bx * r_by * i_b_inv
+        k_yy = m_a_inv + m_b_inv + r_ax * r_ax * i_a_inv + r_bx * r_bx * i_b_inv
+
+        det = k_xx * k_yy - k_xy * k_xy
+        if det <= 1e-12:
+            return e_a, e_b
+
+        beta = 0.25
+        inv_dt = (beta / max(dt, 1e-6)) if dt > 0.0 else 0.0
+        bx = -(vrx + inv_dt * cx)
+        by = -(vry + inv_dt * cy)
+
+        jx = (k_yy * bx - k_xy * by) / det
+        jy = (-k_xy * bx + k_xx * by) / det
+
+        m_sum = m_a_inv + m_b_inv
+        pos_corr = 0.9 if m_sum > 1e-12 else 0.0
+        px_corr = (pos_corr * cx) / m_sum if m_sum > 1e-12 else 0.0
+        py_corr = (pos_corr * cy) / m_sum if m_sum > 1e-12 else 0.0
+
+        new_e_a = e_a
+        if m_a_inv > 0.0 or i_a_inv > 0.0:
+            new_vax = e_a.velocity.vx - m_a_inv * jx
+            new_vay = e_a.velocity.vy - m_a_inv * jy
+            new_w_a = e_a.velocity.omega - i_a_inv * (r_ax * jy - r_ay * jx)
+            new_pos_ax = e_a.position.x + m_a_inv * px_corr
+            new_pos_ay = e_a.position.y + m_a_inv * py_corr
+            new_e_a = self._update_entity_kinematics(
+                e_a, new_pos_ax, new_pos_ay, new_vax, new_vay, new_w_a, e_a.angle
+            )
+
+        new_e_b = e_b
+        if e_b is not None and (m_b_inv > 0.0 or i_b_inv > 0.0):
+            new_vbx = e_b.velocity.vx + m_b_inv * jx
+            new_vby = e_b.velocity.vy + m_b_inv * jy
+            new_w_b = e_b.velocity.omega + i_b_inv * (r_bx * jy - r_by * jx)
+            new_pos_bx = e_b.position.x - m_b_inv * px_corr
+            new_pos_by = e_b.position.y - m_b_inv * py_corr
+            new_e_b = self._update_entity_kinematics(
+                e_b, new_pos_bx, new_pos_by, new_vbx, new_vby, new_w_b, e_b.angle
+            )
+
+        return new_e_a, new_e_b
+
+    def _resolve_constraints(
+        self, entities: List[Entity], constraints: List[Constraint], dt: float
+    ) -> List[Entity]:
+        """Resolves all active constraints over entities."""
+        if not constraints or dt <= 0.0:
+            return entities
+
+        id_to_idx = {e.id: idx for idx, e in enumerate(entities)}
+        iterations = 2
+        for _ in range(iterations):
+            for c in constraints:
+                idx_a = id_to_idx.get(c.entity_a)
+                if idx_a is None:
+                    continue
+                e_a = entities[idx_a]
+                if not e_a.active:
+                    continue
+
+                idx_b = id_to_idx.get(c.entity_b) if c.entity_b is not None else None
+                e_b = entities[idx_b] if idx_b is not None else None
+                if e_b is not None and not e_b.active:
+                    continue
+
+                if c.type == "spring":
+                    res_a, res_b = self._solve_spring_constraint(e_a, e_b, c, dt / iterations)
+                elif c.type == "distance":
+                    res_a, res_b = self._solve_distance_constraint(e_a, e_b, c, dt)
+                elif c.type == "pin":
+                    res_a, res_b = self._solve_pin_constraint(e_a, e_b, c, dt)
+                else:
+                    continue
+
+                entities[idx_a] = res_a
+                if idx_b is not None and res_b is not None:
+                    entities[idx_b] = res_b
+
+        return entities
+
     def step(
         self,
         state: SimulationState,
@@ -1780,17 +2096,20 @@ class MLUEEngine:
             for e in state.entities
         ]
 
-        # 2. Resolve pairwise solid collisions
+        # 2. Resolve interactive mechanical constraints (Distance, Spring, Pin)
+        moved_entities = self._resolve_constraints(moved_entities, state.constraints, dt)
+
+        # 3. Resolve pairwise solid collisions
         moved_entities, collision_events = self._resolve_pairwise_collisions(moved_entities, env)
 
-        # 3. Process pointer inputs & lifecycle transitions
+        # 4. Process pointer inputs & lifecycle transitions
         new_pointer, pointer_events = self._process_pointer_input(state, input_map, moved_entities, env)
 
         step_reward = 0.0
         terminated = state.terminated
         truncated = state.truncated
 
-        # 4. Evaluate declarative rules and execute actions
+        # 5. Evaluate declarative rules and execute actions
         entity_map: Dict[str, int] = {e.id: idx for idx, e in enumerate(moved_entities)}
         for rule in state.rules:
             if self._is_rule_triggered(
@@ -1803,7 +2122,7 @@ class MLUEEngine:
                 if trunc:
                     truncated = True
 
-        # 5. Compute concrete shape coordinates for active entities
+        # 6. Compute concrete shape coordinates for active entities
         new_shapes = self._compute_shapes(env, moved_entities, state_variables)
         new_result = EvaluationResult(
             width=env.width,
@@ -1823,5 +2142,7 @@ class MLUEEngine:
             terminated=terminated,
             truncated=truncated,
             pointer=new_pointer,
+            constraints=state.constraints,
         )
+
 

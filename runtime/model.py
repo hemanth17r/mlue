@@ -130,12 +130,29 @@ class EvaluationResult:
 
 
 @dataclass(frozen=True)
+class Constraint:
+    id: str
+    type: str  # "distance", "spring", "pin"
+    entity_a: str
+    entity_b: Optional[str] = None
+    anchor_a: Position = field(default_factory=lambda: Position(0.0, 0.0))
+    anchor_b: Position = field(default_factory=lambda: Position(0.0, 0.0))
+    length: Optional[float] = None
+    stiffness: float = 100.0
+    damping: float = 1.0
+    min_length: Optional[float] = None
+    max_length: Optional[float] = None
+    properties: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class MLUEDocument:
     version: str
     environment: Environment
     entities: List[Entity]
     state_variables: Dict[str, Any] = field(default_factory=dict)
     rules: List[Rule] = field(default_factory=list)
+    constraints: List[Constraint] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -159,3 +176,5 @@ class SimulationState:
     terminated: bool = False
     truncated: bool = False
     pointer: PointerState = field(default_factory=PointerState)
+    constraints: List[Constraint] = field(default_factory=list)
+

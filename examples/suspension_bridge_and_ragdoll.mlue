@@ -1,0 +1,160 @@
+{
+  "mlue_version": "1.6",
+  "environment": {
+    "dimensions": [800, 800],
+    "background": "#080C14"
+  },
+  "entities": [
+    {
+      "id": "boundary_top",
+      "type": "segment",
+      "position": { "x": 0.02, "y": 0.02 },
+      "end": { "x": 0.98, "y": 0.02 },
+      "thickness": 0.01,
+      "properties": { "color": "#1E293B", "solid": true, "restitution": 0.9 }
+    },
+    {
+      "id": "boundary_bottom",
+      "type": "segment",
+      "position": { "x": 0.02, "y": 0.98 },
+      "end": { "x": 0.98, "y": 0.98 },
+      "thickness": 0.01,
+      "properties": { "color": "#1E293B", "solid": true, "restitution": 0.9 }
+    },
+    {
+      "id": "pier_left",
+      "type": "box",
+      "position": { "x": 0.15, "y": 0.45 },
+      "size": { "width": 0.08, "height": 0.3 },
+      "properties": { "color": "#475569", "solid": true, "static": true }
+    },
+    {
+      "id": "pier_right",
+      "type": "box",
+      "position": { "x": 0.85, "y": 0.45 },
+      "size": { "width": 0.08, "height": 0.3 },
+      "properties": { "color": "#475569", "solid": true, "static": true }
+    },
+    {
+      "id": "plank_1",
+      "type": "box",
+      "position": { "x": 0.32, "y": 0.42 },
+      "size": { "width": 0.16, "height": 0.03 },
+      "properties": { "color": "#38BDF8", "solid": true, "mass": 1.5, "friction": 0.3 }
+    },
+    {
+      "id": "plank_2",
+      "type": "box",
+      "position": { "x": 0.50, "y": 0.44 },
+      "size": { "width": 0.16, "height": 0.03 },
+      "properties": { "color": "#0284C7", "solid": true, "mass": 2.0, "friction": 0.3 }
+    },
+    {
+      "id": "plank_3",
+      "type": "box",
+      "position": { "x": 0.68, "y": 0.42 },
+      "size": { "width": 0.16, "height": 0.03 },
+      "properties": { "color": "#38BDF8", "solid": true, "mass": 1.5, "friction": 0.3 }
+    },
+    {
+      "id": "cart_chassis",
+      "type": "box",
+      "position": { "x": 0.5, "y": 0.20 },
+      "size": { "width": 0.22, "height": 0.06 },
+      "velocity": { "vx": 0.05, "vy": 0.0, "omega": 0.0 },
+      "properties": { "color": "#F59E0B", "solid": true, "mass": 3.0 }
+    },
+    {
+      "id": "wheel_left",
+      "type": "circle",
+      "position": { "x": 0.43, "y": 0.26 },
+      "size": { "radius": 0.035 },
+      "properties": { "color": "#EF4444", "solid": true, "mass": 0.8, "friction": 0.6 }
+    },
+    {
+      "id": "wheel_right",
+      "type": "circle",
+      "position": { "x": 0.57, "y": 0.26 },
+      "size": { "radius": 0.035 },
+      "properties": { "color": "#EF4444", "solid": true, "mass": 0.8, "friction": 0.6 }
+    },
+    {
+      "id": "flipper_lever",
+      "type": "capsule",
+      "position": { "x": 0.5, "y": 0.82 },
+      "size": { "radius": 0.02, "length": 0.18 },
+      "angle": 0.5,
+      "velocity": { "vx": 0.0, "vy": 0.0, "omega": 1.5 },
+      "properties": { "color": "#10B981", "solid": true, "mass": 1.2 }
+    }
+  ],
+  "constraints": [
+    {
+      "id": "cable_pier_left",
+      "type": "distance",
+      "entity_a": "pier_left",
+      "entity_b": "plank_1",
+      "anchor_a": { "x": 0.04, "y": -0.12 },
+      "anchor_b": { "x": -0.08, "y": 0.0 },
+      "length": 0.10
+    },
+    {
+      "id": "joint_plank_1_2",
+      "type": "distance",
+      "entity_a": "plank_1",
+      "entity_b": "plank_2",
+      "anchor_a": { "x": 0.08, "y": 0.0 },
+      "anchor_b": { "x": -0.08, "y": 0.0 },
+      "length": 0.02
+    },
+    {
+      "id": "joint_plank_2_3",
+      "type": "distance",
+      "entity_a": "plank_2",
+      "entity_b": "plank_3",
+      "anchor_a": { "x": 0.08, "y": 0.0 },
+      "anchor_b": { "x": -0.08, "y": 0.0 },
+      "length": 0.02
+    },
+    {
+      "id": "cable_pier_right",
+      "type": "distance",
+      "entity_a": "plank_3",
+      "entity_b": "pier_right",
+      "anchor_a": { "x": 0.08, "y": 0.0 },
+      "anchor_b": { "x": -0.04, "y": -0.12 },
+      "length": 0.10
+    },
+    {
+      "id": "suspension_left",
+      "type": "spring",
+      "entity_a": "cart_chassis",
+      "entity_b": "wheel_left",
+      "anchor_a": { "x": -0.07, "y": 0.03 },
+      "anchor_b": { "x": 0.0, "y": 0.0 },
+      "length": 0.05,
+      "stiffness": 120.0,
+      "damping": 12.0
+    },
+    {
+      "id": "suspension_right",
+      "type": "spring",
+      "entity_a": "cart_chassis",
+      "entity_b": "wheel_right",
+      "anchor_a": { "x": 0.07, "y": 0.03 },
+      "anchor_b": { "x": 0.0, "y": 0.0 },
+      "length": 0.05,
+      "stiffness": 120.0,
+      "damping": 12.0
+    },
+    {
+      "id": "flipper_pin",
+      "type": "pin",
+      "entity_a": "flipper_lever",
+      "entity_b": null,
+      "anchor_a": { "x": 0.0, "y": -0.09 },
+      "anchor_b": { "x": 0.5, "y": 0.73 }
+    }
+  ],
+  "rules": []
+}

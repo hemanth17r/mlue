@@ -24,6 +24,7 @@ from .model import (
     Condition,
     Action,
     Rule,
+    Constraint,
 )
 
 
@@ -706,10 +707,129 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             entity=rule_entity,
         ))
 
+    # Constraints Validation (Phase 3: Distance, Spring, Pin)
+    constraints_data = data.get("constraints", [])
+    if not isinstance(constraints_data, list):
+        raise MLUEValidationError("'constraints' must be a list of constraint objects.")
+
+    entity_by_id = {e.id: e for e in entities}
+    constraints: List[Constraint] = []
+    seen_constraint_ids = set()
+
+    for c_idx, c_raw in enumerate(constraints_data):
+        if not isinstance(c_raw, dict):
+            raise MLUEValidationError(f"Constraint at index {c_idx} must be an object.")
+
+        c_id = c_raw.get("id", f"constraint_{c_idx}")
+        if not (isinstance(c_id, str) and c_id.strip()):
+            raise MLUEValidationError(f"Constraint at index {c_idx} requires a non-empty 'id' string.")
+        if c_id in seen_constraint_ids:
+            raise MLUEValidationError(f"Duplicate constraint id '{c_id}' at index {c_idx}.")
+        seen_constraint_ids.add(c_id)
+
+        c_type = c_raw.get("type")
+        if c_type not in ("distance", "spring", "pin"):
+            raise MLUEValidationError(
+                f"Constraint '{c_id}' has unsupported type '{c_type}'. Supported: 'distance', 'spring', 'pin'."
+            )
+
+        ent_a = c_raw.get("entity_a")
+        if not (isinstance(ent_a, str) and ent_a in entity_by_id):
+            raise MLUEValidationError(f"Constraint '{c_id}' targets unknown entity_a '{ent_a}'.")
+
+        ent_b = c_raw.get("entity_b")
+        if ent_b is not None:
+            if not (isinstance(ent_b, str) and ent_b in entity_by_id):
+                raise MLUEValidationError(f"Constraint '{c_id}' targets unknown entity_b '{ent_b}'.")
+            if ent_a == ent_b:
+                raise MLUEValidationError(f"Constraint '{c_id}' cannot connect entity '{ent_a}' to itself.")
+
+        anc_a_raw = c_raw.get("anchor_a", {"x": 0.0, "y": 0.0})
+        if not isinstance(anc_a_raw, dict) or "x" not in anc_a_raw or "y" not in anc_a_raw:
+            raise MLUEValidationError(f"Constraint '{c_id}' anchor_a must be an object with 'x' and 'y'.")
+        ax_a, ay_a = anc_a_raw["x"], anc_a_raw["y"]
+        if not (isinstance(ax_a, (int, float)) and not math.isnan(ax_a) and not math.isinf(ax_a) and
+                isinstance(ay_a, (int, float)) and not math.isnan(ay_a) and not math.isinf(ay_a)):
+            raise MLUEValidationError(f"Constraint '{c_id}' anchor_a coordinates must be finite numbers.")
+        anchor_a = Position(x=float(ax_a), y=float(ay_a))
+
+        anc_b_raw = c_raw.get("anchor_b", c_raw.get("world_anchor", {"x": 0.0, "y": 0.0}))
+        if not isinstance(anc_b_raw, dict) or "x" not in anc_b_raw or "y" not in anc_b_raw:
+            raise MLUEValidationError(f"Constraint '{c_id}' anchor_b must be an object with 'x' and 'y'.")
+        ax_b, ay_b = anc_b_raw["x"], anc_b_raw["y"]
+        if not (isinstance(ax_b, (int, float)) and not math.isnan(ax_b) and not math.isinf(ax_b) and
+                isinstance(ay_b, (int, float)) and not math.isnan(ay_b) and not math.isinf(ay_b)):
+            raise MLUEValidationError(f"Constraint '{c_id}' anchor_b coordinates must be finite numbers.")
+        anchor_b = Position(x=float(ax_b), y=float(ay_b))
+
+        # Calculate initial world anchor positions if length calculation is needed
+        e_a = entity_by_id[ent_a]
+        cos_a = math.cos(e_a.angle)
+        sin_a = math.sin(e_a.angle)
+        p_ax = e_a.position.x + anchor_a.x * cos_a - anchor_a.y * sin_a
+        p_ay = e_a.position.y + anchor_a.x * sin_a + anchor_a.y * cos_a
+
+        if ent_b is not None:
+            e_b = entity_by_id[ent_b]
+            cos_b = math.cos(e_b.angle)
+            sin_b = math.sin(e_b.angle)
+            p_bx = e_b.position.x + anchor_b.x * cos_b - anchor_b.y * sin_b
+            p_by = e_b.position.y + anchor_b.x * sin_b + anchor_b.y * cos_b
+        else:
+            p_bx = anchor_b.x
+            p_by = anchor_b.y
+
+        length_raw = c_raw.get("length")
+        if length_raw is not None:
+            if not (isinstance(length_raw, (int, float)) and not math.isnan(length_raw) and not math.isinf(length_raw) and length_raw >= 0.0):
+                raise MLUEValidationError(f"Constraint '{c_id}' length must be a non-negative finite number (got {length_raw}).")
+            length_val = float(length_raw)
+        else:
+            if c_type == "pin":
+                length_val = 0.0
+            else:
+                length_val = math.hypot(p_bx - p_ax, p_by - p_ay)
+
+        stiff_raw = c_raw.get("stiffness", 100.0)
+        if not (isinstance(stiff_raw, (int, float)) and not math.isnan(stiff_raw) and not math.isinf(stiff_raw) and stiff_raw >= 0.0):
+            raise MLUEValidationError(f"Constraint '{c_id}' stiffness must be non-negative (got {stiff_raw}).")
+        stiffness_val = float(stiff_raw)
+
+        damp_raw = c_raw.get("damping", 1.0)
+        if not (isinstance(damp_raw, (int, float)) and not math.isnan(damp_raw) and not math.isinf(damp_raw) and damp_raw >= 0.0):
+            raise MLUEValidationError(f"Constraint '{c_id}' damping must be non-negative (got {damp_raw}).")
+        damping_val = float(damp_raw)
+
+        min_len_raw = c_raw.get("min_length")
+        min_length_val = float(min_len_raw) if min_len_raw is not None else None
+        max_len_raw = c_raw.get("max_length")
+        max_length_val = float(max_len_raw) if max_len_raw is not None else None
+
+        props = dict(c_raw.get("properties", {}))
+
+        constraints.append(
+            Constraint(
+                id=c_id,
+                type=c_type,
+                entity_a=ent_a,
+                entity_b=ent_b,
+                anchor_a=anchor_a,
+                anchor_b=anchor_b,
+                length=length_val,
+                stiffness=stiffness_val,
+                damping=damping_val,
+                min_length=min_length_val,
+                max_length=max_length_val,
+                properties=props,
+            )
+        )
+
     return MLUEDocument(
         version=version,
         environment=environment,
         entities=entities,
         state_variables=state_variables,
         rules=rules,
+        constraints=constraints,
     )
+
