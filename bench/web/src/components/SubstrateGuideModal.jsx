@@ -238,49 +238,77 @@ export const DOMAIN_TEMPLATES = {
       title: 'Emergent Breakout & Physics Reflection',
       category: 'Games & Arcade',
       badge: 'Interactive Arcade',
-      description: 'Classic deterministic paddle mechanics, multi-color destructible brick array, and continuous normal angle deflection.',
+      description: 'Canonical 6-tier destructible brick array, player paddle control, deterministic floor-breach lives penalty, and victory condition rules.',
       json: {
         mlue_version: "1.6",
-        environment: { dimensions: [800, 600], background: "#020617" },
-        state_variables: { game: { score: 0, lives: 3, bricks_remaining: 5, state: "PLAYING" } },
+        environment: { dimensions: [750, 500], background: "#0F172A" },
+        state_variables: { score: 0, lives: 3, bricks_remaining: 6, game_state: "PLAYING" },
         entities: [
-          { id: "ball", type: "circle", position: { x: 0.50, y: 0.70 }, size: { radius: 0.025 }, velocity: { vx: 0.28, vy: -0.38 }, properties: { solid: true, color: "#38BDF8" } },
-          { id: "paddle", type: "box", position: { x: 0.50, y: 0.90 }, size: { width: 0.18, height: 0.035 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#10B981", control: { channel: "paddle", axis: "x", speed: 0.85 } } },
-          { id: "brick_1", type: "box", position: { x: 0.20, y: 0.20 }, size: { width: 0.12, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#F43F5E" } },
-          { id: "brick_2", type: "box", position: { x: 0.35, y: 0.20 }, size: { width: 0.12, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#F59E0B" } },
-          { id: "brick_3", type: "box", position: { x: 0.50, y: 0.20 }, size: { width: 0.12, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#10B981" } },
-          { id: "brick_4", type: "box", position: { x: 0.65, y: 0.20 }, size: { width: 0.12, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#3B82F6" } },
-          { id: "brick_5", type: "box", position: { x: 0.80, y: 0.20 }, size: { width: 0.12, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#A855F7" } }
+          { id: "ball_01", type: "circle", position: { x: 0.5, y: 0.7 }, size: { radius: 0.025 }, velocity: { vx: 0.35, vy: -0.45 }, properties: { color: "#38BDF8", solid: true, restitution: 1.0 } },
+          { id: "paddle_bottom", type: "box", position: { x: 0.5, y: 0.92 }, size: { width: 0.22, height: 0.035 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { color: "#10B981", solid: true, control: { channel: "player_bottom", axis: "x", speed: 0.75 } } },
+          { id: "brick_01", type: "box", position: { x: 0.25, y: 0.18 }, size: { width: 0.18, height: 0.055 }, properties: { color: "#F43F5E", solid: true } },
+          { id: "brick_02", type: "box", position: { x: 0.50, y: 0.18 }, size: { width: 0.18, height: 0.055 }, properties: { color: "#F43F5E", solid: true } },
+          { id: "brick_03", type: "box", position: { x: 0.75, y: 0.18 }, size: { width: 0.18, height: 0.055 }, properties: { color: "#F43F5E", solid: true } },
+          { id: "brick_04", type: "box", position: { x: 0.25, y: 0.26 }, size: { width: 0.18, height: 0.055 }, properties: { color: "#F59E0B", solid: true } },
+          { id: "brick_05", type: "box", position: { x: 0.50, y: 0.26 }, size: { width: 0.18, height: 0.055 }, properties: { color: "#F59E0B", solid: true } },
+          { id: "brick_06", type: "box", position: { x: 0.75, y: 0.26 }, size: { width: 0.18, height: 0.055 }, properties: { color: "#F59E0B", solid: true } }
         ],
         rules: [
-          { trigger: "hit_brick_1", event: "collision", entities: ["ball", "brick_1"], actions: [{ type: "destroy_entity", target: "brick_1" }, { type: "increment_path", target: "game.score", amount: 100 }] },
-          { trigger: "hit_brick_2", event: "collision", entities: ["ball", "brick_2"], actions: [{ type: "destroy_entity", target: "brick_2" }, { type: "increment_path", target: "game.score", amount: 100 }] },
-          { trigger: "hit_brick_3", event: "collision", entities: ["ball", "brick_3"], actions: [{ type: "destroy_entity", target: "brick_3" }, { type: "increment_path", target: "game.score", amount: 100 }] },
-          { trigger: "hit_brick_4", event: "collision", entities: ["ball", "brick_4"], actions: [{ type: "destroy_entity", target: "brick_4" }, { type: "increment_path", target: "game.score", amount: 100 }] },
-          { trigger: "hit_brick_5", event: "collision", entities: ["ball", "brick_5"], actions: [{ type: "destroy_entity", target: "brick_5" }, { type: "increment_path", target: "game.score", amount: 100 }] }
+          { trigger: "hit_brick_01", event: "collision", entities: ["ball_01", "brick_01"], actions: [{ type: "destroy_entity", target: "brick_01" }, { type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bricks_remaining", amount: -1 }] },
+          { trigger: "hit_brick_02", event: "collision", entities: ["ball_01", "brick_02"], actions: [{ type: "destroy_entity", target: "brick_02" }, { type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bricks_remaining", amount: -1 }] },
+          { trigger: "hit_brick_03", event: "collision", entities: ["ball_01", "brick_03"], actions: [{ type: "destroy_entity", target: "brick_03" }, { type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bricks_remaining", amount: -1 }] },
+          { trigger: "hit_brick_04", event: "collision", entities: ["ball_01", "brick_04"], actions: [{ type: "destroy_entity", target: "brick_04" }, { type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bricks_remaining", amount: -1 }] },
+          { trigger: "hit_brick_05", event: "collision", entities: ["ball_01", "brick_05"], actions: [{ type: "destroy_entity", target: "brick_05" }, { type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bricks_remaining", amount: -1 }] },
+          { trigger: "hit_brick_06", event: "collision", entities: ["ball_01", "brick_06"], actions: [{ type: "destroy_entity", target: "brick_06" }, { type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bricks_remaining", amount: -1 }] },
+          { trigger: "floor_breach", condition: { entity: "ball_01", property: "position.y", op: ">=", value: 0.97 }, actions: [{ type: "increment", target: "lives", amount: -1 }, { type: "reset_entity", target: "ball_01", position: { x: 0.5, y: 0.7 }, velocity: { vx: 0.35, vy: -0.45 } }] },
+          { trigger: "check_victory", condition: { state_variable: "bricks_remaining", op: "<=", value: 0 }, actions: [{ type: "set", target: "game_state", value: "VICTORY" }] }
         ]
       }
     },
     {
-      id: 'dodge',
-      title: 'Cyberpunk Asteroid Dodge',
+      id: 'pong',
+      title: 'Deterministic 2-Player Pong',
       category: 'Games & Arcade',
-      badge: 'Reflex Evasion',
-      description: 'Full 2D ship kinematics dodging high-speed incoming meteorites with live hull integrity metrics.',
+      badge: 'Dual Control Matrix',
+      description: 'Multi-channel paddle controls (W/S & Arrow keys), analytical normal rebounds, and goal line breach condition triggers.',
       json: {
         mlue_version: "1.6",
-        environment: { dimensions: [800, 600], background: "#050814" },
-        state_variables: { game: { score: 0, lives: 3, state: "PLAYING" } },
+        environment: { dimensions: [750, 480], background: "#0F172A" },
+        state_variables: { score_left: 0, score_right: 0 },
         entities: [
-          { id: "player_ship", type: "box", position: { x: 0.50, y: 0.85 }, size: { width: 0.08, height: 0.05 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: "#06B6D4", control: { channel: "paddle", axis: "xy", speed: 0.80 } } },
-          { id: "asteroid_1", type: "circle", position: { x: 0.20, y: 0.15 }, size: { radius: 0.045 }, velocity: { vx: 0.12, vy: 0.35 }, properties: { solid: true, color: "#F43F5E" } },
-          { id: "asteroid_2", type: "circle", position: { x: 0.50, y: 0.25 }, size: { radius: 0.055 }, velocity: { vx: -0.18, vy: 0.28 }, properties: { solid: true, color: "#A855F7" } },
-          { id: "asteroid_3", type: "circle", position: { x: 0.80, y: 0.10 }, size: { radius: 0.038 }, velocity: { vx: 0.08, vy: 0.40 }, properties: { solid: true, color: "#EAB308" } }
+          { id: "ball_01", type: "circle", position: { x: 0.5, y: 0.5 }, size: { radius: 0.035 }, velocity: { vx: 0.45, vy: 0.28 }, properties: { color: "#38BDF8", solid: true, restitution: 1.0 } },
+          { id: "paddle_left", type: "box", position: { x: 0.05, y: 0.5 }, size: { width: 0.025, height: 0.28 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { color: "#F43F5E", solid: true, control: { channel: "player_left", axis: "y", speed: 0.7 } } },
+          { id: "paddle_right", type: "box", position: { x: 0.95, y: 0.5 }, size: { width: 0.025, height: 0.28 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { color: "#10B981", solid: true, control: { channel: "player_right", axis: "y", speed: 0.7 } } },
+          { id: "net_divider", type: "segment", position: { x: 0.5, y: 0.05 }, size: { end_x: 0.5, end_y: 0.95, thickness: 0.005 }, properties: { color: "#334155", solid: false } }
         ],
         rules: [
-          { trigger: "hit_ast_1", event: "collision", entities: ["player_ship", "asteroid_1"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_1", position: { x: 0.2, y: 0.05 }, velocity: { vx: 0.12, vy: 0.35 } }] },
-          { trigger: "hit_ast_2", event: "collision", entities: ["player_ship", "asteroid_2"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_2", position: { x: 0.5, y: 0.05 }, velocity: { vx: -0.18, vy: 0.28 } }] },
-          { trigger: "hit_ast_3", event: "collision", entities: ["player_ship", "asteroid_3"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_3", position: { x: 0.8, y: 0.05 }, velocity: { vx: 0.08, vy: 0.40 } }] }
+          { trigger: "goal_left", condition: { entity: "ball_01", property: "position.x", op: "<=", value: 0.025 }, actions: [{ type: "increment", target: "score_right", amount: 1 }, { type: "reset_entity", target: "ball_01", position: { x: 0.5, y: 0.5 }, velocity: { vx: 0.45, vy: 0.28 } }] },
+          { trigger: "goal_right", condition: { entity: "ball_01", property: "position.x", op: ">=", value: 0.975 }, actions: [{ type: "increment", target: "score_left", amount: 1 }, { type: "reset_entity", target: "ball_01", position: { x: 0.5, y: 0.5 }, velocity: { vx: -0.45, vy: 0.28 } }] }
+        ]
+      }
+    },
+    {
+      id: 'spinning_paddle_arena',
+      title: 'Spinning Paddle Dynamic Arena',
+      category: 'Games & Arcade',
+      badge: 'Rotational Physics',
+      description: 'Central motorized rotor spinning at high angular velocity (omega), segment perimeter boundary walls, and deflection counter rules.',
+      json: {
+        mlue_version: "1.6",
+        environment: { dimensions: [800, 800], background: "#090D16" },
+        state_variables: { deflections: 0 },
+        entities: [
+          { id: "arena_top", type: "segment", position: { x: 0.05, y: 0.05 }, size: { end_x: 0.95, end_y: 0.05, thickness: 0.015 }, properties: { color: "#334155", solid: true, restitution: 0.95 } },
+          { id: "arena_bottom", type: "segment", position: { x: 0.05, y: 0.95 }, size: { end_x: 0.95, end_y: 0.95, thickness: 0.015 }, properties: { color: "#334155", solid: true, restitution: 0.95 } },
+          { id: "arena_left", type: "segment", position: { x: 0.05, y: 0.05 }, size: { end_x: 0.05, end_y: 0.95, thickness: 0.015 }, properties: { color: "#334155", solid: true, restitution: 0.95 } },
+          { id: "arena_right", type: "segment", position: { x: 0.95, y: 0.05 }, size: { end_x: 0.95, end_y: 0.95, thickness: 0.015 }, properties: { color: "#334155", solid: true, restitution: 0.95 } },
+          { id: "center_rotor", type: "box", position: { x: 0.5, y: 0.5 }, size: { width: 0.35, height: 0.04 }, angle: 0.0, velocity: { vx: 0.0, vy: 0.0, omega: 3.14159 }, properties: { color: "#F59E0B", solid: true, static: true, restitution: 0.95, friction: 0.4 } },
+          { id: "dynamic_spinner", type: "box", position: { x: 0.3, y: 0.3 }, size: { width: 0.12, height: 0.04 }, angle: 0.785, velocity: { vx: 0.08, vy: 0.04, omega: 1.5 }, properties: { color: "#8B5CF6", solid: true, mass: 2.0, restitution: 0.8, friction: 0.3 } },
+          { id: "ball_1", type: "circle", position: { x: 0.5, y: 0.25 }, size: { radius: 0.028 }, velocity: { vx: 0.15, vy: 0.28 }, properties: { color: "#38BDF8", solid: true, mass: 0.5, restitution: 0.95, friction: 0.2 } },
+          { id: "ball_2", type: "circle", position: { x: 0.65, y: 0.65 }, size: { radius: 0.028 }, velocity: { vx: -0.18, vy: -0.22 }, properties: { color: "#10B981", solid: true, mass: 0.5, restitution: 0.95, friction: 0.2 } }
+        ],
+        rules: [
+          { trigger: "rotor_deflect", event: "collision", entities: ["ball_1", "center_rotor"], actions: [{ type: "increment", target: "deflections", amount: 1 }] }
         ]
       }
     },
@@ -289,7 +317,7 @@ export const DOMAIN_TEMPLATES = {
       title: 'Suspension Bridge & Physics Ragdoll',
       category: 'Games & Arcade',
       badge: 'Mechanical Constraints',
-      description: '3-plank suspension bridge with Baumgarte distance joints, damped spring vehicle chassis, and swinging revolute pin hinge.',
+      description: '3-plank suspension bridge with Baumgarte distance joints, damped spring vehicle chassis, and solid anchorage piers.',
       json: {
         mlue_version: "1.6",
         environment: { dimensions: [800, 800], background: "#080C14" },
@@ -314,18 +342,50 @@ export const DOMAIN_TEMPLATES = {
       }
     },
     {
-      id: 'spinning_paddle_arena',
-      title: 'Spinning Paddle Dynamic Arena',
+      id: 'bumper_arena',
+      title: 'Pinball Bumper Kinetic Arena',
       category: 'Games & Arcade',
-      badge: 'Rotational Physics',
-      description: 'Central motorized rotor spinning at high angular velocity, dynamic oriented bounding boxes (OBBs), and Coulomb surface friction.',
+      badge: 'Kinetic Scoring',
+      description: 'Dynamic high-restitution bouncers, moving catcher paddle, and automated point accumulation triggers.',
       json: {
         mlue_version: "1.6",
-        environment: { dimensions: [800, 800], background: "#090D16" },
+        environment: { dimensions: [750, 500], background: "#0B0F19" },
+        state_variables: { score: 0, bumper_hits: 0 },
         entities: [
-          { id: "center_rotor", type: "box", position: { x: 0.5, y: 0.5 }, size: { width: 0.35, height: 0.04 }, angle: 0.0, velocity: { vx: 0.0, vy: 0.0, omega: 3.14159 }, properties: { color: "#F59E0B", solid: true, static: true, restitution: 0.95, friction: 0.4 } },
-          { id: "dynamic_spinner", type: "box", position: { x: 0.3, y: 0.3 }, size: { width: 0.12, height: 0.04 }, angle: 0.785, velocity: { vx: 0.1, vy: 0.0, omega: 1.0 }, properties: { color: "#38BDF8", solid: true, mass: 1.0, restitution: 0.8, friction: 0.2 } },
-          { id: "bouncing_puck", type: "circle", position: { x: 0.5, y: 0.25 }, size: { radius: 0.03 }, velocity: { vx: 0.2, vy: 0.3 }, properties: { color: "#10B981", solid: true, mass: 0.5, restitution: 0.9, friction: 0.1 } }
+          { id: "energy_orb", type: "circle", position: { x: 0.5, y: 0.25 }, size: { radius: 0.028 }, velocity: { vx: 0.38, vy: 0.42 }, properties: { color: "#38BDF8", solid: true, restitution: 1.05 } },
+          { id: "catcher_paddle", type: "box", position: { x: 0.5, y: 0.93 }, size: { width: 0.24, height: 0.038 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { color: "#10B981", solid: true, control: { channel: "player_bottom", axis: "x", speed: 0.75 } } },
+          { id: "bumper_left", type: "circle", position: { x: 0.25, y: 0.45 }, size: { radius: 0.06 }, properties: { color: "#EC4899", solid: true, static: true, restitution: 1.2 } },
+          { id: "bumper_right", type: "circle", position: { x: 0.75, y: 0.45 }, size: { radius: 0.06 }, properties: { color: "#A855F7", solid: true, static: true, restitution: 1.2 } },
+          { id: "bumper_center", type: "circle", position: { x: 0.50, y: 0.60 }, size: { radius: 0.045 }, properties: { color: "#F59E0B", solid: true, static: true, restitution: 1.15 } }
+        ],
+        rules: [
+          { trigger: "hit_bumper_l", event: "collision", entities: ["energy_orb", "bumper_left"], actions: [{ type: "increment", target: "score", amount: 50 }, { type: "increment", target: "bumper_hits", amount: 1 }] },
+          { trigger: "hit_bumper_r", event: "collision", entities: ["energy_orb", "bumper_right"], actions: [{ type: "increment", target: "score", amount: 50 }, { type: "increment", target: "bumper_hits", amount: 1 }] },
+          { trigger: "hit_bumper_c", event: "collision", entities: ["energy_orb", "bumper_center"], actions: [{ type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bumper_hits", amount: 1 }] },
+          { trigger: "floor_breach", condition: { entity: "energy_orb", property: "position.y", op: ">=", value: 0.98 }, actions: [{ type: "reset_entity", target: "energy_orb", position: { x: 0.5, y: 0.25 }, velocity: { vx: 0.38, vy: 0.42 } }] }
+        ]
+      }
+    },
+    {
+      id: 'button_counter',
+      title: 'Interactive Pointer FSM Button',
+      category: 'Games & Arcade',
+      badge: 'Discrete Pointer Events',
+      description: 'PointerState machine handling hover enter, hover exit, and click transitions with live text templating.',
+      json: {
+        mlue_version: "1.6",
+        environment: { dimensions: [600, 400], background: "#020617" },
+        state_variables: { counter: 0, status: "IDLE" },
+        entities: [
+          { id: "card_bg", type: "box", position: { x: 0.5, y: 0.5 }, size: { width: 0.7, height: 0.7 }, properties: { color: "#0F172A", solid: false } },
+          { id: "counter_label", type: "text", position: { x: 0.5, y: 0.35 }, template: "CLICK COUNT: {counter} [{status}]", size: { font_scale: 0.035, align: "center" }, properties: { color: "#38BDF8" } },
+          { id: "increment_btn", type: "capsule", position: { x: 0.5, y: 0.58 }, size: { length: 0.28, radius: 0.045, angle: 0.0 }, properties: { color: "#10B981", solid: false } },
+          { id: "btn_label", type: "text", position: { x: 0.5, y: 0.58 }, template: "CLICK TO INCREMENT", size: { font_scale: 0.024, align: "center" }, properties: { color: "#020617" } }
+        ],
+        rules: [
+          { trigger: "on_btn_click", event: "pointer_click", entity: "increment_btn", actions: [{ type: "increment", target: "counter", amount: 1 }, { type: "set", target: "status", value: "CLICKED" }] },
+          { trigger: "on_btn_enter", event: "pointer_hover_enter", entity: "increment_btn", actions: [{ type: "set", target: "status", value: "HOVERING" }] },
+          { trigger: "on_btn_exit", event: "pointer_hover_exit", entity: "increment_btn", actions: [{ type: "set", target: "status", value: "IDLE" }] }
         ]
       }
     }

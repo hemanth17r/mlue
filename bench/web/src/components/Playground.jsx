@@ -54,18 +54,18 @@ const COLOR_PRESETS = [
 ];
 
 const PROMPT_SUGGESTIONS = [
-  { text: "Cluster Telemetry Dashboard with 4 worker nodes & load balancer", category: "dashboards" },
-  { text: "Orbital N-Body Gravitational Swarm with central sun attractor", category: "simulations" },
-  { text: "Autonomous Multi-Agent Drone Grid with collision avoidance", category: "swarms" },
-  { text: "Hydraulic Reservoir with dual wave surge & safety valve", category: "control" },
-  { text: "Emergent Breakout with 5 destructible brick tiers", category: "games" },
-  { text: "Cyberpunk Asteroid Dodge with high-velocity meteorites", category: "games" }
+  { text: "Emergent Breakout with 6 destructible brick tiers", category: "games" },
+  { text: "Deterministic 2-Player Pong with multi-channel controls", category: "games" },
+  { text: "Spinning Paddle Dynamic Arena with rotational physics", category: "games" },
+  { text: "Suspension Bridge & Physics Ragdoll with distance joints", category: "games" },
+  { text: "Pinball Bumper Kinetic Arena with dynamic scoring", category: "games" },
+  { text: "Interactive Pointer FSM Button with hover states", category: "games" }
 ];
 
 export default function Playground({ onOpenBenchmarks }) {
   // Active State & Scene
-  const [activeTitle, setActiveTitle] = useState('Cluster Telemetry & Node Health Monitor');
-  const [jsonText, setJsonText] = useState(() => JSON.stringify(DOMAIN_TEMPLATES.dashboards[0].json, null, 2));
+  const [activeTitle, setActiveTitle] = useState('Emergent Breakout & Physics Reflection');
+  const [jsonText, setJsonText] = useState(() => JSON.stringify(DOMAIN_TEMPLATES.games[0].json, null, 2));
   const [showCode, setShowCode] = useState(false);
   const [showInspector, setShowInspector] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
@@ -114,6 +114,8 @@ export default function Playground({ onOpenBenchmarks }) {
   const keysDownRef = useRef({});
   const pointerTargetRef = useRef({ x: 0.5, y: 0.5, active: false });
   const dragEntityRef = useRef(null); // { id, startX, startY, offsetX, offsetY, isDragging }
+  const clickedEntityIdRef = useRef(null);
+  const hoveredEntityIdRef = useRef(null);
   const stageRef = useRef(null);
 
   // Save to Recent
@@ -143,6 +145,7 @@ export default function Playground({ onOpenBenchmarks }) {
         entities: cloned.entities || [],
         state_variables: cloned.state_variables || {},
         rules: cloned.rules || [],
+        constraints: cloned.constraints || [],
         env: cloned.environment || { dimensions: [800, 600], background: "#020617" },
         tick: 0
       };
@@ -150,6 +153,8 @@ export default function Playground({ onOpenBenchmarks }) {
       setErrorMsg(null);
       dragEntityRef.current = null;
       pointerTargetRef.current.active = false;
+      clickedEntityIdRef.current = null;
+      hoveredEntityIdRef.current = null;
       if (saveHistory) {
         saveToRecent(historyName || 'Custom Scene', cloned);
       }
@@ -163,11 +168,12 @@ export default function Playground({ onOpenBenchmarks }) {
     if (!simStateRef.current) return;
     try {
       const doc = {
-        mlue_version: "1.6",
+        mlue_version: simStateRef.current.doc?.mlue_version || "1.6",
         environment: simStateRef.current.env,
         state_variables: simStateRef.current.state_variables,
         entities: simStateRef.current.entities,
-        rules: simStateRef.current.rules
+        rules: simStateRef.current.rules,
+        constraints: simStateRef.current.constraints || []
       };
       setJsonText(JSON.stringify(doc, null, 2));
     } catch (e) {}
@@ -185,7 +191,7 @@ export default function Playground({ onOpenBenchmarks }) {
         return;
       } catch (e) {}
     }
-    initSimulation(DOMAIN_TEMPLATES.dashboards[0].json);
+    initSimulation(DOMAIN_TEMPLATES.games[0].json);
   }, [initSimulation]);
 
   // 0ms Instant Local AST Tweak & Compiler Engine
@@ -416,7 +422,7 @@ export default function Playground({ onOpenBenchmarks }) {
     };
   }, []);
 
-  // --- DRAG AND DROP HANDLING ON CANVAS ---
+  // --- DRAG AND DROP & POINTER HANDLING ON CANVAS ---
   const handleCanvasPointerDown = (e) => {
     const canvas = canvasRef.current;
     const state = simStateRef.current;
@@ -429,7 +435,7 @@ export default function Playground({ onOpenBenchmarks }) {
     const [envW, envH] = state.env.dimensions || [800, 600];
     const minDim = Math.min(envW, envH);
 
-    // Check if clicking an existing entity (Generous Hit Testing)
+    // Check if clicking an existing entity (Generous Hit Testing across circles, oriented boxes, capsules, text)
     let hitEntity = null;
     for (let i = state.entities.length - 1; i >= 0; i--) {
       const ent = state.entities[i];
@@ -444,8 +450,34 @@ export default function Playground({ onOpenBenchmarks }) {
           break;
         }
       } else if (ent.type === 'box') {
-        const hw = (ent.size.width / 2.0) + 0.025;
-        const hh = (ent.size.height / 2.0) + 0.025;
+        const ang = ent.position?.theta || ent.angle || 0;
+        const dx = (nx - ent.position.x) * (envW / minDim);
+        const dy = (ny - ent.position.y) * (envH / minDim);
+        const cos = Math.cos(-ang), sin = Math.sin(-ang);
+        const lx = Math.abs(dx * cos - dy * sin);
+        const ly = Math.abs(dx * sin + dy * cos);
+        const hw = ((ent.size?.width || 0.1) * (envW / minDim) * 0.5) + 0.02;
+        const hh = ((ent.size?.height || 0.05) * (envH / minDim) * 0.5) + 0.02;
+        if (lx <= hw && ly <= hh) {
+          hitEntity = ent;
+          break;
+        }
+      } else if (ent.type === 'capsule') {
+        const dx = (nx - ent.position.x) * (envW / minDim);
+        const dy = (ny - ent.position.y) * (envH / minDim);
+        const ang = (ent.position?.theta || ent.angle || 0) + (ent.size?.angle || 0);
+        const cos = Math.cos(-ang), sin = Math.sin(-ang);
+        const lx = Math.abs(dx * cos - dy * sin);
+        const ly = Math.abs(dx * sin + dy * cos);
+        const hl = ((ent.size?.length || 0.1) * (envW / minDim) * 0.5);
+        const r = (ent.size?.radius || 0.04);
+        if (lx <= hl + r && ly <= r + 0.02) {
+          hitEntity = ent;
+          break;
+        }
+      } else if (ent.type === 'text') {
+        const hw = 0.25;
+        const hh = (ent.size?.font_scale || 0.035) * 1.5;
         if (Math.abs(nx - ent.position.x) <= hw && Math.abs(ny - ent.position.y) <= hh) {
           hitEntity = ent;
           break;
@@ -454,6 +486,7 @@ export default function Playground({ onOpenBenchmarks }) {
     }
 
     if (hitEntity) {
+      clickedEntityIdRef.current = hitEntity.id;
       setSelectedEntityId(hitEntity.id);
       setShowInspector(true);
       dragEntityRef.current = {
@@ -476,6 +509,40 @@ export default function Playground({ onOpenBenchmarks }) {
     const rect = canvas.getBoundingClientRect();
     const nx = Math.max(0.02, Math.min(0.98, (e.clientX - rect.left) / rect.width));
     const ny = Math.max(0.02, Math.min(0.98, (e.clientY - rect.top) / rect.height));
+
+    const [envW, envH] = state.env.dimensions || [800, 600];
+    const minDim = Math.min(envW, envH);
+
+    // Track hovered entity
+    let foundHovered = null;
+    for (let i = state.entities.length - 1; i >= 0; i--) {
+      const ent = state.entities[i];
+      if (ent.active === false) continue;
+      if (ent.type === 'circle') {
+        const dx = (ent.position.x - nx) * (envW / minDim);
+        const dy = (ent.position.y - ny) * (envH / minDim);
+        const hitRadius = (ent.size.radius || 0.03) * 1.2;
+        if ((dx * dx) + (dy * dy) <= (hitRadius * hitRadius)) {
+          foundHovered = ent.id;
+          break;
+        }
+      } else if (ent.type === 'box') {
+        const hw = (ent.size?.width || 0.1) * 0.5;
+        const hh = (ent.size?.height || 0.05) * 0.5;
+        if (Math.abs(nx - ent.position.x) <= hw && Math.abs(ny - ent.position.y) <= hh) {
+          foundHovered = ent.id;
+          break;
+        }
+      } else if (ent.type === 'capsule') {
+        const hl = (ent.size?.length || 0.1) * 0.5;
+        const r = ent.size?.radius || 0.04;
+        if (Math.abs(nx - ent.position.x) <= hl + r && Math.abs(ny - ent.position.y) <= r) {
+          foundHovered = ent.id;
+          break;
+        }
+      }
+    }
+    hoveredEntityIdRef.current = foundHovered;
 
     if (dragEntityRef.current?.isDragging) {
       const ent = state.entities.find(e => e.id === dragEntityRef.current.id);
@@ -571,7 +638,98 @@ export default function Playground({ onOpenBenchmarks }) {
     reader.readAsText(file);
   };
 
-  // Step Simulation Frame
+  // Universal Helper: Evaluate MLUE Declarative Rule Condition
+  const evaluateRuleCondition = (cond, entities, stateVars) => {
+    if (!cond) return true;
+    let actualVal = undefined;
+
+    if (cond.state_path) {
+      const parts = cond.state_path.split('.');
+      let curr = stateVars;
+      for (const p of parts) curr = curr != null ? curr[p] : undefined;
+      actualVal = curr;
+    } else if (cond.state_variable) {
+      actualVal = stateVars[cond.state_variable];
+    } else if (cond.entity) {
+      const ent = entities.find(e => e.id === cond.entity);
+      if (!ent || ent.active === false) return false;
+      const prop = cond.property || 'position.x';
+      const parts = prop.split('.');
+      let curr = ent;
+      for (const p of parts) curr = curr != null ? curr[p] : undefined;
+      actualVal = curr;
+    }
+
+    if (actualVal === undefined) return false;
+    const threshold = cond.value;
+
+    switch (cond.op) {
+      case '<=': return actualVal <= threshold;
+      case '>=': return actualVal >= threshold;
+      case '<': return actualVal < threshold;
+      case '>': return actualVal > threshold;
+      case '==': return actualVal === threshold;
+      case '!=': return actualVal !== threshold;
+      default: return false;
+    }
+  };
+
+  // Universal Helper: Execute MLUE Declarative Actions
+  const executeRuleActions = (actions, entities, stateVars) => {
+    for (const action of actions || []) {
+      if (action.type === 'destroy_entity' || action.type === 'deactivate_entity') {
+        const target = entities.find(e => e.id === action.target);
+        if (target) target.active = false;
+      } else if (action.type === 'reset_entity') {
+        const target = entities.find(e => e.id === action.target);
+        if (target) {
+          if (action.position) {
+            target.position.x = action.position.x;
+            target.position.y = action.position.y;
+          }
+          if (action.velocity) {
+            target.velocity.vx = action.velocity.vx;
+            target.velocity.vy = action.velocity.vy;
+            if (action.velocity.omega != null) target.velocity.omega = action.velocity.omega;
+          }
+          target.active = true;
+        }
+      } else if (action.type === 'set_property') {
+        const target = entities.find(e => e.id === action.target);
+        if (target && action.property) {
+          if (!target.properties) target.properties = {};
+          target.properties[action.property] = action.value;
+        }
+      } else if (action.type === 'increment' || action.type === 'increment_path') {
+        const targetPath = action.target;
+        const amount = action.amount ?? 1;
+        const parts = targetPath.split('.');
+        let curr = stateVars;
+        for (let k = 0; k < parts.length - 1; k++) {
+          if (!curr[parts[k]]) curr[parts[k]] = {};
+          curr = curr[parts[k]];
+        }
+        if (curr && parts.length > 0) {
+          const lastKey = parts[parts.length - 1];
+          curr[lastKey] = (curr[lastKey] || 0) + amount;
+        }
+      } else if (action.type === 'set' || action.type === 'set_path') {
+        const targetPath = action.target;
+        const val = action.value;
+        const parts = targetPath.split('.');
+        let curr = stateVars;
+        for (let k = 0; k < parts.length - 1; k++) {
+          if (!curr[parts[k]]) curr[parts[k]] = {};
+          curr = curr[parts[k]];
+        }
+        if (curr && parts.length > 0) {
+          curr[parts[parts.length - 1]] = val;
+        }
+      }
+    }
+  };
+
+  // Step Simulation Frame (MLUE Core Engine Implementation)
   const stepSimulation = useCallback((dt) => {
     const state = simStateRef.current;
     if (!state) return;
@@ -579,94 +737,212 @@ export default function Playground({ onOpenBenchmarks }) {
     const [envW, envH] = state.env.dimensions || [800, 600];
     const minDim = Math.min(envW, envH);
 
-    // Apply Controls
+    // 1. Process Discrete Pointer FSM Event Signals
+    const clickedId = clickedEntityIdRef.current;
+    clickedEntityIdRef.current = null;
+    const hoveredId = hoveredEntityIdRef.current;
+
+    // 2. Multi-Channel Input Dynamics
     const keys = keysDownRef.current;
     for (const ent of state.entities) {
       if (ent.active === false) continue;
       const ctrl = ent.properties?.control;
-      if (ctrl) {
-        const speed = ctrl.speed || 0.85;
-        const axis = ctrl.axis || 'xy';
+      if (!ctrl) continue;
 
-        let moveX = 0;
-        let moveY = 0;
+      const speed = ctrl.speed || 0.85;
+      const axis = ctrl.axis || 'xy';
+      const ch = ctrl.channel || 'paddle';
 
-        if (ctrl.channel === 'paddle' || ctrl.channel === 'p1') {
-          if (keys['ArrowLeft'] || keys['a'] || keys['KeyA']) moveX -= 1;
-          if (keys['ArrowRight'] || keys['d'] || keys['KeyD']) moveX += 1;
-          if (keys['ArrowUp'] || keys['w'] || keys['KeyW']) moveY -= 1;
-          if (keys['ArrowDown'] || keys['s'] || keys['KeyS']) moveY += 1;
-        } else if (ctrl.channel === 'p2') {
-          if (keys['ArrowUp'] || keys['k']) moveY -= 1;
-          if (keys['ArrowDown'] || keys['j']) moveY += 1;
+      let moveX = 0;
+      let moveY = 0;
+
+      if (ch === 'player_bottom' || ch === 'player_top') {
+        if (keys['ArrowLeft'] || keys['a'] || keys['KeyA']) moveX -= 1;
+        if (keys['ArrowRight'] || keys['d'] || keys['KeyD']) moveX += 1;
+      } else if (ch === 'player_left') {
+        if (keys['w'] || keys['KeyW'] || keys['ArrowUp']) moveY -= 1;
+        if (keys['s'] || keys['KeyS'] || keys['ArrowDown']) moveY += 1;
+      } else if (ch === 'player_right') {
+        if (keys['ArrowUp'] || keys['k'] || keys['KeyK'] || keys['KeyI']) moveY -= 1;
+        if (keys['ArrowDown'] || keys['j'] || keys['KeyJ'] || keys['KeyM']) moveY += 1;
+      } else if (ch === 'paddle' || ch === 'p1') {
+        if (keys['ArrowLeft'] || keys['a'] || keys['KeyA']) moveX -= 1;
+        if (keys['ArrowRight'] || keys['d'] || keys['KeyD']) moveX += 1;
+        if (keys['ArrowUp'] || keys['w'] || keys['KeyW']) moveY -= 1;
+        if (keys['ArrowDown'] || keys['s'] || keys['KeyS']) moveY += 1;
+      } else if (ch === 'p2') {
+        if (keys['ArrowUp'] || keys['k'] || keys['KeyK']) moveY -= 1;
+        if (keys['ArrowDown'] || keys['j'] || keys['KeyJ']) moveY += 1;
+        if (keys['ArrowLeft'] || keys['h'] || keys['KeyH']) moveX -= 1;
+        if (keys['ArrowRight'] || keys['l'] || keys['KeyL']) moveX += 1;
+      }
+
+      if (!ent.velocity) ent.velocity = { vx: 0, vy: 0 };
+      if (axis === 'x') {
+        ent.velocity.vx = moveX * speed;
+        ent.velocity.vy = 0.0;
+      } else if (axis === 'y') {
+        ent.velocity.vx = 0.0;
+        ent.velocity.vy = moveY * speed;
+      } else {
+        ent.velocity.vx = moveX * speed;
+        ent.velocity.vy = moveY * speed;
+      }
+
+      // Pointer follow for player control channel
+      if (pointerTargetRef.current?.active && (ch === 'paddle' || ch === 'player_bottom' || ch === 'p1')) {
+        const pt = pointerTargetRef.current;
+        if (axis === 'x' || axis === 'xy') {
+          const dx = pt.x - ent.position.x;
+          ent.position.x += dx * Math.min(1.0, dt * 16.0);
         }
-
-        if (axis === 'x') {
-          ent.velocity.vx = moveX * speed;
-          ent.velocity.vy = 0.0;
-        } else if (axis === 'y') {
-          ent.velocity.vx = 0.0;
-          ent.velocity.vy = moveY * speed;
-        } else {
-          ent.velocity.vx = moveX * speed;
-          ent.velocity.vy = moveY * speed;
-        }
-
-        // Pointer follow
-        if (pointerTargetRef.current?.active && (ctrl.channel === 'paddle' || ctrl.channel === 'p1')) {
-          const pt = pointerTargetRef.current;
-          if (axis === 'x' || axis === 'xy') {
-            const dx = pt.x - ent.position.x;
-            ent.position.x += dx * Math.min(1.0, dt * 16.0);
-          }
-          if (axis === 'y' || axis === 'xy') {
-            const dy = pt.y - ent.position.y;
-            ent.position.y += dy * Math.min(1.0, dt * 16.0);
-          }
+        if (axis === 'y' || axis === 'xy') {
+          const dy = pt.y - ent.position.y;
+          ent.position.y += dy * Math.min(1.0, dt * 16.0);
         }
       }
     }
 
-    // Kinematics & Bounding Reflections
+    // 3. Kinematics (Linear & Rotational) & Boundary Invariants
     for (const ent of state.entities) {
       if (ent.active === false || dragEntityRef.current?.id === ent.id) continue;
+      if (!ent.velocity) ent.velocity = { vx: 0, vy: 0 };
+      if (!ent.position) ent.position = { x: 0.5, y: 0.5 };
 
-      let ex = 0, ey = 0;
-      if (ent.type === 'circle') {
-        const r = ent.size.radius;
-        ex = r * (minDim / envW);
-        ey = r * (minDim / envH);
-      } else if (ent.type === 'box') {
-        ex = ent.size.width / 2.0;
-        ey = ent.size.height / 2.0;
+      // Angular velocity integration
+      if (ent.velocity.omega != null && ent.velocity.omega !== 0) {
+        ent.angle = (ent.angle || 0.0) + ent.velocity.omega * dt;
+        ent.position.theta = ent.angle;
       }
 
+      // Linear velocity integration
       let newX = ent.position.x + (ent.velocity.vx * dt);
       let newY = ent.position.y + (ent.velocity.vy * dt);
 
       const hasControl = Boolean(ent.properties?.control);
+      const isStatic = Boolean(ent.properties?.static);
+      const restitution = ent.properties?.restitution ?? (hasControl ? 0.0 : 1.0);
 
-      if (newX - ex <= 0.0) {
-        newX = ex;
-        if (!hasControl && ent.velocity.vx < 0) ent.velocity.vx = -ent.velocity.vx;
-      } else if (newX + ex >= 1.0) {
-        newX = 1.0 - ex;
-        if (!hasControl && ent.velocity.vx > 0) ent.velocity.vx = -ent.velocity.vx;
+      let ex = 0, ey = 0;
+      if (ent.type === 'circle') {
+        const r = ent.size?.radius || 0.03;
+        ex = r * (minDim / envW);
+        ey = r * (minDim / envH);
+      } else if (ent.type === 'box') {
+        ex = (ent.size?.width || 0.1) * 0.5;
+        ey = (ent.size?.height || 0.05) * 0.5;
       }
 
-      if (newY - ey <= 0.0) {
-        newY = ey;
-        if (!hasControl && ent.velocity.vy < 0) ent.velocity.vy = -ent.velocity.vy;
-      } else if (newY + ey >= 1.0) {
-        newY = 1.0 - ey;
-        if (!hasControl && ent.velocity.vy > 0) ent.velocity.vy = -ent.velocity.vy;
-      }
+      if (!isStatic && ex > 0 && ey > 0) {
+        if (newX - ex <= 0.0) {
+          newX = ex;
+          if (!hasControl && ent.velocity.vx < 0) ent.velocity.vx = -ent.velocity.vx * restitution;
+        } else if (newX + ex >= 1.0) {
+          newX = 1.0 - ex;
+          if (!hasControl && ent.velocity.vx > 0) ent.velocity.vx = -ent.velocity.vx * restitution;
+        }
 
-      ent.position.x = Math.max(ex, Math.min(1.0 - ex, newX));
-      ent.position.y = Math.max(ey, Math.min(1.0 - ey, newY));
+        if (newY - ey <= 0.0) {
+          newY = ey;
+          if (!hasControl && ent.velocity.vy < 0) ent.velocity.vy = -ent.velocity.vy * restitution;
+        } else if (newY + ey >= 1.0) {
+          newY = 1.0 - ey;
+          if (!hasControl && ent.velocity.vy > 0) ent.velocity.vy = -ent.velocity.vy * restitution;
+        }
+
+        ent.position.x = Math.max(ex, Math.min(1.0 - ex, newX));
+        ent.position.y = Math.max(ey, Math.min(1.0 - ey, newY));
+      } else {
+        ent.position.x = newX;
+        ent.position.y = newY;
+      }
     }
 
-    // Collisions
+    // 4. Interactive Mechanical Constraints Solver (Baumgarte Distance & Hookean Springs)
+    if (Array.isArray(state.constraints) && state.constraints.length > 0 && dt > 0) {
+      const entityMap = {};
+      for (const ent of state.entities) entityMap[ent.id] = ent;
+
+      const getInvMass = (e) => {
+        if (!e || e.properties?.static || e.properties?.control) return 0.0;
+        const m = e.properties?.mass || 1.0;
+        return m > 0 ? 1.0 / m : 0.0;
+      };
+
+      for (let iter = 0; iter < 2; iter++) {
+        for (const c of state.constraints) {
+          const eA = entityMap[c.entity_a];
+          if (!eA || eA.active === false) continue;
+          const eB = c.entity_b ? entityMap[c.entity_b] : null;
+          if (eB && eB.active === false) continue;
+
+          const aA = c.anchor_a || { x: 0, y: 0 };
+          const angA = eA.position?.theta || eA.angle || 0;
+          const cosA = Math.cos(angA), sinA = Math.sin(angA);
+          const pAx = eA.position.x + (aA.x * cosA - aA.y * sinA);
+          const pAy = eA.position.y + (aA.x * sinA + aA.y * cosA);
+
+          let pBx, pBy, vBx = 0, vBy = 0;
+          if (eB) {
+            const aB = c.anchor_b || { x: 0, y: 0 };
+            const angB = eB.position?.theta || eB.angle || 0;
+            const cosB = Math.cos(angB), sinB = Math.sin(angB);
+            pBx = eB.position.x + (aB.x * cosB - aB.y * sinB);
+            pBy = eB.position.y + (aB.x * sinB + aB.y * cosB);
+            vBx = eB.velocity?.vx || 0;
+            vBy = eB.velocity?.vy || 0;
+          } else {
+            const wAnc = c.anchor_b || c.world_anchor || { x: 0, y: 0 };
+            pBx = wAnc.x;
+            pBy = wAnc.y;
+          }
+
+          const dx = (pBx - pAx) * (envW / minDim);
+          const dy = (pBy - pAy) * (envH / minDim);
+          const dist = Math.hypot(dx, dy);
+          if (dist < 1e-9) continue;
+          const nx = dx / dist;
+          const ny = dy / dist;
+
+          const restLen = (c.length || 0.0) * (envW / minDim);
+          const mAInv = getInvMass(eA);
+          const mBInv = getInvMass(eB);
+          const mSum = mAInv + mBInv;
+          if (mSum <= 1e-9) continue;
+
+          if (c.type === 'spring') {
+            const deltaL = dist - restLen;
+            const vRel = (vBx - (eA.velocity?.vx || 0)) * nx + (vBy - (eA.velocity?.vy || 0)) * ny;
+            const k = c.stiffness || 100.0;
+            const d = c.damping || 4.0;
+            const force = k * deltaL + d * vRel;
+            const impulse = force * (dt / 2.0);
+
+            if (mAInv > 0) {
+              eA.velocity.vx += (impulse * nx * mAInv) * (minDim / envW);
+              eA.velocity.vy += (impulse * ny * mAInv) * (minDim / envH);
+            }
+            if (eB && mBInv > 0) {
+              eB.velocity.vx -= (impulse * nx * mBInv) * (minDim / envW);
+              eB.velocity.vy -= (impulse * ny * mBInv) * (minDim / envH);
+            }
+          } else if (c.type === 'distance' || c.type === 'pin') {
+            const deltaL = dist - restLen;
+            const corr = (deltaL * 0.85) / mSum;
+            if (mAInv > 0) {
+              eA.position.x += (nx * corr * mAInv) * (minDim / envW);
+              eA.position.y += (ny * corr * mAInv) * (minDim / envH);
+            }
+            if (eB && mBInv > 0) {
+              eB.position.x -= (nx * corr * mBInv) * (minDim / envW);
+              eB.position.y -= (ny * corr * mBInv) * (minDim / envH);
+            }
+          }
+        }
+      }
+    }
+
+    // 5. Solid Collisions Resolution (Circle-Circle, Circle-Box OBB with Angle, Circle-Segment)
     const entities = state.entities;
     const collisionsThisFrame = [];
 
@@ -696,7 +972,8 @@ export default function Playground({ onOpenBenchmarks }) {
             const velAlongNorm = (rvx * nx) + (rvy * ny);
 
             if (velAlongNorm < 0) {
-              const impulse = -velAlongNorm;
+              const rest = Math.min(e1.properties?.restitution ?? 1.0, e2.properties?.restitution ?? 1.0);
+              const impulse = -(1.0 + rest) * velAlongNorm * 0.5;
               e1.velocity.vx += nx * impulse;
               e1.velocity.vy += ny * impulse;
               e2.velocity.vx -= nx * impulse;
@@ -712,104 +989,153 @@ export default function Playground({ onOpenBenchmarks }) {
             }
           }
         }
-        // Circle vs Box
+        // Circle vs Box (Oriented Bounding Box)
         else if ((e1.type === 'circle' && e2.type === 'box') || (e1.type === 'box' && e2.type === 'circle')) {
           const circle = e1.type === 'circle' ? e1 : e2;
           const box = e1.type === 'box' ? e1 : e2;
 
-          const r = circle.size.radius;
-          const hw = box.size.width * 0.5;
-          const hh = box.size.height * 0.5;
+          const r = circle.size?.radius || 0.025;
+          const hw = (box.size?.width || 0.1) * 0.5;
+          const hh = (box.size?.height || 0.05) * 0.5;
+          const boxAng = box.position?.theta || box.angle || 0.0;
 
-          const nearestX = Math.max(box.position.x - hw, Math.min(box.position.x + hw, circle.position.x));
-          const nearestY = Math.max(box.position.y - hh, Math.min(box.position.y + hh, circle.position.y));
+          const cosB = Math.cos(-boxAng);
+          const sinB = Math.sin(-boxAng);
+          const dxRel = (circle.position.x - box.position.x) * (envW / minDim);
+          const dyRel = (circle.position.y - box.position.y) * (envH / minDim);
 
-          const dx = (circle.position.x - nearestX) * (envW / minDim);
-          const dy = (circle.position.y - nearestY) * (envH / minDim);
-          const distSq = (dx * dx) + (dy * dy);
+          const localCx = dxRel * cosB - dyRel * sinB;
+          const localCy = dxRel * sinB + dyRel * cosB;
+
+          const boxHwScale = hw * (envW / minDim);
+          const boxHhScale = hh * (envH / minDim);
+
+          const nearestX = Math.max(-boxHwScale, Math.min(boxHwScale, localCx));
+          const nearestY = Math.max(-boxHhScale, Math.min(boxHhScale, localCy));
+
+          const diffX = localCx - nearestX;
+          const diffY = localCy - nearestY;
+          const distSq = (diffX * diffX) + (diffY * diffY);
+
+          if (distSq < (r * r) && distSq > 1e-9) {
+            const dist = Math.sqrt(distSq);
+            const lnx = diffX / dist;
+            const lny = diffY / dist;
+
+            // Transform normal back to world
+            const cosF = Math.cos(boxAng);
+            const sinF = Math.sin(boxAng);
+            const nx = lnx * cosF - lny * sinF;
+            const ny = lnx * sinF + lny * cosF;
+
+            // Box velocity at contact (accounting for angular velocity omega)
+            const omega = box.velocity?.omega || 0.0;
+            const rPx = (nearestX * cosF - nearestY * sinF) * (minDim / envW);
+            const rPy = (nearestX * sinF + nearestY * cosF) * (minDim / envH);
+            const boxContactVx = (box.velocity?.vx || 0) - omega * rPy;
+            const boxContactVy = (box.velocity?.vy || 0) + omega * rPx;
+
+            const rvx = circle.velocity.vx - boxContactVx;
+            const rvy = circle.velocity.vy - boxContactVy;
+            const velAlongNorm = (rvx * nx) + (rvy * ny);
+
+            if (velAlongNorm < 0) {
+              const rest = Math.min(circle.properties?.restitution ?? 1.0, box.properties?.restitution ?? 1.0);
+              const impulse = -(1.0 + rest) * velAlongNorm;
+              circle.velocity.vx += nx * impulse;
+              circle.velocity.vy += ny * impulse;
+
+              // Paddle control directional boost
+              if (box.properties?.control) {
+                const hitOffset = nearestX / boxHwScale;
+                circle.velocity.vx += hitOffset * 0.25;
+                if (box.properties.control.axis === 'x') {
+                  circle.velocity.vy = -Math.abs(circle.velocity.vy || 0.35);
+                }
+              }
+
+              const pen = (r - dist);
+              circle.position.x += nx * pen * (minDim / envW);
+              circle.position.y += ny * pen * (minDim / envH);
+
+              collisionsThisFrame.push([circle.id, box.id]);
+            }
+          }
+        }
+        // Circle vs Segment
+        else if ((e1.type === 'circle' && e2.type === 'segment') || (e1.type === 'segment' && e2.type === 'circle')) {
+          const circle = e1.type === 'circle' ? e1 : e2;
+          const seg = e1.type === 'segment' ? e1 : e2;
+
+          const sx = seg.position.x * (envW / minDim);
+          const sy = seg.position.y * (envH / minDim);
+          const ex = (seg.size?.end_x ?? seg.position.x) * (envW / minDim);
+          const ey = (seg.size?.end_y ?? seg.position.y) * (envH / minDim);
+
+          const cx = circle.position.x * (envW / minDim);
+          const cy = circle.position.y * (envH / minDim);
+
+          const vx = ex - sx;
+          const vy = ey - sy;
+          const lenSq = vx * vx + vy * vy;
+          let t = lenSq > 1e-9 ? Math.max(0.0, Math.min(1.0, ((cx - sx) * vx + (cy - sy) * vy) / lenSq)) : 0.0;
+
+          const qx = sx + t * vx;
+          const qy = sy + t * vy;
+
+          const dx = cx - qx;
+          const dy = cy - qy;
+          const distSq = dx * dx + dy * dy;
+          const r = (circle.size?.radius || 0.025) + ((seg.size?.thickness || 0.01) * 0.5);
 
           if (distSq < (r * r) && distSq > 1e-9) {
             const dist = Math.sqrt(distSq);
             const nx = dx / dist;
             const ny = dy / dist;
 
-            if (box.properties?.control) {
-              const hitOffset = (circle.position.x - box.position.x) / hw;
-              circle.velocity.vx = hitOffset * 0.45;
-              circle.velocity.vy = -Math.abs(circle.velocity.vy || 0.35);
-            } else {
-              const rvx = circle.velocity.vx - box.velocity.vx;
-              const rvy = circle.velocity.vy - box.velocity.vy;
-              const velAlongNorm = (rvx * nx) + (rvy * ny);
+            const velAlongNorm = (circle.velocity.vx * nx) + (circle.velocity.vy * ny);
+            if (velAlongNorm < 0) {
+              const rest = Math.min(circle.properties?.restitution ?? 1.0, seg.properties?.restitution ?? 1.0);
+              const impulse = -(1.0 + rest) * velAlongNorm;
+              circle.velocity.vx += nx * impulse;
+              circle.velocity.vy += ny * impulse;
 
-              if (velAlongNorm < 0) {
-                const impulse = -(1.0 + 1.0) * velAlongNorm * 0.5;
-                circle.velocity.vx += nx * impulse;
-                circle.velocity.vy += ny * impulse;
-              }
+              const pen = r - dist;
+              circle.position.x += nx * pen * (minDim / envW);
+              circle.position.y += ny * pen * (minDim / envH);
+
+              collisionsThisFrame.push([circle.id, seg.id]);
             }
-
-            const pen = (r - dist);
-            circle.position.x += nx * pen * (minDim / envW);
-            circle.position.y += ny * pen * (minDim / envH);
-
-            collisionsThisFrame.push([circle.id, box.id]);
           }
         }
       }
     }
 
-    // Declarative Rules Execution
+    // 6. Declarative Rule Engine Evaluation
     if (state.rules && state.rules.length > 0) {
       for (const rule of state.rules) {
+        let isTriggered = false;
+
         if (rule.event === 'collision') {
           const [idA, idB] = rule.entities || [];
-          const hit = collisionsThisFrame.some(([c1, c2]) => (c1 === idA && c2 === idB) || (c1 === idB && c2 === idA));
-          if (hit) {
-            for (const action of rule.actions || []) {
-              if (action.type === 'destroy_entity' || action.type === 'deactivate_entity') {
-                const target = state.entities.find(e => e.id === action.target);
-                if (target) target.active = false;
-              } else if (action.type === 'reset_entity') {
-                const target = state.entities.find(e => e.id === action.target);
-                if (target) {
-                  if (action.position) {
-                    target.position.x = action.position.x;
-                    target.position.y = action.position.y;
-                  }
-                  if (action.velocity) {
-                    target.velocity.vx = action.velocity.vx;
-                    target.velocity.vy = action.velocity.vy;
-                  }
-                }
-              } else if (action.type === 'increment_path' || action.type === 'increment') {
-                const targetPath = action.target;
-                const amount = action.amount ?? 1;
-                const parts = targetPath.split('.');
-                let curr = state.state_variables;
-                for (let k = 0; k < parts.length - 1; k++) {
-                  if (!curr[parts[k]]) curr[parts[k]] = {};
-                  curr = curr[parts[k]];
-                }
-                if (curr && parts.length > 0) {
-                  const lastKey = parts[parts.length - 1];
-                  curr[lastKey] = (curr[lastKey] || 0) + amount;
-                }
-              } else if (action.type === 'set_path' || action.type === 'set') {
-                const targetPath = action.target;
-                const val = action.value;
-                const parts = targetPath.split('.');
-                let curr = state.state_variables;
-                for (let k = 0; k < parts.length - 1; k++) {
-                  if (!curr[parts[k]]) curr[parts[k]] = {};
-                  curr = curr[parts[k]];
-                }
-                if (curr && parts.length > 0) {
-                  curr[parts[parts.length - 1]] = val;
-                }
-              }
-            }
-          }
+          isTriggered = collisionsThisFrame.some(([c1, c2]) => (c1 === idA && c2 === idB) || (c1 === idB && c2 === idA));
+        } else if (rule.event === 'pointer_click' || rule.event === 'pointer_down') {
+          isTriggered = clickedId != null && rule.entity === clickedId;
+        } else if (rule.event === 'pointer_hover_enter') {
+          isTriggered = hoveredId != null && rule.entity === hoveredId;
+        } else if (rule.event === 'pointer_hover_exit') {
+          isTriggered = hoveredId == null && rule.entity === hoveredId;
+        } else if (rule.condition) {
+          isTriggered = evaluateRuleCondition(rule.condition, state.entities, state.state_variables);
+        }
+
+        // Secondary condition filter
+        if (isTriggered && rule.event && rule.condition) {
+          isTriggered = evaluateRuleCondition(rule.condition, state.entities, state.state_variables);
+        }
+
+        if (isTriggered) {
+          executeRuleActions(rule.actions, state.entities, state.state_variables);
         }
       }
     }
@@ -1526,6 +1852,36 @@ export default function Playground({ onOpenBenchmarks }) {
               <span>•</span>
               <span>🎮 Arrows / WASD</span>
             </div>
+          </div>
+
+          {/* Canonical MLUE Games Showcase Quick Launcher */}
+          <div className="px-4 py-2.5 bg-slate-950/90 border-t border-white/[0.06] flex flex-wrap items-center gap-1.5">
+            <span className="text-[11px] font-mono text-cyan-400 font-bold mr-1 flex items-center gap-1">
+              <Gamepad2 className="w-3.5 h-3.5" />
+              <span>MLUE Games:</span>
+            </span>
+            {DOMAIN_TEMPLATES.games.map((game) => (
+              <button
+                key={game.id}
+                type="button"
+                onClick={() => {
+                  setActiveTitle(game.title);
+                  setJsonText(JSON.stringify(game.json, null, 2));
+                  initSimulation(game.json, true, game.title);
+                  setStatusMsg(`⚡ Launched "${game.title}" (Pure MLUE Engine)`);
+                  setTimeout(() => setStatusMsg(null), 3000);
+                }}
+                className={`px-2.5 py-1 rounded-full border text-xs font-mono transition cursor-pointer flex items-center gap-1.5 ${
+                  activeTitle === game.title 
+                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-sm shadow-cyan-500/20' 
+                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border-white/[0.08] hover:border-cyan-500/30'
+                }`}
+              >
+                <span className="text-[10px] text-amber-400 font-semibold">{game.badge}</span>
+                <span className="text-slate-500">•</span>
+                <span className="font-sans font-semibold">{game.title.split('&')[0].trim()}</span>
+              </button>
+            ))}
           </div>
 
           {/* 4. INSTANT QUICK-TWEAK PILL BAR (0ms Response) */}
