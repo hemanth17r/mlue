@@ -1678,7 +1678,7 @@ export default function Playground({ onOpenBenchmarks }) {
           )}
 
           {/* Minimal Stage Bar */}
-          <div className="px-5 py-3.5 border-b border-white/[0.06] flex flex-wrap items-center justify-between gap-3 bg-black/30">
+          <div className="px-5 py-3.5 border-b border-white/[0.06] flex flex-wrap items-center justify-between gap-3 bg-black/30 relative z-20">
             <div className="flex items-center space-x-3">
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse" />
               <h2 className="text-sm font-bold text-white tracking-tight truncate max-w-xs">{activeTitle}</h2>
@@ -1757,7 +1757,7 @@ export default function Playground({ onOpenBenchmarks }) {
                   {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
                 </motion.button>
                 {copiedLink && (
-                  <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-mono text-emerald-300 bg-slate-900 border border-emerald-500/40 px-2 py-0.5 rounded shadow-xl whitespace-nowrap z-30 pointer-events-none">
+                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-mono text-emerald-300 bg-slate-900 border border-emerald-500/40 px-2.5 py-0.5 rounded shadow-xl whitespace-nowrap z-50 pointer-events-none">
                     Copied!
                   </span>
                 )}
