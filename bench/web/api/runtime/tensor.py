@@ -54,6 +54,7 @@ class TensorObservationBuffer:
         self.spec = spec
         self.dim = spec.dimension
         self._c_array = (ctypes.c_float * self.dim)()
+        self._mem_view = memoryview(self._c_array).cast('B').cast('f')
         self._use_numpy = use_numpy and HAS_NUMPY
         if self._use_numpy:
             self._np_view = np.frombuffer(self._c_array, dtype=np.float32)
@@ -123,7 +124,7 @@ class TensorObservationBuffer:
 
         if self._use_numpy:
             return self._np_view
-        return memoryview(self._c_array)
+        return self._mem_view
 
 
 class BatchTensorObservationBuffer:
@@ -135,6 +136,7 @@ class BatchTensorObservationBuffer:
         self.dim = spec.dimension
         self.total_floats = num_envs * self.dim
         self._c_array = (ctypes.c_float * self.total_floats)()
+        self._mem_view = memoryview(self._c_array).cast('B').cast('f', shape=[num_envs, self.dim])
         self._use_numpy = use_numpy and HAS_NUMPY
         if self._use_numpy:
             self._np_view = np.frombuffer(self._c_array, dtype=np.float32).reshape((num_envs, self.dim))
@@ -167,4 +169,4 @@ class BatchTensorObservationBuffer:
         """Returns zero-copy view of the complete batch observation array."""
         if self._use_numpy:
             return self._np_view
-        return memoryview(self._c_array)
+        return self._mem_view
