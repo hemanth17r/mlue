@@ -1529,12 +1529,12 @@ export default function Playground({ onOpenBenchmarks }) {
   };
 
   // Share & Export
-  const copyShareLink = async () => {
+  const copyShareLink = () => {
     try {
       const base64 = btoa(unescape(encodeURIComponent(jsonText)));
       const url = `${window.location.origin}${window.location.pathname}#data=${base64}`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(url).catch(() => {});
+        navigator.clipboard.writeText(url).catch(() => {});
       }
     } catch (e) {}
     setCopiedLink(true);
