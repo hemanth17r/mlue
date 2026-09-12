@@ -70,8 +70,11 @@ Output strictly valid raw JSON only.
 """
 
 MODELS_TO_TRY = [
-    "gemini-2.5-flash-lite",
-    "gemini-2.5-flash"
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-flash-latest",
 ]
 
 
@@ -139,7 +142,7 @@ class handler(BaseHTTPRequestHandler):
         if current_scene:
             full_user_content += f"\nExisting MLUE Scene to Modify:\n{json.dumps(current_scene, indent=2)}\n\nApply the requested changes and output the complete updated .mlue JSON document."
 
-        last_error = None
+        errors = []
         for model_name in MODELS_TO_TRY:
             gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
             gemini_body = {
@@ -172,10 +175,12 @@ class handler(BaseHTTPRequestHandler):
 
                 candidates = gemini_json.get('candidates', [])
                 if not candidates:
+                    errors.append(f"{model_name}: no candidates returned")
                     continue
 
                 generated_text = candidates[0].get('content', {}).get('parts', [{}])[0].get('text', '')
                 if not generated_text:
+                    errors.append(f"{model_name}: empty generated text")
                     continue
 
                 parsed_scene = extract_json(generated_text)
@@ -203,13 +208,13 @@ class handler(BaseHTTPRequestHandler):
                 return
 
             except urllib.error.HTTPError as he:
-                last_error = f"Gemini ({model_name}) HTTP {he.code}: {he.read().decode('utf-8', errors='ignore')}"
+                errors.append(f"{model_name} (HTTP {he.code}: {he.read().decode('utf-8', errors='ignore').strip()})")
             except MLUEValidationError as ve:
-                last_error = f"Invariant Violation ({model_name}): {ve}"
+                errors.append(f"{model_name} (Invariant: {ve})")
             except Exception as ex:
-                last_error = f"Error ({model_name}): {ex}"
+                errors.append(f"{model_name} (Error: {ex})")
 
-        self._send_json_error(500, f"Compilation failed: {last_error}")
+        self._send_json_error(500, f"Compilation failed: {' | '.join(errors)}")
 
     def _send_json_error(self, code, message):
         self.send_response(code)
