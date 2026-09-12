@@ -261,7 +261,8 @@ export const DOMAIN_TEMPLATES = {
           { trigger: "hit_brick_05", event: "collision", entities: ["ball_01", "brick_05"], actions: [{ type: "destroy_entity", target: "brick_05" }, { type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bricks_remaining", amount: -1 }] },
           { trigger: "hit_brick_06", event: "collision", entities: ["ball_01", "brick_06"], actions: [{ type: "destroy_entity", target: "brick_06" }, { type: "increment", target: "score", amount: 100 }, { type: "increment", target: "bricks_remaining", amount: -1 }] },
           { trigger: "floor_breach", condition: { entity: "ball_01", property: "position.y", op: ">=", value: 0.97 }, actions: [{ type: "increment", target: "lives", amount: -1 }, { type: "reset_entity", target: "ball_01", position: { x: 0.5, y: 0.7 }, velocity: { vx: 0.35, vy: -0.45 } }] },
-          { trigger: "check_victory", condition: { state_variable: "bricks_remaining", op: "<=", value: 0 }, actions: [{ type: "set", target: "game_state", value: "VICTORY" }] }
+          { trigger: "check_victory", condition: { state_variable: "bricks_remaining", op: "<=", value: 0 }, actions: [{ type: "set", target: "game_state", value: "VICTORY" }] },
+          { trigger: "check_game_over", condition: { state_variable: "lives", op: "<=", value: 0 }, actions: [{ type: "set", target: "game_state", value: "GAME OVER" }] }
         ]
       }
     },

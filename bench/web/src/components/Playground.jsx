@@ -53,16 +53,26 @@ const COLOR_PRESETS = [
   "#E2E8F0"  // Slate
 ];
 
-const PROMPT_SUGGESTIONS = [
-  { text: "Cluster Telemetry Dashboard with 4 worker nodes & load balancer", category: "dashboards" },
-  { text: "Interactive Pointer FSM Button with hover & click states", category: "apps" },
-  { text: "Hydraulic Reservoir with dual wave surge & safety cutoff valve", category: "control" },
-  { text: "Emergent Breakout with 6 destructible brick tiers", category: "games" },
-  { text: "Deterministic 2-Player Pong with multi-channel paddle controls", category: "games" },
-  { text: "Spinning Paddle Dynamic Arena with rotational physics", category: "games" }
+const ROTATING_EXAMPLES = [
+  "Cluster telemetry dashboard with 4 worker nodes & load balancer...",
+  "Emergent breakout with 6 destructible brick tiers...",
+  "Deterministic 2-player Pong with paddle physics...",
+  "Hydraulic reservoir with safety cutoff valve...",
+  "Spinning paddle dynamic arena with rotational physics...",
+  "Interactive pointer state machine with click counter..."
 ];
 
 export default function Playground({ onOpenBenchmarks }) {
+  // Rotating Placeholder Example
+  const [exampleIdx, setExampleIdx] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setExampleIdx((prev) => (prev + 1) % ROTATING_EXAMPLES.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
+
   // Active State & Scene
   const [activeTitle, setActiveTitle] = useState('Emergent Breakout & Physics Reflection');
   const [jsonText, setJsonText] = useState(() => JSON.stringify(DOMAIN_TEMPLATES.games[0].json, null, 2));
@@ -84,9 +94,6 @@ export default function Playground({ onOpenBenchmarks }) {
 
   // Drag & Drop Palettes & Dropzone
   const [isDraggingFile, setIsDraggingFile] = useState(false);
-  const [activePaletteItem, setActivePaletteItem] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [galleryTab, setGalleryTab] = useState('curated'); // 'curated' | 'recent'
 
   // AI Prompt & Instant Tweak Engine
   const [prompt, setPrompt] = useState('');
@@ -684,6 +691,15 @@ export default function Playground({ onOpenBenchmarks }) {
         const target = entities.find(e => e.id === action.target);
         if (target) target.active = false;
       } else if (action.type === 'reset_entity') {
+        if (stateVars.game_state === 'GAME OVER' || (typeof stateVars.lives === 'number' && stateVars.lives <= 0)) {
+          const target = entities.find(e => e.id === action.target);
+          if (target) {
+            target.velocity.vx = 0;
+            target.velocity.vy = 0;
+            target.active = false;
+          }
+          return;
+        }
         const target = entities.find(e => e.id === action.target);
         if (target) {
           if (action.position) {
@@ -714,7 +730,16 @@ export default function Playground({ onOpenBenchmarks }) {
         }
         if (curr && parts.length > 0) {
           const lastKey = parts[parts.length - 1];
-          curr[lastKey] = (curr[lastKey] || 0) + amount;
+          const currentVal = curr[lastKey] || 0;
+          const newVal = currentVal + amount;
+          if (lastKey === 'lives') {
+            curr[lastKey] = Math.max(0, newVal);
+            if (curr[lastKey] <= 0) {
+              stateVars.game_state = "GAME OVER";
+            }
+          } else {
+            curr[lastKey] = newVal;
+          }
         }
       } else if (action.type === 'set' || action.type === 'set_path') {
         const targetPath = action.target;
@@ -736,6 +761,17 @@ export default function Playground({ onOpenBenchmarks }) {
   const stepSimulation = useCallback((dt) => {
     const state = simStateRef.current;
     if (!state) return;
+
+    // Check Game Over or Victory condition
+    const isGameOver = state.state_variables?.game_state === "GAME OVER" || (typeof state.state_variables?.lives === 'number' && state.state_variables.lives <= 0);
+    const isVictory = state.state_variables?.game_state === "VICTORY";
+    if (isGameOver || isVictory) {
+      if (isGameOver && state.state_variables) {
+        if (typeof state.state_variables.lives === 'number') state.state_variables.lives = 0;
+        state.state_variables.game_state = "GAME OVER";
+      }
+      return;
+    }
 
     const [envW, envH] = state.env.dimensions || [800, 600];
     const minDim = Math.min(envW, envH);
@@ -1535,17 +1571,17 @@ export default function Playground({ onOpenBenchmarks }) {
           </button>
         </div>
 
-        {/* Hero Title - Plain Language First */}
+        {/* Hero Title */}
         <div className="space-y-2">
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-tight">
             What do you want to build?
           </h1>
           <p className="text-xs sm:text-sm md:text-base text-slate-300 font-sans max-w-2xl mx-auto leading-relaxed">
-            Describe a simulation, interactive dashboard, game, or control panel. MLUE turns it into a playable, editable runtime in milliseconds.
+            Describe a 2D game, physics simulation, or interactive dashboard. MLUE compiles and runs it in milliseconds.
           </p>
         </div>
 
-        {/* Spacious Floating Prompt Capsule */}
+        {/* Clean Google-Style Floating Prompt Capsule */}
         <div className="relative pt-1 max-w-3xl mx-auto">
           <form 
             onSubmit={(e) => { e.preventDefault(); handleBuild(); }}
@@ -1560,7 +1596,7 @@ export default function Playground({ onOpenBenchmarks }) {
               type="text"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="e.g. Cluster telemetry dashboard with 4 worker nodes and load balancer..."
+              placeholder={isGenerating ? "Compiling interactive runtime..." : `e.g. ${ROTATING_EXAMPLES[exampleIdx]}`}
               disabled={isGenerating}
               aria-label="Describe what you want to build"
               className="flex-1 bg-transparent text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none font-sans"
@@ -1571,7 +1607,7 @@ export default function Playground({ onOpenBenchmarks }) {
               disabled={isGenerating || !prompt.trim()}
               title={!prompt.trim() ? "Describe what to build to generate" : "Generate interactive runtime"}
               aria-label="Generate interactive runtime"
-              className="px-3 sm:px-4 h-9 sm:h-10 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 flex items-center justify-center font-bold text-xs sm:text-sm transition disabled:opacity-40 shadow-md shadow-cyan-500/20 cursor-pointer shrink-0 ml-2 gap-1.5"
+              className="px-4 sm:px-5 h-9 sm:h-10 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 flex items-center justify-center font-bold text-xs sm:text-sm transition disabled:opacity-40 shadow-md shadow-cyan-500/20 cursor-pointer shrink-0 ml-2 gap-1.5"
             >
               {isGenerating ? (
                 <>
@@ -1586,21 +1622,6 @@ export default function Playground({ onOpenBenchmarks }) {
               )}
             </motion.button>
           </form>
-
-          {/* Quick Domain Suggestion Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 pt-3">
-            {PROMPT_SUGGESTIONS.map((sug, idx) => (
-              <motion.button
-                {...tapScale.pill}
-                key={idx}
-                onClick={() => handleBuild(sug.text)}
-                disabled={isGenerating}
-                className="text-[11px] font-sans text-slate-400 hover:text-white bg-slate-900/70 hover:bg-slate-800 border border-white/[0.08] hover:border-cyan-500/30 px-3 py-1 rounded-full cursor-pointer transition-colors"
-              >
-                {sug.text}
-              </motion.button>
-            ))}
-          </div>
 
           {/* Feedback & Error Alerts */}
           {statusMsg && (
@@ -1625,50 +1646,6 @@ export default function Playground({ onOpenBenchmarks }) {
           )}
         </div>
 
-      </section>
-
-      {/* 2. DRAG & DROP PRIMITIVES PALETTE BAR */}
-      <section className="bg-slate-900/70 border border-white/[0.08] rounded-2xl p-3 flex flex-wrap items-center justify-between gap-3 shadow-lg backdrop-blur-xl">
-        <div className="flex items-center space-x-2 font-mono text-xs text-slate-300">
-          <Move className="w-4 h-4 text-cyan-400" />
-          <span className="font-bold">Drag & Drop Palette:</span>
-          <span className="text-slate-500 hidden sm:inline">(Drag primitives onto canvas or click to add)</span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          {[
-            { type: 'circle', label: 'Circle Node', icon: '🔵', color: '#38BDF8' },
-            { type: 'box', label: 'Box Barrier', icon: '🟦', color: '#3B82F6' },
-            { type: 'controller', label: 'Controller Paddle', icon: '🕹️', color: '#10B981' },
-            { type: 'sensor', label: 'Sensor Trigger', icon: '📡', color: '#F59E0B' },
-            { type: 'swarm', label: 'Swarm Emitter', icon: '✨', color: '#A855F7' }
-          ].map(prim => (
-            <div
-              key={prim.type}
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData('mlue/primitive', prim.type);
-                setActivePaletteItem(prim.type);
-              }}
-              onDragEnd={() => setActivePaletteItem(null)}
-              onClick={() => {
-                // Click to add to center
-                const id = `${prim.type}_${Date.now().toString().slice(-4)}`;
-                const newEnt = prim.type === 'circle' 
-                  ? { id, type: 'circle', position: { x: 0.5, y: 0.5 }, size: { radius: 0.03 }, velocity: { vx: 0.2, vy: -0.2 }, properties: { solid: true, color: prim.color } }
-                  : { id, type: 'box', position: { x: 0.5, y: 0.5 }, size: { width: 0.16, height: 0.04 }, velocity: { vx: 0.0, vy: 0.0 }, properties: { solid: true, color: prim.color } };
-                simStateRef.current?.entities.push(newEnt);
-                setSelectedEntityId(id);
-                setShowInspector(true);
-                syncJsonFromState();
-              }}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-white/[0.08] hover:border-cyan-500/40 text-xs font-mono font-semibold text-slate-200 cursor-grab active:cursor-grabbing transition shadow-sm select-none"
-            >
-              <span>{prim.icon}</span>
-              <span>{prim.label}</span>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* 3. ACTIVE INTERACTIVE STAGE & CANVAS */}
@@ -1735,37 +1712,20 @@ export default function Playground({ onOpenBenchmarks }) {
                 <Radio className="w-3.5 h-3.5" />
               </button>
 
-              {/* Speed Multipliers */}
-              <div className="flex items-center bg-slate-800/80 rounded-lg p-0.5 border border-white/[0.06]">
-                {[0.5, 1.0, 2.0].map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setSimSpeed(s)}
-                    aria-label={`Set simulation speed to ${s}x`}
-                    className={`px-2 py-1 rounded text-[10px] font-bold cursor-pointer transition ${
-                      simSpeed === s ? 'bg-cyan-400 text-slate-950 font-black' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {s}x
-                  </button>
-                ))}
-              </div>
-
               {/* Playback Controls */}
               <motion.button
                 {...tapScale.button}
                 type="button"
-                aria-label={isPlaying ? "Pause simulation playback" : "Resume simulation playback"}
+                aria-label={isPlaying ? "Pause simulation" : "Resume simulation"}
                 onClick={() => setIsPlaying(!isPlaying)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                className={`p-2 rounded-xl border transition cursor-pointer flex items-center justify-center ${
                   isPlaying 
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' 
-                    : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30 hover:bg-amber-500/25' 
+                    : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/25'
                 }`}
+                title={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-                <span>{isPlaying ? 'PAUSE' : 'PLAY'}</span>
               </motion.button>
 
               <motion.button
@@ -1777,22 +1737,29 @@ export default function Playground({ onOpenBenchmarks }) {
                     initSimulation(JSON.parse(jsonText));
                   } catch (e) {}
                 }}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/[0.06] cursor-pointer"
+                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/[0.06] cursor-pointer transition flex items-center justify-center"
                 title="Reset State"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
               </motion.button>
 
-              <motion.button
-                {...tapScale.button}
-                type="button"
-                aria-label="Share scene via copyable link"
-                onClick={copyShareLink}
-                className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/[0.06] cursor-pointer"
-                title="Share Scene Link"
-              >
-                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-cyan-400" />}
-              </motion.button>
+              <div className="relative">
+                <motion.button
+                  {...tapScale.button}
+                  type="button"
+                  aria-label="Copy scene link"
+                  onClick={copyShareLink}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/[0.06] cursor-pointer transition flex items-center justify-center"
+                  title="Copy Scene Link"
+                >
+                  {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
+                </motion.button>
+                {copiedLink && (
+                  <span className="absolute -bottom-7 left-1/2 -translate-x-1/2 text-[10px] font-mono text-emerald-300 bg-slate-900 border border-emerald-500/40 px-2 py-0.5 rounded shadow-xl whitespace-nowrap z-30 pointer-events-none">
+                    Copied!
+                  </span>
+                )}
+              </div>
 
               <motion.button
                 {...tapScale.button}
@@ -1861,144 +1828,128 @@ export default function Playground({ onOpenBenchmarks }) {
               <span>•</span>
               <span>🎮 Arrows / WASD</span>
             </div>
-          </div>
-
-          {/* Substrate Showcase: 4 Core Applications & 4 Deterministic Games */}
-          <div className="px-4 py-3 bg-slate-950/95 border-t border-white/[0.06] space-y-2">
-            {/* Row 1: Core Applications */}
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-mono text-emerald-400 font-bold mr-1 flex items-center gap-1 shrink-0">
-                <Activity className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Applications:</span>
-              </span>
-              {[
-                { title: 'Cluster Telemetry Monitor', badge: 'Live Dashboard', json: DOMAIN_TEMPLATES.dashboards[0].json },
-                { title: 'Pointer FSM Button & Counter', badge: 'Interactive GUI', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'button_counter')?.json },
-                { title: 'Hydraulic Safety Cutoff Valve', badge: 'Industrial Control', json: DOMAIN_TEMPLATES.control[0].json },
-                { title: 'Digital Logic Bus & MUX', badge: 'Hardware Logic', json: DOMAIN_TEMPLATES.logic[0].json }
-              ].map((app, idx) => (
+            {/* Game Over Overlay */}
+            {simStateRef.current?.state_variables?.game_state === 'GAME OVER' && (
+              <div className="absolute inset-0 z-20 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400 text-xl font-bold">
+                  ✕
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-2xl sm:text-3xl font-black text-rose-400 tracking-wider font-mono">GAME OVER</h3>
+                  {simStateRef.current?.state_variables?.score !== undefined && (
+                    <p className="text-xs sm:text-sm font-mono text-slate-300">
+                      Final Score: <span className="text-cyan-400 font-bold">{simStateRef.current.state_variables.score}</span>
+                    </p>
+                  )}
+                </div>
                 <button
-                  key={idx}
                   type="button"
                   onClick={() => {
-                    if (!app.json) return;
-                    setActiveTitle(app.title);
-                    setJsonText(JSON.stringify(app.json, null, 2));
-                    initSimulation(app.json, true, app.title);
-                    setStatusMsg(`⚡ Launched "${app.title}" (MLUE Software Runtime)`);
-                    setTimeout(() => setStatusMsg(null), 3000);
+                    try {
+                      initSimulation(JSON.parse(jsonText));
+                    } catch (e) {}
                   }}
-                  className={`px-2.5 py-1 rounded-full border text-xs font-mono transition cursor-pointer flex items-center gap-1.5 ${
-                    activeTitle === app.title 
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/60 shadow-sm shadow-emerald-500/20' 
-                      : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border-white/[0.08] hover:border-emerald-500/30'
-                  }`}
+                  className="px-5 py-2.5 rounded-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-bold text-xs font-mono transition cursor-pointer flex items-center gap-2 shadow-lg shadow-cyan-500/20"
                 >
-                  <span className="text-[10px] text-emerald-400 font-semibold">{app.badge}</span>
-                  <span className="text-slate-500">•</span>
-                  <span className="font-sans font-semibold">{app.title}</span>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Play Again</span>
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
 
-            {/* Row 2: Deterministic Games */}
-            <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/[0.04]">
-              <span className="text-[11px] font-mono text-cyan-400 font-bold mr-1 flex items-center gap-1 shrink-0">
-                <Gamepad2 className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Deterministic Games:</span>
-              </span>
-              {[
-                { title: 'Emergent Breakout & Physics Reflection', badge: 'Destructible State', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'breakout')?.json },
-                { title: 'Deterministic 2-Player Pong', badge: 'Multi-Channel Inputs', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'pong')?.json },
-                { title: 'Spinning Paddle Dynamic Arena', badge: 'Rotational Physics', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'spinning_paddle_arena')?.json },
-                { title: 'Suspension Bridge & Physics Ragdoll', badge: 'Constraints & Springs', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'suspension_bridge')?.json }
-              ].map((game, idx) => (
+            {/* Victory Overlay */}
+            {simStateRef.current?.state_variables?.game_state === 'VICTORY' && (
+              <div className="absolute inset-0 z-20 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl font-bold">
+                  ✓
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-wider font-mono">VICTORY!</h3>
+                  {simStateRef.current?.state_variables?.score !== undefined && (
+                    <p className="text-xs sm:text-sm font-mono text-slate-300">
+                      Final Score: <span className="text-emerald-400 font-bold">{simStateRef.current.state_variables.score}</span>
+                    </p>
+                  )}
+                </div>
                 <button
-                  key={idx}
                   type="button"
                   onClick={() => {
-                    if (!game.json) return;
-                    setActiveTitle(game.title);
-                    setJsonText(JSON.stringify(game.json, null, 2));
-                    initSimulation(game.json, true, game.title);
-                    setStatusMsg(`⚡ Launched "${game.title}" (MLUE Game Engine)`);
-                    setTimeout(() => setStatusMsg(null), 3000);
+                    try {
+                      initSimulation(JSON.parse(jsonText));
+                    } catch (e) {}
                   }}
-                  className={`px-2.5 py-1 rounded-full border text-xs font-mono transition cursor-pointer flex items-center gap-1.5 ${
-                    activeTitle === game.title 
-                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-sm shadow-cyan-500/20' 
-                      : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border-white/[0.08] hover:border-cyan-500/30'
-                  }`}
+                  className="px-5 py-2.5 rounded-full bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-bold text-xs font-mono transition cursor-pointer flex items-center gap-2 shadow-lg shadow-emerald-500/20"
                 >
-                  <span className="text-[10px] text-amber-400 font-semibold">{game.badge}</span>
-                  <span className="text-slate-500">•</span>
-                  <span className="font-sans font-semibold">{game.title.split('&')[0].trim()}</span>
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Play Again</span>
                 </button>
-              ))}
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* 4. INSTANT QUICK-TWEAK PILL BAR (0ms Response) */}
-          <div className="px-4 py-2.5 bg-slate-950 border-t border-white/[0.06] flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-mono text-slate-500 font-bold mr-1">Instant Tweaks:</span>
-            {[
-              { label: '⚡ 2x Speed', action: '2x faster' },
-              { label: '🐢 0.5x Speed', action: 'half speed' },
-              { label: '➕ Add Swarm', action: 'add 5 particles' },
-              { label: '🧱 Add Barrier', action: 'add barrier in middle' },
-              { label: '🎨 Neon Theme', action: 'neon purple theme' },
-              { label: '💥 Kinetic Burst', action: 'explode' },
-              { label: '🔄 Invert Vectors', action: 'invert velocities' }
-            ].map((tweak, idx) => (
-              <button
-                key={idx}
-                onClick={() => applyLocalTweak(tweak.action)}
-                className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-slate-800 border border-white/[0.06] hover:border-cyan-500/40 text-xs font-mono text-slate-300 hover:text-white transition cursor-pointer"
-              >
-                {tweak.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Natural Language Refinement Input */}
-          <div className="p-3 bg-slate-950/80 border-t border-white/[0.06]">
-            <div className="flex items-center justify-between mb-2 px-1 font-mono text-[11px] text-slate-400">
-              <span className="flex items-center gap-1.5 text-cyan-400 font-semibold">
-                <Sparkles className="w-3 h-3" />
-                <span>2. Refine the running world</span>
-              </span>
-              <span className="text-[10px] text-slate-500 hidden sm:inline">Mutates the active simulation state in real time</span>
-            </div>
+          {/* Minimal Game Modification & Presets Command Strip */}
+          <div className="p-3 sm:p-4 bg-slate-950/95 border-t border-white/[0.06] space-y-3">
             <form 
               onSubmit={(e) => { e.preventDefault(); handleBuild(refinePrompt); }}
-              className="flex items-center bg-slate-900 border border-white/[0.08] focus-within:border-cyan-400 rounded-full px-3 sm:px-4 py-1.5 sm:py-2"
+              className="flex items-center bg-slate-900 border border-white/[0.08] hover:border-cyan-500/40 focus-within:border-cyan-400 focus-within:ring-2 focus-within:ring-cyan-500/20 rounded-full px-4 py-2 shadow-inner transition"
             >
-              <label htmlFor="refine-prompt-input" className="sr-only">
-                Refine the running world with natural language
-              </label>
+              <Sparkles className="w-4 h-4 text-cyan-400 shrink-0 mr-2.5" />
               <input
                 id="refine-prompt-input"
                 name="refinePrompt"
                 type="text"
                 value={refinePrompt}
                 onChange={(e) => setRefinePrompt(e.target.value)}
-                aria-label="Refine the running world with natural language"
-                placeholder="Tweak this scene (e.g. make all nodes emerald, add 5 satellites, make paddle 2x faster)..."
+                aria-label="Modify the active game"
+                placeholder="Modify this game (e.g. make paddle wider, increase ball speed, add 2 obstacles)..."
                 disabled={isGenerating}
-                className="flex-1 bg-transparent text-xs text-slate-200 placeholder-slate-500 focus:outline-none font-sans"
+                className="flex-1 bg-transparent text-xs sm:text-sm text-slate-200 placeholder-slate-500 focus:outline-none font-sans"
               />
               <motion.button
-                {...tapScale.icon}
+                {...tapScale.button}
                 type="submit"
                 disabled={isGenerating || !refinePrompt.trim()}
-                title={!refinePrompt.trim() ? "Describe a change to apply" : "Apply modification to active scene"}
-                aria-label="Apply modification to active scene"
-                className="px-3 py-1 bg-cyan-400 text-slate-950 rounded-full disabled:opacity-40 cursor-pointer ml-2 flex items-center gap-1 font-bold text-xs shrink-0"
+                title={!refinePrompt.trim() ? "Describe a change to apply" : "Apply modification to active game"}
+                aria-label="Apply modification to active game"
+                className="px-4 py-1.5 bg-cyan-400 hover:bg-cyan-300 text-slate-950 rounded-full disabled:opacity-40 cursor-pointer ml-2 flex items-center gap-1.5 font-bold text-xs shrink-0 transition"
               >
                 {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                <span className="hidden xs:inline">Apply</span>
+                <span>Apply</span>
               </motion.button>
             </form>
+
+            {/* Clean Presets Strip */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1 font-mono text-xs">
+              <span className="text-[11px] text-slate-500 font-semibold mr-1">Presets:</span>
+              {[
+                { title: 'Breakout', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'breakout')?.json },
+                { title: '2-Player Pong', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'pong')?.json },
+                { title: 'Spinning Arena', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'spinning_paddle_arena')?.json },
+                { title: 'Telemetry Monitor', json: DOMAIN_TEMPLATES.dashboards[0].json },
+                { title: 'Hydraulic Valve', json: DOMAIN_TEMPLATES.control[0].json }
+              ].map((preset) => {
+                const isActive = activeTitle.toLowerCase().includes(preset.title.toLowerCase());
+                return (
+                  <button
+                    key={preset.title}
+                    type="button"
+                    onClick={() => {
+                      if (!preset.json) return;
+                      setActiveTitle(preset.title);
+                      setJsonText(JSON.stringify(preset.json, null, 2));
+                      initSimulation(preset.json, true, preset.title);
+                    }}
+                    className={`px-3 py-1 rounded-full border text-xs transition cursor-pointer ${
+                      isActive
+                        ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/50 font-bold shadow-sm shadow-cyan-500/10'
+                        : 'bg-slate-900/70 text-slate-400 hover:text-white border-white/[0.06] hover:border-white/[0.15]'
+                    }`}
+                  >
+                    {preset.title}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* 5. VISUAL ENTITY INSPECTOR DRAWER */}
@@ -2142,183 +2093,7 @@ export default function Playground({ onOpenBenchmarks }) {
 
       </section>
 
-      {/* 6. REFERENCE ARCHITECTURES & RECENT BUILDS */}
-      <section className="space-y-4 pt-4 border-t border-white/[0.06]">
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div className="flex flex-wrap items-center gap-2.5 mb-1">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
-                Explore Architectures
-              </h3>
-              {/* Tab Switcher: Curated vs Your Recent Builds */}
-              <div className="flex items-center bg-black/60 p-0.5 rounded-full border border-white/[0.08] text-xs font-mono">
-                <button
-                  type="button"
-                  onClick={() => setGalleryTab('curated')}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                    galleryTab === 'curated' ? 'bg-cyan-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Curated Templates
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGalleryTab('recent')}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer transition-colors ${
-                    galleryTab === 'recent' ? 'bg-cyan-400 text-slate-950 font-bold' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Your Recent Builds {recentBuilds.length > 0 ? `(${recentBuilds.length})` : ''}
-                </button>
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 font-sans">
-              {galleryTab === 'curated' 
-                ? 'Deterministic, zero-dependency reference architectures across domains.'
-                : 'Locally generated and modified scenes saved in your browser.'}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowGuideModal(true)}
-            className="text-xs font-mono text-cyan-400 hover:text-cyan-300 flex items-center space-x-1 cursor-pointer shrink-0"
-          >
-            <span>View Complete Architectural Guide</span>
-            <BookOpen className="w-3.5 h-3.5" />
-          </button>
-        </div>
 
-        {/* Tab 1: Curated Templates */}
-        {galleryTab === 'curated' && (
-          <>
-            {/* Domain Category Filter */}
-            <div className="flex flex-wrap gap-1.5 font-mono text-xs">
-              {[
-                { id: 'all', label: 'All Domains' },
-                { id: 'dashboards', label: 'Dashboards & Telemetry' },
-                { id: 'simulations', label: 'Physics & Simulations' },
-                { id: 'swarms', label: 'Multi-Agent Swarms' },
-                { id: 'control', label: 'Control & Logic' },
-                { id: 'games', label: 'Games & Arcade' }
-              ].map(cat => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-3 py-1 rounded-full cursor-pointer transition text-xs font-semibold ${
-                    selectedCategory === cat.id 
-                      ? 'bg-cyan-400 text-slate-950 font-bold shadow-md shadow-cyan-500/20' 
-                      : 'bg-slate-900/80 text-slate-400 hover:text-white border border-white/[0.06]'
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Gallery Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.entries(DOMAIN_TEMPLATES).map(([domainKey, list]) => {
-                if (selectedCategory !== 'all' && selectedCategory !== domainKey) return null;
-                return list.map(template => {
-                  const isSelected = activeTitle === template.title;
-                  return (
-                    <motion.div
-                      {...tapScale.card}
-                      key={template.id}
-                      onClick={() => {
-                        setActiveTitle(template.title);
-                        setJsonText(JSON.stringify(template.json, null, 2));
-                        initSimulation(template.json, true, template.title);
-                        stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }}
-                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
-                        isSelected 
-                          ? 'bg-cyan-500/10 border-cyan-500/50 shadow-lg shadow-cyan-500/10' 
-                          : 'bg-slate-900/60 border-white/[0.06] hover:border-cyan-500/30'
-                      }`}
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/40 font-bold">
-                            {template.badge}
-                          </span>
-                          {isSelected && <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />}
-                        </div>
-                        <h4 className={`text-sm font-bold ${isSelected ? 'text-cyan-300' : 'text-slate-100'}`}>
-                          {template.title}
-                        </h4>
-                        <p className="text-xs text-slate-400 font-sans leading-relaxed">
-                          {template.description}
-                        </p>
-                      </div>
-
-                      <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-mono text-slate-500">
-                        <span>{template.json.entities?.length || 0} Entities</span>
-                        <span className="text-cyan-400 font-semibold">Launch →</span>
-                      </div>
-                    </motion.div>
-                  );
-                });
-              })}
-            </div>
-          </>
-        )}
-
-        {/* Tab 2: Your Recent Builds */}
-        {galleryTab === 'recent' && (
-          <div>
-            {recentBuilds.length === 0 ? (
-              <div className="p-8 text-center border border-dashed border-white/[0.1] rounded-2xl bg-slate-900/40 text-slate-400 font-sans text-xs space-y-1">
-                <p className="font-semibold text-slate-300">No local recent builds yet.</p>
-                <p className="text-slate-500">Generate a world using the prompt above or tweak the running simulation to save snapshots here.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {recentBuilds.map((build) => {
-                  const isSelected = activeTitle === build.name;
-                  return (
-                    <motion.div
-                      {...tapScale.card}
-                      key={build.id}
-                      onClick={() => {
-                        setActiveTitle(build.name);
-                        setJsonText(JSON.stringify(build.json, null, 2));
-                        initSimulation(build.json, false, build.name);
-                        stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }}
-                      className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
-                        isSelected 
-                          ? 'bg-cyan-500/10 border-cyan-500/50 shadow-lg shadow-cyan-500/10' 
-                          : 'bg-slate-900/60 border-white/[0.06] hover:border-cyan-500/30'
-                      }`}
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/40 font-bold">
-                            Local Build
-                          </span>
-                          <span className="text-[10px] font-mono text-slate-500">{build.timestamp}</span>
-                        </div>
-                        <h4 className={`text-sm font-bold ${isSelected ? 'text-cyan-300' : 'text-slate-100'}`}>
-                          {build.name}
-                        </h4>
-                      </div>
-
-                      <div className="pt-2 border-t border-white/[0.04] flex items-center justify-between text-[11px] font-mono text-slate-500">
-                        <span>{build.json?.entities?.length || 0} Entities</span>
-                        <span className="text-cyan-400 font-semibold">Load Session →</span>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-      </section>
 
       {/* 7. ARCHITECTURAL GUIDE MODAL */}
       <SubstrateGuideModal
