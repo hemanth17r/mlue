@@ -1745,23 +1745,27 @@ export default function Playground({ onOpenBenchmarks }) {
                 <RotateCcw className="w-3.5 h-3.5" />
               </motion.button>
 
-              <div className="relative">
-                <motion.button
-                  {...tapScale.button}
-                  type="button"
-                  aria-label="Copy scene link"
-                  onClick={copyShareLink}
-                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-white/[0.06] cursor-pointer transition flex items-center justify-center"
-                  title="Copy Scene Link"
-                >
-                  {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
-                </motion.button>
-                {copiedLink && (
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-mono text-emerald-300 bg-slate-900 border border-emerald-500/40 px-2.5 py-0.5 rounded shadow-xl whitespace-nowrap z-50 pointer-events-none">
-                    Copied!
-                  </span>
+              <motion.button
+                {...tapScale.button}
+                type="button"
+                aria-label="Copy scene link"
+                onClick={copyShareLink}
+                className={`p-2 px-2.5 rounded-xl border transition cursor-pointer flex items-center gap-1.5 ${
+                  copiedLink 
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' 
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border-white/[0.06]'
+                }`}
+                title="Copy Scene Link"
+              >
+                {copiedLink ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[11px] font-mono text-emerald-300 font-bold">Copied!</span>
+                  </>
+                ) : (
+                  <Copy className="w-3.5 h-3.5 text-cyan-400" />
                 )}
-              </div>
+              </motion.button>
 
               <motion.button
                 {...tapScale.button}
