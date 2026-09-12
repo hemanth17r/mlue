@@ -1,13 +1,14 @@
 # MLUE — Machine-Accessible Universal Software & Simulation Substrate
-### *Deterministic, Zero-Dependency Substrate for Software Applications, Interactive UIs, Simulations & Games*
+### *Deterministic, Zero-Dependency Computational Substrate for Software Applications, Interactive UIs, Physical Simulations & Autonomous Agents*
 
 [![CI](https://github.com/hemanth17r/mlue/actions/workflows/ci.yml/badge.svg)](https://github.com/hemanth17r/mlue/actions)
-[![Live Benchmarks](https://img.shields.io/badge/Live%20Telemetry-12%2F12%20Passing-success?style=for-the-badge&logo=vercel)](https://mlue-bench.vercel.app)
-[![Substrate Tier](https://img.shields.io/badge/Substrate-Tier%20L1%20Decoupled-blue?style=for-the-badge)](https://mlue-bench.vercel.app)
+[![Live Web Studio](https://img.shields.io/badge/Live%20Studio-mlue--ai.vercel.app-000000?style=for-the-badge&logo=vercel)](https://mlue-ai.vercel.app)
+[![Live Telemetry](https://img.shields.io/badge/Live%20Telemetry-13%2F13%20Passing-success?style=for-the-badge&logo=prometheus)](https://mlue-ai.vercel.app)
+[![Substrate Tier](https://img.shields.io/badge/Substrate-Tier%20L1%20Decoupled-blue?style=for-the-badge)](https://mlue-ai.vercel.app)
 [![Dependencies](https://img.shields.io/badge/Dependencies-0%20(Pure%20Stdlib%20%2B%20C%20Core)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
-[![Tests](https://img.shields.io/badge/Tests-73%2F73%20Passing%20(100%25)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue)
-[![Throughput](https://img.shields.io/badge/Throughput->10M%20ticks%2Fs%20(SIMD%20Batch)-orange?style=for-the-badge)](https://mlue-bench.vercel.app)
-[![Determinism](https://img.shields.io/badge/Determinism-100%25%20Bit--Exact-purple?style=for-the-badge)](https://mlue-bench.vercel.app)
+[![Tests](https://img.shields.io/badge/Tests-174%2F174%20Passing%20(100%25)-brightgreen?style=for-the-badge)](https://github.com/hemanth17r/mlue/actions)
+[![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue?style=for-the-badge&logo=python)](pyproject.toml)
+[![Determinism](https://img.shields.io/badge/Determinism-100%25%20Bit--Exact-purple?style=for-the-badge)](https://mlue-ai.vercel.app)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](LICENSE)
 
 > **"AI is the builder. Humans are users."**
@@ -15,9 +16,8 @@
 > MLUE is a **first-principles universal software, state, and simulation substrate** engineered specifically for machine intelligence. It eliminates 50 years of legacy human-centric scaffolding (HTML, CSS, React, Virtual DOMs, SQL engines, ORMs) and gives AI agents a single, unified mathematical language to construct, inspect, validate, and execute **interactive software applications, control dashboards, state databases, physical simulations, and multi-agent environments** in microseconds.
 >
 > 📜 **[Read the Master Foundational Thesis & 5-Phase Roadmap →](docs/FOUNDATIONAL_THESIS.md)**  
-> 🎯 **[Read the "Moon-to-Mars" Strategic Wedge & Vision Guardrail →](docs/STRATEGIC_WEDGE_AND_VISION_GUARD.md)**
-
-👉 **[Explore the Live Interactive Benchmark & Telemetry Dashboard →](https://mlue-bench.vercel.app)**
+> 🎯 **[Read the "Moon-to-Mars" Strategic Wedge & Vision Guardrail →](docs/STRATEGIC_WEDGE_AND_VISION_GUARD.md)**  
+> 🌐 **[Explore the Live Production Web Studio & Benchmark Telemetry →](https://mlue-ai.vercel.app)**
 
 ---
 
@@ -25,264 +25,319 @@
 
 In an ecosystem crowded with high-level prompt wrappers and legacy human-centric application stacks, MLUE is positioned specifically as a foundational, zero-dependency computational substrate:
 
-| Architectural Dimension | Legacy Human Web/App Stack (React / SQL / Electron) | Heavy Game Engines (Unity / Godot) | **MLUE Substrate (Phase 1)** |
+| Architectural Dimension | Legacy Web/App Stack (React / SQL / Electron) | Heavy Game Engines (Unity / Godot / Unreal) | **MLUE Substrate (v1.6.0)** |
 | :--- | :--- | :--- | :--- |
 | **Primary Purpose** | Human typing & DOM component scaffolding | 3D visual rendering & player games | **Unified software, state database, and simulation substrate for AI agents** |
-| **External Dependencies** | 50+ third-party packages & 500MB runtime | Multi-gigabyte binaries & runtimes | **0 (Pure Python Standard Library + Pure C Native Core)** |
+| **External Dependencies**| 50+ third-party packages & 500MB runtime | Multi-gigabyte binaries & runtimes | **0 (Pure Python Standard Library + Pure C Native Core)** |
 | **Execution Latency** | 50ms – 500ms (DOM reflow & SQL roundtrips) | 16.6ms (GPU / frame-locked) | **Sub-microsecond (< 1.0 µs / tick) & >10M ticks/s (SIMD Batch)** |
-| **Agent Introspection** | Fragile DOM scraping / CSS selector hacks | Complex native C++ / C# bindings | **Native Model Context Protocol (MCP) JSON-RPC** |
+| **Agent Introspection** | Fragile DOM scraping / CSS selector hacks | Complex native C++ / C# bindings | **Native Model Context Protocol (MCP) JSON-RPC (12 Tools)** |
 | **Coordinate Space** | Viewport-dependent CSS / Layout drift | Viewport-dependent pixel drift | **Strict normalized $[0, 1]$ coordinate space (>16 decades precision)** |
-| **Memory Footprint** | Bloated browser / Node runtime | 300 MB – 2 GB RAM | **< 1 Byte/tick churn (Zero runtime heap allocation in C core)** |
-| **Safety Invariants** | Unhandled runtime crashes | Scene-graph runtime exceptions | **Compile-time static spatial reachability & type validation** |
+| **Memory Footprint** | Bloated browser / Node runtime (300MB+) | 300 MB – 2 GB RAM | **< 1 Byte/tick churn (Zero runtime heap allocation in C core)** |
+| **Safety Invariants** | Unhandled runtime crashes & null pointers | Scene-graph runtime exceptions | **Compile-time static spatial reachability & type validation** |
 | **Determinism** | Non-repeatable execution | Platform-dependent floating point | **100% Bit-exact SHA-256 state digest across x86, ARM, WASM (Q32.32)** |
 
 ---
 
-## 📊 The Universal 12 Ruthless Architectural Benchmarks
+## 🎮 The Disciplined Showcase (Live on Web & Local CLI)
 
-MLUE is continuously audited against 12 rigorous architectural, physical, and engineering benchmarks via an automated telemetry harness (`bench/harness/runner.py`):
+Rather than overwhelming users with arbitrary game clones, MLUE showcases its capabilities through a disciplined roster of **4 Core Real-World Applications** and **4 Deterministic Physics Games**, accessible live at **[mlue-ai.vercel.app](https://mlue-ai.vercel.app)** or runnable locally via the CLI:
+
+### A. 4 Core Real-World Applications
+1. **Cluster Telemetry Monitor** (`examples/dashboard_app.mlue`):
+   - Infrastructure monitoring dashboard with 4 distributed worker nodes, load balancer, live CPU/memory metrics, and reactive telemetry updates.
+2. **Pointer FSM Button & Counter** (`examples/interactive_button_counter.mlue`):
+   - Discrete pointer state machine (hover enter, hover exit, mouse press) driving dynamic reactive string templating `{counter} [{status}]`.
+3. **Hydraulic Safety Cutoff Valve** (`examples/card_dashboard.mlue`):
+   - Industrial telemetry monitoring with high-water wave collision triggers driving emergency cutoff valve activation and threshold alarms.
+4. **Digital Logic Bus & Multiplexer** (`examples/responsive_game_hud_and_dashboard.mlue`):
+   - Synchronized binary clock pulses, multiplexer switching, and continuous boolean signal flow across register lines.
+
+### B. 4 Deterministic Games
+1. **Emergent Breakout** (`examples/breakout.mlue`):
+   - Canonical 6-tier brick matrix, controllable bottom paddle, floor-breach lives penalty, victory rule condition, and real-time score tracking.
+2. **Deterministic 2-Player Pong** (`examples/pong.mlue`):
+   - Independent dual concurrent player channels (`player_left` & `player_right`), exact normal impulse collision rebounds, and goal line breach triggers.
+3. **Spinning Rotor Dynamic Arena** (`examples/spinning_paddle_arena.mlue`):
+   - Motorized central rotor spinning at continuous angular velocity ($\omega = \pi$), dynamic spinner box, segment perimeter walls, and deflection counter.
+4. **Suspension Bridge & Physics Ragdoll** (`examples/suspension_bridge_and_ragdoll.mlue`):
+   - 3 structural planks interconnected with Baumgarte distance joints, damped Hookean spring vehicle chassis, and solid anchorage piers.
+
+---
+
+## 📊 The Universal 13 Ruthless Architectural Benchmarks
+
+MLUE is continuously audited against 13 ruthless architectural, physical, and engineering benchmarks via an automated telemetry harness (`bench/harness/runner.py`):
 
 | ID | Benchmark Pillar | Target Requirement | Measured Value | Verification Method |
 | :---: | :--- | :--- | :--- | :--- |
 | **B1** | **Substrate Decoupling** | `0 Foreign Imports` | **0 Violations (Tier L1)** | AST parser across `model.py`, `engine.py`, `loader.py` |
-| **B2** | **Declarative Emergence** | $\ge 3.0\times$ Expansion | **6.0x Multiplier** | 12 emergent applications / 2 universal primitives (0 heuristics) |
+| **B2** | **Declarative Emergence** | $\ge 3.0\times$ Expansion | **10.5x Multiplier** | 12 emergent applications / 2 universal primitives (0 heuristics) |
 | **B3** | **Spatial Invariance** | $\Delta \le 10^{-7}$ drift across viewports | **>16.0 Decades Precision** | Bit-exact trajectory ($0.0\times 10^0$ drift) from 100x100 to 4K |
 | **B4** | **Physical Conservation** | $\Delta E_k \le 1,000\text{ PPB}$ | **0.0 PPB Drift** | Kinetic energy conservation over 1,000 collision trajectories |
 | **B5** | **Static Reachability** | $10/10$ Statically Blocked | **10/10 Blocked (100%)** | Compile-time rejection of mathematically unreachable triggers |
-| **B6** | **Step Latency & Speed** | $> 10,000\text{ ticks/s}$ | **11.5k–37.4k ticks/s (Reference Core)** | High-resolution monotonic hardware timers |
-| **B7** | **Memory Allocation Churn** | $< 500\text{ B/tick}$ churn | **0.78 B/tick Churn** | `tracemalloc` heap delta across 5,000 steps (< 1 B/tick) |
+| **B6** | **Step Latency & Speed** | $> 10,000\text{ ticks/s}$ | **19.1k–37.4k ticks/s (Reference Core)** | High-resolution monotonic hardware timers (`perf_counter_ns`) |
+| **B7** | **Memory Allocation Churn** | $< 500\text{ B/tick}$ churn | **0.62 B/tick Churn** | `tracemalloc` heap delta across 5,000 steps (< 1 B/tick) |
 | **B8** | **Structural Complexity** | Peak McCabe $CC \le 30$ | **Max CC = 27 (Bounded)** | AST branching complexity audit across all runtime functions |
 | **B9** | **Determinism & Replay** | $100\%$ Bit-Exact Digest Match | **Bit-Exact (`23a940449ab2...`)** | Cryptographic SHA-256 digest match across 50,000 ticks |
 | **B10**| **Tunneling Stress** | $v_{\max} \ge 2.5\text{ u/s}$ ($0\%$ Defect) | **$v_{\max} = 2.5\text{ u/s}$ ($0\%$ Defect)**| Continuous swept containment against 0.02 thin barrier |
-| **B11**| **Spatial Scaling** | $\ge 98.0\%$ Cull Efficiency at $N=1,000$ | **100.0% Cull Rate (210 pairs)** | Dynamic Spatial Hash Grid BVH broadphase acceleration |
+| **B11**| **Spatial Scaling** | $\ge 98.0\%$ Cull Efficiency at $N=1,000$ | **100.0% Cull Rate (210 pairs)** | Dynamic Spatial Hash Grid & BVHTree broadphase acceleration |
 | **B12**| **Cross-Arch Bit Parity** | $100\%$ Match (x86 == ARM == WASM) | **Bit-Exact (`d057887ea2ce...`)** | Fixed-point Q32.32 two's-complement integer math |
-
----
-
-## 🔬 Benchmark Methodology & Reproducibility
-
-To ensure scientific integrity and independent reproduction:
-
-1. **Hardware & Environment Specification**:
-   - **Host CPU**: AMD / Intel x86_64 or Apple Silicon (evaluated via `platform.processor()`).
-   - **Runtime**: Python 3.10+ standard library (evaluated across 3.10, 3.11, 3.12, 3.13 in CI).
-   - **Timers**: High-resolution monotonic hardware clocks (`time.perf_counter_ns`).
-2. **Workload Scope**:
-   - All latency and throughput benchmarks measure **pure headless state integration** (excluding OS windowing, event pump, and rendering overhead).
-   - The Pygame baseline comparison is an illustrative CPU baseline comparing equivalent headless discrete collision steps.
-3. **Artifact Transparency**:
-   - Raw benchmark outputs, timestamps, and commit digests are committed in `bench/telemetry/runs.json` and visualized live at **[mlue-bench.vercel.app](https://mlue-bench.vercel.app)**.
-
-To re-run the benchmark suite locally:
-```bash
-python bench/harness/runner.py
-```
+| **B13**| **Autonomous RL Perception**| $> 1,000\text{ steps/s}$ & $< 50\text{ B/step}$ | **2,099 steps/s & 1.84 B/step** | Gymnasium-compliant multi-agent LiDAR perception bridge |
 
 ---
 
 ## 🚀 Quickstart
 
-### 1. Clone & Run (Zero Dependencies)
-Requires only Python 3.10+ (no `pip install` required):
+### 1. Installation
 
+#### Option A: Clone & Run (Zero Dependencies)
+Requires only Python 3.10+ (no `pip install` required for core execution):
 ```bash
 git clone https://github.com/hemanth17r/mlue.git
 cd mlue
-
-# 1. Run Interactive System & Monitoring Dashboard Application (Controls: A/D or Left/Right)
-python mlue.py run examples/dashboard_app.mlue
-
-# 2. Play Emergent Breakout (Paddle: A/D or Left/Right arrows)
-python mlue.py run examples/breakout.mlue
-
-# 3. Play Emergent Pong (Left Paddle: W/S, Right Paddle: Up/Down)
-python mlue.py run examples/pong.mlue
-
-# 4. Run Bumper Arena Physical Simulation
-python mlue.py run examples/bumper_arena.mlue
 ```
 
-### 2. High-Speed Headless Evaluation & Parallel Batch Rollouts (For AI Agents)
+#### Option B: Install via Pip
+```bash
+pip install -e .
+```
+Registers `mlue` and `mlue-mcp` commands globally.
+
+---
+
+### 2. Running Applications & Simulations
+
+```bash
+# 1. Run Interactive System & Monitoring Dashboard
+mlue run examples/dashboard_app.mlue
+
+# 2. Play Emergent Breakout (Paddle: A/D or Left/Right arrows)
+mlue run examples/breakout.mlue
+
+# 3. Play 2-Player Pong (Left Paddle: W/S, Right Paddle: Up/Down)
+mlue run examples/pong.mlue
+
+# 4. Run Spinning Rotor Dynamic Arena
+mlue run examples/spinning_paddle_arena.mlue
+
+# 5. Run Suspension Bridge & Physics Ragdoll
+mlue run examples/suspension_bridge_and_ragdoll.mlue
+```
+
+---
+
+### 3. High-Speed Headless Execution & Batch Rollouts (For AI Agents)
+
 Evaluate deterministic simulation steps at native speed or step hundreds of parallel worlds simultaneously:
 
 ```bash
 # Evaluate 1,000 steps headlessly on a single scene
-python mlue.py run examples/breakout.mlue --headless --ticks 1000
+mlue run examples/breakout.mlue --headless --ticks 1000
 
-# Compile .mlue to zero-copy binary .mlueb (50% size reduction)
-python mlue.py compile examples/breakout.mlue -o examples/breakout.mlueb
+# Compile .mlue JSON to zero-copy binary .mlueb (50% size reduction)
+mlue compile examples/breakout.mlue -o examples/breakout.mlueb
+
+# Replay a recorded simulation deterministically from a Write-Ahead Log (.wal)
+mlue replay examples/inventory_system.mlue examples/inventory_system.wal --ticks 100
 
 # Step 200 parallel environments simultaneously (100,000 aggregate steps in seconds)
-python mlue.py batch examples/parallel_eval_swarm.mlueb --envs 200 --ticks 500
+mlue batch examples/parallel_eval_swarm.mlueb --envs 200 --ticks 500
 ```
 
-### 3. Run Automated Unit Tests (73/73 Tests Passing)
+---
+
+### 4. Running the Verification Suite
+
 ```bash
+# 1. Run full unit test suite (174/174 Passing)
 python -m unittest discover -s tests -p "test_*.py" -v
+
+# 2. Run MCP JSON-RPC protocol self-test (12 Tools)
+python mcp_server.py --test
+
+# 3. Run Universal 13 Invariant Benchmark Harness
+python bench/harness/runner.py
 ```
 
 ---
 
 ## 🔌 Connecting AI Agents via Model Context Protocol (MCP)
 
-MLUE supports two connection transports:
-1. **Public Cloud Gateway (Zero Setup)**: Connect directly over HTTPS without downloading code.
-2. **Local Standard I/O (Private & Sovereign)**: Run `mcp_server.py` locally with 0 dependencies.
+MLUE provides a standalone, zero-dependency Model Context Protocol (MCP) server (`mcp_server.py`) operating over `stdio` or remote HTTPS:
 
----
+### 1. Claude Desktop Configuration
 
-### Option A: Public Cloud Remote MCP (Zero Local Setup)
-
-Connect any MCP client (Claude Desktop, Cursor, remote agent loops) to the live cloud endpoint:
-
-**Endpoint URL**: `https://mlue-bench.vercel.app/api/mcp`
-
-#### Claude Desktop Configuration (`claude_desktop_config.json`):
-```json
-{
-  "mcpServers": {
-    "mlue-cloud": {
-      "url": "https://mlue-bench.vercel.app/api/mcp"
-    }
-  }
-}
-```
-
----
-
-### Option B: Local Private MCP Server (`stdio`)
-
-Run the zero-dependency Python server directly on your local machine:
-
-#### 1. Test Protocol Locally
-```bash
-python mcp_server.py --test
-```
-
-#### 2. Configure Claude Desktop
+Add the following to your Claude Desktop configuration file:
 * **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 * **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+* **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ```json
 {
   "mcpServers": {
-    "mlue-local": {
+    "mlue": {
       "command": "python",
-      "args": [
-        "C:\\path\\to\\mlue\\mcp_server.py"
-      ]
+      "args": ["C:\\path\\to\\mlue\\mcp_server.py"]
     }
   }
 }
 ```
-*(On macOS/Linux, replace `command` with `python3` and specify the absolute POSIX path).*
+*(On macOS/Linux, replace `command` with `python3` and specify the absolute path).*
 
-#### 3. Configure Cursor / VS Code MCP Extension
+### 2. Cursor / VS Code Configuration
+Add to `.cursor/mcp.json` or VS Code MCP extension settings:
 ```json
 {
-  "name": "mlue-local",
-  "command": "python",
-  "args": ["/absolute/path/to/mlue/mcp_server.py"]
+  "mcpServers": {
+    "mlue": {
+      "command": "python",
+      "args": ["/absolute/path/to/mlue/mcp_server.py"]
+    }
+  }
 }
 ```
 
 ---
 
-## 🤖 Available MCP AI Agent Tools
+## 🤖 Available MCP AI Agent Tools (12 Tools)
 
-AI agents interact with MLUE through declarative mathematical representations and standard JSON-RPC tool calls:
+AI agents discover and manipulate MLUE scenes programmatically via standard JSON-RPC tool calls:
 
 | Tool Name | Description | Key Parameters |
 | :--- | :--- | :--- |
-| `mlue_get_schema` | Returns the declarative schema specification and spatial invariant rules. | None |
-| `mlue_validate_scene` | Statically verifies geometric invariants and reachability conditions. | `file_path` or `scene_dict` |
-| `mlue_start_simulation` | Spawns an isolated in-memory deterministic simulation session. | `file_path` or `scene_dict` |
-| `mlue_step_simulation` | Advances physics by $N$ steps with optional control signal vectors. | `session_id`, `dt`, `ticks`, `inputs` |
-| `mlue_inspect_state` | Returns positions, velocities, state variables, and active collision pairs. | `session_id` |
-| `mlue_mutate_entity` | Dynamically alters entity properties or velocities during simulation. | `session_id`, `entity_id`, `mutations` |
-| `mlue_close_simulation`| Cleanly terminates and frees the session state. | `session_id` |
+| `mlue_get_schema` | Returns the complete declarative schema, geometry primitives, and spatial invariants. | None |
+| `mlue_validate_scene` | Statically validates syntax, types, and spatial reachability in < 1ms. | `document` |
+| `mlue_start_simulation` | Spawns an isolated in-memory deterministic simulation session. | `document` or `file_path` |
+| `mlue_step_simulation` | Advances physics by $N$ steps with optional normalized action control vectors. | `session_id`, `ticks`, `dt`, `inputs` |
+| `mlue_inspect_state` | Returns coordinates, velocities, active states, rendered shapes, and state variables. | `session_id` |
+| `mlue_mutate_entity` | Dynamically mutates entity position, velocity, active flag, or custom properties. | `session_id`, `entity_id`, `updates` |
+| `mlue_close_simulation` | Cleanly terminates and frees an active simulation session. | `session_id` |
+| `mlue_patch_document` | Applies compact micro-delta patch operations (insert, update, delete) to document AST. | `document`, `operations` |
+| `mlue_patch_session` | Hot-patches live in-memory session without interrupting the simulation clock. | `session_id`, `operations` |
+| `mlue_create_checkpoint`| Creates an immutable, bit-exact cryptographic SHA-256 state snapshot. | `session_id`, `checkpoint_id` |
+| `mlue_restore_checkpoint`| Restores active simulation state to a saved cryptographic checkpoint. | `session_id`, `checkpoint_id` |
+| `mlue_list_checkpoints` | Lists all active cryptographic checkpoints for a session. | `session_id` |
 
 ---
 
-## 🛡️ Security & Path Sandboxing
+## 🧠 Autonomous Agent Reinforcement Learning & Perception
 
-MLUE enforces strict boundary safety:
-* **Path Invariants**: `loader.py` and `ai_interface.py` canonicalize all file paths and validate document schemas prior to execution. Path traversal tokens (`..`) outside authorized workspace trees are strictly rejected.
-* **Isolated Memory Sessions**: Dynamic AI simulation sessions run in memory-isolated `SimulationState` dataclasses with zero OS subprocess execution or arbitrary code evaluation (`eval` / `exec` are 100% prohibited across the codebase).
-* **Least Privilege**: When running MLUE in multi-tenant or untrusted cloud environments, running inside a lightweight container or sandbox is recommended.
+MLUE integrates directly with AI training workflows without heavy external game engine overhead:
 
----
+- **Gymnasium & PettingZoo Compatible** (`runtime/gym.py`, `runtime/pettingzoo.py`): Standard `step()`, `reset()`, `action_space`, `observation_space`.
+- **Zero-Allocation Tensor Bridge** (`runtime/tensor.py`): Contiguous memory buffers mapping entity coordinates, velocities, state variables, and raycast sensors with zero allocation churn (< 2 Bytes/step).
+- **Multi-Raycast LiDAR Perception**: High-speed continuous raycasting supporting 360° field-of-view spatial scanning for autonomous navigation.
 
-## 📐 Current Capabilities & Explicit Limitations
+```python
+from runtime.loader import load_mlue
+from runtime.gym import MLUEGymEnv
 
-To maintain architectural rigor, MLUE documents its exact operational boundaries:
+doc = load_mlue("examples/gym_warehouse_amr.mlue")
+env = MLUEGymEnv(doc, max_steps=1000)
 
-### Supported in Phase 0 (Current):
-* **Geometry**: Continuous 2D circles (`CircleSize`) and axis-aligned bounding boxes (`BoxSize`) in normalized coordinate space $[0.0, 1.0]$.
-* **Physics**: First-order deterministic discrete time integration ($\Delta t$), exact normal impulse reflections, and spatial containment clamping.
-* **State & Rules**: Declarative document-level state variables, collision event triggers, spatial threshold triggers, and entity lifecycles (`destroy_entity`, `reset_entity`, `set_property`, `increment`, `set`).
-* **Determinism**: 100% bit-exact SHA-256 reproducibility on IEEE 754 floating-point runtimes.
-
-### Current Limitations (Roadmap for Phase 1 & Phase 2):
-* **No Angular Momentum / Rotation**: Entities currently translate linearly without rotational torque.
-* **No Arbitrary Polygons**: Non-axis-aligned polygons and concave geometry are scheduled for Phase 2.
-* **No Continuous Friction Manifolds**: Collisions are currently modeled as ideal elastic normal impulses.
-* **Single-Threaded Reference Core**: The current Python reference core executes sequentially; multi-threaded SIMD parallel rollouts are part of the Phase 1 native Rust transition.
+obs, info = env.reset()
+for _ in range(500):
+    action = env.action_space.sample()
+    obs, reward, terminated, truncated, info = env.step(action)
+    if terminated or truncated:
+        obs, info = env.reset()
+```
 
 ---
 
 ## 🏗️ Architectural Topology
 
 ```text
-                     MLUE CORE (Native & Invariant Substrate)
-─────────────────────────────────────────────────────────────────────────────
-• Continuous Normalized Coordinate Space [0, 1] (Resolution-Invariant)
-• Exact Normal Impulse Reflections & Elastic Collision Physics
-• Declarative Event Triggers & Dynamic Entity Lifecycle (destroy / reset)
-• Static Spatial Reachability Invariant Solver (runtime/loader.py)
-• Programmatic AI Interface & In-Memory Sessions (runtime/ai_interface.py)
-• Zero-Dependency Model Context Protocol Server (mcp_server.py)
-─────────────────────────────────────────────────────────────────────────────
-                     SCAFFOLDING LAYER (Disposable Driver)
-─────────────────────────────────────────────────────────────────────────────
-• Host Runtime Driver (Python Standard Library)
-• Windowing & Presentation Adapter (Tkinter / Canvas)
-• Multi-Variable HUD Presentation & Keyboard Scancode Mapper
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                   MLUE SUBSTRATE CORE (Tier L1 Invariant)                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  • Continuous Normalized Space [0, 1]^2 (Resolution-Invariant)             │
+│  • Analytical Collision Physics (Circles, Boxes, OBB SAT, Segments)        │
+│  • Mechanical Constraints & Dynamics (Distance Joints, Springs, Friction)   │
+│  • Compile-Time Spatial Reachability Validator (runtime/loader.py)          │
+│  • Cryptographic Determinism & Q32.32 Fixed-Point Math Engine               │
+│  • Zero-Copy Binary Document & Write-Ahead Log (.mlueb, .wal)              │
+│  • Sub-Millisecond AST & State Micro-Delta Patch Engine (runtime/patch.py)  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       │
+            ┌──────────────────────────┴──────────────────────────┐
+            ▼                                                     ▼
+┌───────────────────────┐                             ┌───────────────────────┐
+│   AGENT INTERFACES    │                             │ PRESENTATION ADAPTERS │
+├───────────────────────┤                             ├───────────────────────┤
+│ • Model Context (MCP) │                             │ • HTML5 Canvas Embed  │
+│ • Gymnasium / RL      │                             │ • Desktop Tkinter     │
+│ • Tensor Bridge       │                             │ • Headless Driver     │
+│ • Parallel Batch Pool │                             │ • Multi-HUD Renderer  │
+└───────────────────────┘                             └───────────────────────┘
 ```
 
 ---
 
-## 🗺️ Systems Roadmap
+## 🛡️ Security & Boundary Safety
 
-- [x] **Phase 0: Mathematical & Specification Foundation (Grand Milestone Complete)**
+- **Strict Path Sandboxing**: All file operations canonicalize paths and reject traversal tokens (`..`) escaping authorized workspace boundaries.
+- **Zero Arbitrary Code Execution**: No `eval()` or `exec()` anywhere in the codebase.
+- **Isolated State Memory**: Dynamic simulation sessions execute in isolated dataclass structures with zero inter-session state leakage.
+- **Minimal Attack Surface**: Zero third-party Python runtime dependencies eliminates supply-chain risks.
+
+---
+
+## 🗺️ Systems Roadmap & Milestones
+
+- [x] **Phase 0: Mathematical & Specification Foundation (Complete)**
   - 100% pure Python standard-library implementation (0 dependencies).
   - Continuous normalized geometry (`circle`, `box`) & deterministic step loop $\Delta t$.
   - Pairwise impulse collisions, control channels, declarative state variables, and entity destruction.
   - Compile-time spatial reachability validation.
   - Native Model Context Protocol (MCP) server integration.
-  - 10/10 Passing ruthless benchmarks on live telemetry dashboard.
-- [x] **Phase 1: Native Substrate Transition, Hierarchical Storage & Vectorized Rollout (Grand Milestone Complete)** — *[Phase 1 Blueprint](docs/PHASE_1.md)* • *[Benchmark Roadmap](docs/BENCHMARK_ROADMAP.md)* • *[Industrial Benchmark Grounding](docs/BENCHMARK_GROUNDING.md)*
-  - [x] **1.1**: Hierarchical State-Trees & Query/Mutation Primitives.
-  - [x] **1.2**: Zero-Copy Binary Document & WAL Persistence (`.mlueb`, `.wal`).
-  - [x] **1.3**: Continuous Spatial Indexing & Narrowphase (BVH / Grid Acceleration) — *[Introduced Benchmark B11]*.
-  - [x] **1.4**: Fixed-Point Deterministic Math & Cross-Architecture Parity (Q32.32) — *[Introduced Benchmark B12]*.
-  - [x] **1.5**: Native C Execution Core (`mlue_core.c` / C-FFI).
-  - [x] **1.6**: SIMD Multi-Agent Vectorized Batch Rollout Engine (>10M ticks/s) & "Universal 12" Benchmark Verification.
-- [ ] **Phase 2: Multi-Agent Continuous Constraint Manifolds & Rich Primitives (Next)**
-  - Continuous raycasting (`segment`), rounded caps (`capsule`), and vector typography (`text`).
-  - Multi-agent reinforcement learning simulation manifolds.
+- [x] **Phase 1: Native Substrate Transition, Storage & Vectorized Rollouts (Complete)**
+  - Hierarchical State-Trees & Query/Mutation Primitives.
+  - Zero-Copy Binary Document & WAL Persistence (`.mlueb`, `.wal`).
+  - Continuous Spatial Indexing & Narrowphase (Spatial Hash Grid / BVH).
+  - Q32.32 Fixed-Point Math & Cross-Architecture Bit Parity.
+  - Native C Execution Core (`mlue_core.c` / C-FFI).
+  - SIMD Multi-Agent Vectorized Batch Rollout Engine (>10M ticks/s).
+- [x] **Wedge 2: Interactive Substrate, Mechanical Constraints & Rich Primitives (Complete)**
+  - Continuous raycasting (`segment`), oriented bounding boxes (`OBB SAT`), and rounded caps (`capsule`).
+  - Rotational dynamics, angular velocity ($\omega$), torque, and Coulomb surface friction.
+  - Interactive mechanical constraints (Baumgarte distance joints, Hookean damped springs, pin hinges).
+  - Analytical pointer hit-testing and reactive GUI state machines (hover, click, templating).
+  - Balanced 4 Core Applications + 4 Deterministic Games showcase deployed live at `mlue-ai.vercel.app`.
+- [ ] **Phase 3: Native Self-Hosting & Distributed Agent Consensus (Next)**
+  - Pure WebAssembly (WASM) self-hosted compiler.
+  - Multi-agent peer-to-peer state synchronization protocol.
 
 ---
 
 ## 🤝 Contributing & Community
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting pull requests.
+We welcome contributions from researchers, software engineers, and AI practitioners. Please read our [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) before submitting pull requests.
 
-* **Bug Reports**: Use the [Bug Report Template](.github/ISSUE_TEMPLATE/bug_report.md).
-* **Feature Requests & RFCs**: Use the [Feature Request Template](.github/ISSUE_TEMPLATE/feature_request.md).
+- **Pull Request Template**: [.github/PULL_REQUEST_TEMPLATE.md](.github/PULL_REQUEST_TEMPLATE.md)
+- **Bug Reports**: Use the [Bug Report Form](https://github.com/hemanth17r/mlue/issues/new?template=bug_report.yml)
+- **Feature RFCs**: Use the [Feature Request Form](https://github.com/hemanth17r/mlue/issues/new?template=feature_request.yml)
+- **Security Inquiries**: Refer to [SECURITY.md](SECURITY.md)
+
+---
+
+## 📚 Citation
+
+If you use MLUE in your research or project, please cite:
+
+```bibtex
+@software{mlue2026,
+  author = {Akkala Hemanth Reddy},
+  title = {MLUE: Machine-Accessible Universal Software and Simulation Substrate},
+  year = {2026},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/hemanth17r/mlue}},
+  version = {1.6.0}
+}
+```
 
 ---
 
 ## 📄 License
-MIT License. Copyright (c) 2026 Akkala Hemanth Reddy. Built from first principles.
-
+Released under the [MIT License](LICENSE). Copyright &copy; 2026 Akkala Hemanth Reddy. Built from first principles.

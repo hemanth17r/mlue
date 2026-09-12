@@ -283,3 +283,7 @@ class FixedPointEngine:
                             collision_events.add(frozenset([e1.id, e2.id]))
 
         return updated_entities, collision_events
+
+
+# Convenience Alias
+FixedVector = Vec2FP

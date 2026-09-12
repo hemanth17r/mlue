@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: https://github.com/hemanth17r/mlue/blob/main/SECURITY.md
+    about: Please report security vulnerabilities privately via our security disclosure policy.
+  - name: MLUE Web Studio & Live Telemetry
+    url: https://mlue-ai.vercel.app
+    about: Explore the live interactive MLUE studio, applications, games, and telemetry dashboard.
+  - name: Documentation & Thesis
+    url: https://github.com/hemanth17r/mlue/tree/main/docs
+    about: Review the architectural thesis, mathematical specifications, and roadmaps.

@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Test & Invariant Verification
+    name: Test & Invariant Verification (${{ matrix.os }} - Py${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Run Runtime Unit Tests (73/73)
+      - name: Run Runtime Unit Tests (174/174)
         run: |
           python -m unittest discover -s tests -p "test_*.py" -v
 
@@ -33,6 +33,56 @@ jobs:
         run: |
           python mcp_server.py --test
 
-      - name: Run The Universal 12 Invariant Benchmark Harness
+      - name: Run The Universal 13 Invariant Benchmark Harness
         run: |
           python bench/harness/runner.py
+
+  package:
+    name: Package Build & Wheel Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Build Tools
+        run: |
+          python -m pip install --upgrade pip build wheel
+
+      - name: Build Source Distribution and Wheel
+        run: |
+          python -m build
+
+      - name: Verify Package Install
+        run: |
+          python -m pip install dist/*.whl
+          mlue --help
+          python -c "import runtime; print('MLUE Version:', runtime.__version__)"
+
+  web:
+    name: Web Studio & Benchmark Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: bench/web/package-lock.json
+
+      - name: Install Web Dependencies
+        working-directory: bench/web
+        run: |
+          npm ci
+
+      - name: Build Web Application
+        working-directory: bench/web
+        run: |
+          npm run build

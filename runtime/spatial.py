@@ -145,6 +145,7 @@ def compute_entity_aabb(entity: Entity, env: Environment) -> AABB2D:
 class SpatialHashGrid2D:
     """Uniform Spatial Hash Grid broadphase accelerator with O(1) amortized insertion and O(N log N) / O(N) querying."""
 
+
     def __init__(self, cell_size: float = 0.05):
         self.cell_size = max(0.001, float(cell_size))
         self.inv_cell_size = 1.0 / self.cell_size
@@ -797,5 +798,9 @@ def hit_test_scene(
         if hit_test_entity(px, py, entity, env):
             return entity.id
     return None
+
+
+# Convenience Alias
+SpatialGrid = SpatialHashGrid2D
 
 

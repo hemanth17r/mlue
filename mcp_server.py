@@ -417,7 +417,7 @@ def run_self_test():
     # 2. List tools
     tools_req = {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}
     tools_resp = handle_jsonrpc_message(tools_req)
-    assert len(tools_resp["result"]["tools"]) == 7
+    assert len(tools_resp["result"]["tools"]) == len(TOOLS_DEFINITIONS)
     print(f"[PASS] MCP tools/list verified ({len(tools_resp['result']['tools'])} tools available).")
 
     # 3. Get schema
@@ -516,8 +516,12 @@ def run_self_test():
     print("=== All MCP Protocol Tests Passed Successfully! ===")
 
 
-if __name__ == "__main__":
+def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--test":
         run_self_test()
     else:
         run_stdio_server()
+
+
+if __name__ == "__main__":
+    main()

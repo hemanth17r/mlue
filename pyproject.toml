@@ -8,7 +8,7 @@ version = "1.6.0"
 description = "MLUE: Native AI Computational & Spatial Simulation Substrate"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "Akkala Hemanth Reddy", email = "hemanth@example.com" }
 ]
@@ -31,11 +31,11 @@ classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: C",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
@@ -57,7 +57,10 @@ Homepage = "https://github.com/hemanth17r/mlue"
 Documentation = "https://github.com/hemanth17r/mlue#readme"
 Repository = "https://github.com/hemanth17r/mlue.git"
 Tracker = "https://github.com/hemanth17r/mlue/issues"
-LiveDashboard = "https://mlue-bench.vercel.app"
+LiveDashboard = "https://mlue-ai.vercel.app"
+
+[tool.setuptools]
+py-modules = ["mlue", "mcp_server"]
 
 [tool.setuptools.packages.find]
 where = ["."]

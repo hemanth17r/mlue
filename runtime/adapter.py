@@ -267,6 +267,10 @@ class TkinterAdapter:
             root.update()
 
 
+# Alias for presentation and multi-tier adapter architecture
+PresentationAdapter = TkinterAdapter
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         from .loader import load_mlue

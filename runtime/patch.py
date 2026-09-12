@@ -354,3 +354,8 @@ class SessionCheckpointManager:
                 "entity_count": len(state_copy.entities),
             })
         return result
+
+
+# Convenience Aliases
+apply_patch = apply_patch_to_document
+MLUEPatchEngine = SessionCheckpointManager

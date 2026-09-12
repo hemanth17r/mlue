@@ -88,3 +88,7 @@ class BatchEnvironmentPool:
 
     def get_step_counts(self) -> List[int]:
         return list(self.step_counts)
+
+
+# Convenience Alias
+BatchSimulator = BatchEnvironmentPool

@@ -1,8 +1,29 @@
-# Python bytecode & caches
+# Python bytecode & cache
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*$py.class
+*.so
 *.pyd
+
+# Packaging & Distribution
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
 
 # Temporary / Scratch
 .tmp/
@@ -12,12 +33,21 @@ scratch/
 # Environment & Secrets
 .env
 .env.*
-.DS_Store
+!.env.example
 
-# Benchmark Web App Artifacts (Zone 4)
+# OS & Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Web Bench & Vercel
 bench/web/node_modules/
 bench/web/dist/
 bench/web/.vite/
 .vercel/
 bench/web/.vercel/
+
 

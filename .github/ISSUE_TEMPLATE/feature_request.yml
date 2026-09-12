@@ -1,0 +1,48 @@
+name: '💡 Feature Request / RFC'
+description: 'Propose a new primitive, constraint, mathematical invariant, or architectural enhancement'
+labels: ['enhancement', 'rfc']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before submitting, review [docs/FOUNDATIONAL_THESIS.md](https://github.com/hemanth17r/mlue/blob/main/docs/FOUNDATIONAL_THESIS.md) and ensure your proposal adheres to **Zero External Dependencies** and **Continuous Invariant Preservation**.
+  - type: input
+    id: title_summary
+    attributes:
+      label: Proposal Title
+      placeholder: 'e.g. Add support for continuous angular damping constraint'
+    validations:
+      required: true
+  - type: dropdown
+    id: proposal_type
+    attributes:
+      label: Proposal Category
+      options:
+        - 'Geometry / Physical Primitive (e.g. polygon, convex hull)'
+        - 'Mechanical Constraint / Dynamics (e.g. spring, joint, friction)'
+        - 'AI Introspection / MCP Tool (e.g. protocol tool, observer)'
+        - 'Serialization & Persistence (e.g. zero-copy format)'
+        - 'Benchmark & Verification (e.g. invariant gate)'
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem & Machine Intelligence Motivation
+      description: What limitation or agent capability motivates this proposal?
+    validations:
+      required: true
+  - type: textarea
+    id: specification
+    attributes:
+      label: Proposed Declarative Specification
+      description: Provide an example of how this would be declared in `.mlue` JSON syntax and evaluated.
+    validations:
+      required: true
+  - type: textarea
+    id: invariants
+    attributes:
+      label: Invariant Preservation
+      description: How will this feature maintain bit-exact determinism, coordinate invariance, and sub-millisecond execution?
+    validations:
+      required: true

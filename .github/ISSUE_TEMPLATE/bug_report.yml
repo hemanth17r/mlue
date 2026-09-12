@@ -1,0 +1,68 @@
+name: '🐛 Bug Report'
+description: 'Report a reproducible defect, numerical drift, or invariant violation in MLUE'
+labels: ['bug', 'triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting an issue! Please ensure you have tested against the latest release (`v1.6.0`).
+  - type: input
+    id: version
+    attributes:
+      label: MLUE Version
+      description: What version or commit of MLUE are you running?
+      placeholder: 'e.g. 1.6.0, commit b59620c'
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected Component
+      options:
+        - 'Core Runtime & Physics Engine (runtime/engine.py)'
+        - 'Loader & Static Validation (runtime/loader.py)'
+        - 'Model Context Protocol Server (mcp_server.py)'
+        - 'Presentation & Canvas Adapter (runtime/adapter.py)'
+        - 'Binary & WAL Persistence (.mlueb, .wal)'
+        - 'Web Studio & Telemetry Dashboard (bench/web)'
+        - 'Autonomous Agent Gym / RL Adapter (runtime/gym.py)'
+        - 'Other'
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Problem Description
+      description: A clear description of the bug or unexpected behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: |
+        Please provide the exact reproduction steps, including CLI commands or minimal `.mlue` scene file.
+      placeholder: |
+        1. Create scene 'test.mlue' with ...
+        2. Execute: python mlue.py run test.mlue --headless --ticks 100
+        3. Observe invariant error ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Invariant Behavior
+      description: What should have occurred according to the MLUE mathematical specification?
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: OS version, Python version, CPU architecture.
+      placeholder: |
+        - OS: Windows 11 / Ubuntu 24.04 / macOS Sequoia
+        - Python: 3.12.3
+        - CPU: x86_64 / Apple Silicon / ARM64
+    validations:
+      required: true
