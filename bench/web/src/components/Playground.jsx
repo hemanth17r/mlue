@@ -54,12 +54,12 @@ const COLOR_PRESETS = [
 ];
 
 const PROMPT_SUGGESTIONS = [
+  { text: "Cluster Telemetry Dashboard with 4 worker nodes & load balancer", category: "dashboards" },
+  { text: "Interactive Pointer FSM Button with hover & click states", category: "apps" },
+  { text: "Hydraulic Reservoir with dual wave surge & safety cutoff valve", category: "control" },
   { text: "Emergent Breakout with 6 destructible brick tiers", category: "games" },
-  { text: "Deterministic 2-Player Pong with multi-channel controls", category: "games" },
-  { text: "Spinning Paddle Dynamic Arena with rotational physics", category: "games" },
-  { text: "Suspension Bridge & Physics Ragdoll with distance joints", category: "games" },
-  { text: "Pinball Bumper Kinetic Arena with dynamic scoring", category: "games" },
-  { text: "Interactive Pointer FSM Button with hover states", category: "games" }
+  { text: "Deterministic 2-Player Pong with multi-channel paddle controls", category: "games" },
+  { text: "Spinning Paddle Dynamic Arena with rotational physics", category: "games" }
 ];
 
 export default function Playground({ onOpenBenchmarks }) {
@@ -1854,34 +1854,79 @@ export default function Playground({ onOpenBenchmarks }) {
             </div>
           </div>
 
-          {/* Canonical MLUE Games Showcase Quick Launcher */}
-          <div className="px-4 py-2.5 bg-slate-950/90 border-t border-white/[0.06] flex flex-wrap items-center gap-1.5">
-            <span className="text-[11px] font-mono text-cyan-400 font-bold mr-1 flex items-center gap-1">
-              <Gamepad2 className="w-3.5 h-3.5" />
-              <span>MLUE Games:</span>
-            </span>
-            {DOMAIN_TEMPLATES.games.map((game) => (
-              <button
-                key={game.id}
-                type="button"
-                onClick={() => {
-                  setActiveTitle(game.title);
-                  setJsonText(JSON.stringify(game.json, null, 2));
-                  initSimulation(game.json, true, game.title);
-                  setStatusMsg(`⚡ Launched "${game.title}" (Pure MLUE Engine)`);
-                  setTimeout(() => setStatusMsg(null), 3000);
-                }}
-                className={`px-2.5 py-1 rounded-full border text-xs font-mono transition cursor-pointer flex items-center gap-1.5 ${
-                  activeTitle === game.title 
-                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-sm shadow-cyan-500/20' 
-                    : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border-white/[0.08] hover:border-cyan-500/30'
-                }`}
-              >
-                <span className="text-[10px] text-amber-400 font-semibold">{game.badge}</span>
-                <span className="text-slate-500">•</span>
-                <span className="font-sans font-semibold">{game.title.split('&')[0].trim()}</span>
-              </button>
-            ))}
+          {/* Substrate Showcase: 4 Core Applications & 4 Deterministic Games */}
+          <div className="px-4 py-3 bg-slate-950/95 border-t border-white/[0.06] space-y-2">
+            {/* Row 1: Core Applications */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-[11px] font-mono text-emerald-400 font-bold mr-1 flex items-center gap-1 shrink-0">
+                <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Applications:</span>
+              </span>
+              {[
+                { title: 'Cluster Telemetry Monitor', badge: 'Live Dashboard', json: DOMAIN_TEMPLATES.dashboards[0].json },
+                { title: 'Pointer FSM Button & Counter', badge: 'Interactive GUI', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'button_counter')?.json },
+                { title: 'Hydraulic Safety Cutoff Valve', badge: 'Industrial Control', json: DOMAIN_TEMPLATES.control[0].json },
+                { title: 'Digital Logic Bus & MUX', badge: 'Hardware Logic', json: DOMAIN_TEMPLATES.logic[0].json }
+              ].map((app, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    if (!app.json) return;
+                    setActiveTitle(app.title);
+                    setJsonText(JSON.stringify(app.json, null, 2));
+                    initSimulation(app.json, true, app.title);
+                    setStatusMsg(`⚡ Launched "${app.title}" (MLUE Software Runtime)`);
+                    setTimeout(() => setStatusMsg(null), 3000);
+                  }}
+                  className={`px-2.5 py-1 rounded-full border text-xs font-mono transition cursor-pointer flex items-center gap-1.5 ${
+                    activeTitle === app.title 
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/60 shadow-sm shadow-emerald-500/20' 
+                      : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border-white/[0.08] hover:border-emerald-500/30'
+                  }`}
+                >
+                  <span className="text-[10px] text-emerald-400 font-semibold">{app.badge}</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="font-sans font-semibold">{app.title}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Row 2: Deterministic Games */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-white/[0.04]">
+              <span className="text-[11px] font-mono text-cyan-400 font-bold mr-1 flex items-center gap-1 shrink-0">
+                <Gamepad2 className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Deterministic Games:</span>
+              </span>
+              {[
+                { title: 'Emergent Breakout & Physics Reflection', badge: 'Destructible State', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'breakout')?.json },
+                { title: 'Deterministic 2-Player Pong', badge: 'Multi-Channel Inputs', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'pong')?.json },
+                { title: 'Spinning Paddle Dynamic Arena', badge: 'Rotational Physics', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'spinning_paddle_arena')?.json },
+                { title: 'Suspension Bridge & Physics Ragdoll', badge: 'Constraints & Springs', json: DOMAIN_TEMPLATES.games.find(g => g.id === 'suspension_bridge')?.json }
+              ].map((game, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    if (!game.json) return;
+                    setActiveTitle(game.title);
+                    setJsonText(JSON.stringify(game.json, null, 2));
+                    initSimulation(game.json, true, game.title);
+                    setStatusMsg(`⚡ Launched "${game.title}" (MLUE Game Engine)`);
+                    setTimeout(() => setStatusMsg(null), 3000);
+                  }}
+                  className={`px-2.5 py-1 rounded-full border text-xs font-mono transition cursor-pointer flex items-center gap-1.5 ${
+                    activeTitle === game.title 
+                      ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/60 shadow-sm shadow-cyan-500/20' 
+                      : 'bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border-white/[0.08] hover:border-cyan-500/30'
+                  }`}
+                >
+                  <span className="text-[10px] text-amber-400 font-semibold">{game.badge}</span>
+                  <span className="text-slate-500">•</span>
+                  <span className="font-sans font-semibold">{game.title.split('&')[0].trim()}</span>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* 4. INSTANT QUICK-TWEAK PILL BAR (0ms Response) */}
