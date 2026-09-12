@@ -109,15 +109,12 @@ export default function App() {
               />
 
               {/* Section Divider & Filter Bar */}
-              {/* Section Divider & Filter Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 mb-6 border-t border-white/[0.06] pt-6">
                 <div className="flex items-center space-x-2">
-                  <h2 className="text-sm font-semibold tracking-tight text-white font-mono uppercase">
-                    The {benchmarks.length} Invariant Matrix
+                  <h2 className="text-sm font-bold tracking-tight text-white font-mono uppercase flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
+                    <span>Invariant Matrix ({benchmarks.length})</span>
                   </h2>
-                  <span className="text-[11px] font-mono text-cyan-400/80 px-2.5 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/40 font-semibold">
-                    AUTOMATED HARNESS
-                  </span>
                 </div>
 
                 {/* Filter Pills */}

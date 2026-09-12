@@ -328,6 +328,7 @@ export default function Playground({ onOpenBenchmarks }) {
       setRefinePrompt('');
       setStatusMsg(`⚡ Loaded "${matched.title}" template instantly (0ms)`);
       setTimeout(() => setStatusMsg(null), 3000);
+      setTimeout(() => stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
       return;
     }
 
@@ -362,6 +363,7 @@ export default function Playground({ onOpenBenchmarks }) {
         setRefinePrompt('');
         setStatusMsg("✅ Generated and verified against MLUE 1.6 invariants");
         setTimeout(() => setStatusMsg(null), 3000);
+        setTimeout(() => stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
       } else {
         setErrorMsg(data.error || 'Could not compile MLUE specification. Try a different prompt.');
       }
@@ -387,6 +389,7 @@ export default function Playground({ onOpenBenchmarks }) {
       initSimulation(synthesized, true, title);
       setStatusMsg("⚡ Synthesized local MLUE 1.6 scene (Zero-Dependency Offline Mode)");
       setTimeout(() => setStatusMsg(null), 3500);
+      setTimeout(() => stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
     } finally {
       setIsGenerating(false);
     }
@@ -1818,14 +1821,20 @@ export default function Playground({ onOpenBenchmarks }) {
             </div>
           </div>
 
-          {/* Canvas Viewport (Supports Drag & Drop, Mouse Control, Keyboard) */}
-          <div className="relative aspect-[16/10] sm:aspect-[16/9] bg-slate-950 flex items-center justify-center p-2 select-none overflow-hidden">
+          {/* Canvas Viewport (Edge-to-Edge Flush Stage: Zero Dead Space, Single Unified Play Border) */}
+          <div 
+            className="relative w-full bg-slate-950 flex items-center justify-center select-none overflow-hidden"
+            style={{
+              aspectRatio: `${simStateRef.current?.env?.dimensions?.[0] || 750} / ${simStateRef.current?.env?.dimensions?.[1] || 500}`,
+              maxHeight: 'min(72vh, 680px)'
+            }}
+          >
             <canvas
               ref={canvasRef}
               onPointerDown={handleCanvasPointerDown}
               onPointerMove={handleCanvasPointerMove}
               onPointerUp={handleCanvasPointerUp}
-              className="w-full h-full object-contain rounded-2xl border border-white/[0.04] cursor-crosshair touch-none"
+              className="w-full h-full block cursor-crosshair touch-none"
             />
 
             {/* Live State Variable HUD */}

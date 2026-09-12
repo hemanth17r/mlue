@@ -86,22 +86,29 @@ MLUE is continuously audited against 13 ruthless architectural, physical, and en
 
 ---
 
+## 🔬 Architectural Ground Truth & Scaffolding Transparency
+
+We believe in radical engineering honesty:
+* **What is Core Math (Tier L1 Substrate)**: Analytical collision math (CCD, AABB, OBB SAT, segment/capsule distance), rotational dynamics ($\omega$, $\tau$, inertia), Baumgarte distance constraints, Hookean springs, state transition engines, and Gymnasium RL perception are 100% mathematical standard library with **0 GUI imports** and **174 verified unit tests**.
+* **What is Active Scaffolding**: Visual presentation currently runs via lightweight host adapters (`TkinterAdapter` for desktop windows and HTML5 Canvas 2D for the web studio). These are decoupled presentation layers; a native hardware WebGPU pipeline is on the roadmap for future wedges.
+
+---
+
 ## 🚀 Quickstart
 
 ### 1. Installation
 
-#### Option A: Clone & Run (Zero Dependencies)
-Requires only Python 3.10+ (no `pip install` required for core execution):
+#### Direct Source (Recommended -- Zero Dependencies)
+Requires only Python 3.10+ (pure standard library, 0 external dependencies):
 ```bash
 git clone https://github.com/hemanth17r/mlue.git
 cd mlue
-```
-
-#### Option B: Install via Pip
-```bash
 pip install -e .
 ```
-Registers `mlue` and `mlue-mcp` commands globally.
+*(Or run directly without installing: `python mlue.py run examples/breakout.mlue`)*
+
+> [!NOTE]
+> **Package Distribution**: `mlue-2.5.0` wheels and source archives are built locally in `dist/`. For the initial release, cloning via GitHub is recommended to access the full test harness, benchmarks, and example scenes.
 
 ---
 
@@ -109,19 +116,20 @@ Registers `mlue` and `mlue-mcp` commands globally.
 
 ```bash
 # 1. Run Interactive System & Monitoring Dashboard
-mlue run examples/dashboard_app.mlue
+python mlue.py run examples/dashboard_app.mlue
+# (Or simply: mlue run examples/dashboard_app.mlue if installed via pip)
 
 # 2. Play Emergent Breakout (Paddle: A/D or Left/Right arrows)
-mlue run examples/breakout.mlue
+python mlue.py run examples/breakout.mlue
 
 # 3. Play 2-Player Pong (Left Paddle: W/S, Right Paddle: Up/Down)
-mlue run examples/pong.mlue
+python mlue.py run examples/pong.mlue
 
 # 4. Run Spinning Rotor Dynamic Arena
-mlue run examples/spinning_paddle_arena.mlue
+python mlue.py run examples/spinning_paddle_arena.mlue
 
 # 5. Run Suspension Bridge & Physics Ragdoll
-mlue run examples/suspension_bridge_and_ragdoll.mlue
+python mlue.py run examples/suspension_bridge_and_ragdoll.mlue
 ```
 
 ---

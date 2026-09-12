@@ -147,9 +147,9 @@ graph TD
 | Component | Status | Architectural Rationale |
 | :--- | :--- | :--- |
 | **HTML / CSS / DOM Scaffolding** | ❌ **Strictly Forbidden** | Violates MLUE's founding mission. All layout, styling, and boundaries are pure mathematical $[0.0, 1.0]$ coordinates. |
-| **Heavy Rotational Inertia Tensors (Torque, Friction Cones)** | ⏸️ **Deferred to Phase 3** | Deadweight complexity for software applications. Linear kinematics, spring joints, and restitution satisfy 99% of UI and casual simulation needs. |
+| **3D Meshes & Complex Polygonal Ear-Clipping** | ⏸️ **Deferred to Phase 4** | Focus is 2D universal spatial manifolds with closed-form $O(1)$ analytical math (circles, boxes, capsules, segments). |
 | **Arbitrary Concave N-Gons** | ❌ **Out of Scope** | Requires heavy ear-clipping and iterative Minkowski solvers. Capsules, segments, boxes, and circles provide $O(1)$ analytical math. |
-| **GPU Shader Pipelines in Core** | ❌ **Out of Scope** | MLUE is a headless computational substrate. Rendering is decoupled and delegated to external clients. |
+| **GPU Shader Pipelines in Core** | ❌ **Out of Scope** | MLUE is a headless computational substrate. Rendering is decoupled and delegated to external adapters. |
 
 ---
 
@@ -157,8 +157,9 @@ graph TD
 
 | Subphase | Milestone | Prerequisite | Status |
 | :---: | :--- | :---: | :---: |
-| **2.1** | Universal Spatial Substrate (Primitives, Hierarchy & C-ABI) | Phase 1 Core | 🎯 **LOCKED & READY TO EXECUTE** |
-| **2.2** | Continuous Interaction & Constraint Dynamics | 2.1 Complete | ⏳ Pending |
-| **2.3** | Zero-Copy AI Interfaces (RL Gym + MCP Semantic Tree) | 2.2 Complete | ⏳ Pending |
-| **2.4** | Real-Time Streaming & Declarative Hot-Reload Protocol | 2.3 Complete | ⏳ Pending |
-| **2.5** | Phase 2 Dual Capstone & 12 Ruthless Benchmarks Audit | 2.4 Complete | ⏳ Pending |
+| **2.1** | Universal Spatial Substrate (Primitives, Hierarchy & C-ABI) | Phase 1 Core | ✅ **Completed** (Merged in v2.1.0) |
+| **2.2** | Continuous Interaction & Constraint Dynamics (Springs, Hinges, SAT) | 2.1 Complete | ✅ **Completed** (Merged in v2.2.0) |
+| **2.3** | Zero-Copy AI Interfaces (RL Gym Tensors + MCP Semantic Tree) | 2.2 Complete | ✅ **Completed** (Merged in v2.3.0) |
+| **2.4** | Real-Time Streaming & Declarative Hot-Reload Protocol | 2.3 Complete | ⏳ **In Progress** (Patch engine live in `patch.py`; WebSocket server deferred) |
+| **2.5** | Phase 2 Dual Capstone & 13-Pillar Ruthless Benchmarks Audit | 2.4 Complete | ✅ **Completed** (Tagged `v2.5.0` - 174/174 tests, 13/13 gates) |
+

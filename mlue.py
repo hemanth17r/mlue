@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MLUE CLI Runner & Toolchain — Subphase 1.2
+"""MLUE CLI Runner & Toolchain -- v2.5.0 (Phase 2 Capstone)
 
 Executes MLUE representations (.mlue, .mlueb), compiles binary containers,
 and manages Write-Ahead Log (.wal) recording and deterministic replay.
@@ -169,7 +169,7 @@ def handle_batch(args) -> int:
         print(f"[MLUE Batch Engine] Completed {total_steps:,} total simulation steps in {elapsed:.4f}s.")
         print(f"  - Parallel Environments : {num_envs:,}")
         print(f"  - Ticks per Environment : {ticks:,}")
-        print(f"  - Aggregate Throughput  : {throughput:,.0f} steps/second ({1e6/throughput:.2f} µs/step)")
+        print(f"  - Aggregate Throughput  : {throughput:,.0f} steps/second ({1e6/throughput:.2f} us/step)")
         return 0
 
     except MLUEValidationError as e:
@@ -182,7 +182,7 @@ def handle_batch(args) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="MLUE CLI Toolchain — Binary Compiler, Engine & Batch Rollout (Phase 1.6)",
+        description="MLUE CLI Toolchain -- Binary Compiler, Engine & Batch Rollout (v2.5.0)",
     )
     subparsers = parser.add_subparsers(dest="subcommand")
 

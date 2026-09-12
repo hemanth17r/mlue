@@ -16,25 +16,25 @@ export default function Hero({ latestRun }) {
 
   const metrics = [
     { 
-      label: 'Simulation Speed', 
+      label: '⚡ Simulation Speed', 
       value: speed, 
       color: 'text-amber-400',
       definition: 'Evaluation throughput per CPU core'
     },
     { 
-      label: 'Energy Drift', 
+      label: '🛡️ Energy Drift', 
       value: drift, 
       color: 'text-emerald-400',
       definition: 'Kinetic conservation in closed tests'
     },
     { 
-      label: 'Spatial Precision', 
+      label: '🎯 Spatial Precision', 
       value: precision, 
       color: 'text-cyan-300',
       definition: 'Coordinate invariance [0, 1] across displays'
     },
     { 
-      label: 'Invariant Checks', 
+      label: '✓ Invariant Checks', 
       value: `${passedCount}/${totalCount}`, 
       suffix: 'Verified', 
       color: 'text-indigo-300',
