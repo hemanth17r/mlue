@@ -70,10 +70,8 @@ Output strictly valid raw JSON only.
 """
 
 MODELS_TO_TRY = [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-2.5-flash",
-    "gemini-1.5-pro"
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash"
 ]
 
 
@@ -126,7 +124,8 @@ class handler(BaseHTTPRequestHandler):
 
         prompt = payload.get('prompt', '').strip()
         current_scene = payload.get('current_scene')
-        api_key = self.headers.get('x-gemini-key') or payload.get('api_key') or os.environ.get('GEMINI_API_KEY')
+        raw_key = self.headers.get('x-gemini-key') or payload.get('api_key') or os.environ.get('GEMINI_API_KEY') or ''
+        api_key = raw_key.strip()
 
         if not prompt:
             self._send_json_error(400, 'Missing "prompt" in request body.')
