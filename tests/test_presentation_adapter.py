@@ -128,8 +128,17 @@ class TestPresentationAdapter(unittest.TestCase):
         self.assertAlmostEqual(c_by_id["world_spring"].p2[0], 200.0, places=2)
         self.assertAlmostEqual(c_by_id["world_spring"].p2[1], 60.0, places=2)
 
+    def _ensure_display(self):
+        try:
+            import tkinter as tk
+            root = tk.Tk()
+            root.destroy()
+        except Exception as e:
+            self.skipTest(f"Headless environment without display server: {e}")
+
     def test_tkinter_adapter_static_render(self):
         """Verifies that TkinterAdapter.present() runs with block=False without error."""
+        self._ensure_display()
         doc = MLUEDocument(
             version="1.6",
             environment=self.env,
@@ -160,6 +169,7 @@ class TestPresentationAdapter(unittest.TestCase):
 
     def test_tkinter_adapter_simulation_step(self):
         """Verifies that TkinterAdapter.run_simulation() steps cleanly with duration limit."""
+        self._ensure_display()
         doc = MLUEDocument(
             version="1.6",
             environment=self.env,
