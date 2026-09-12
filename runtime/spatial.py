@@ -47,13 +47,54 @@ class AABB2D:
         return max(0.0, self.max_x - self.min_x) * max(0.0, self.max_y - self.min_y)
 
 
+def get_anchor_origin(anchor: Optional[str], env: Optional[Environment] = None) -> Tuple[float, float]:
+    """Computes normalized (ox, oy) origin for a 9-point edge anchor within the environment."""
+    if not anchor:
+        return 0.0, 0.0
+    safe = env.safe_area if env and env.safe_area else None
+    sl = float(safe.get("left", 0.0)) if safe else 0.0
+    sr = float(safe.get("right", 0.0)) if safe else 0.0
+    st = float(safe.get("top", 0.0)) if safe else 0.0
+    sb = float(safe.get("bottom", 0.0)) if safe else 0.0
+
+    anc = anchor.lower()
+    if anc == "top-left":
+        return sl, st
+    elif anc == "top-center":
+        return 0.5, st
+    elif anc == "top-right":
+        return 1.0 - sr, st
+    elif anc == "center-left":
+        return sl, 0.5
+    elif anc == "center":
+        return 0.5, 0.5
+    elif anc == "center-right":
+        return 1.0 - sr, 0.5
+    elif anc == "bottom-left":
+        return sl, 1.0 - sb
+    elif anc == "bottom-center":
+        return 0.5, 1.0 - sb
+    elif anc == "bottom-right":
+        return 1.0 - sr, 1.0 - sb
+    return 0.0, 0.0
+
+
+def get_entity_effective_pos(entity: Entity, env: Optional[Environment] = None) -> Tuple[float, float]:
+    """Computes effective normalized position (x, y) taking anchor origin and safe area into account."""
+    anc = getattr(entity, "anchor", None) or entity.properties.get("anchor")
+    if not anc:
+        return entity.position.x, entity.position.y
+    ox, oy = get_anchor_origin(anc, env)
+    return entity.position.x + ox, entity.position.y + oy
+
+
 def compute_entity_aabb(entity: Entity, env: Environment) -> AABB2D:
     """Computes exact normalized AABB for an entity in the given environment viewport."""
     w = env.width
     h = env.height
     min_dim = min(w, h)
 
-    px, py = entity.position.x, entity.position.y
+    px, py = get_entity_effective_pos(entity, env)
     if entity.type == "circle" and isinstance(entity.size, CircleSize):
         r = entity.size.radius
         ex = r * (min_dim / w)
@@ -721,20 +762,23 @@ def hit_test_entity(
     if not entity.active:
         return False
 
+    ex, ey = get_entity_effective_pos(entity, env)
+
     if entity.type == "circle" and isinstance(entity.size, CircleSize):
-        return point_in_circle(px, py, entity.position.x, entity.position.y, entity.size.radius, env)
+        return point_in_circle(px, py, ex, ey, entity.size.radius, env)
     elif entity.type == "box" and isinstance(entity.size, BoxSize):
         return point_in_box(
-            px, py, entity.position.x, entity.position.y, entity.size.width, entity.size.height, angle=getattr(entity, "angle", 0.0)
+            px, py, ex, ey, entity.size.width, entity.size.height, angle=getattr(entity, "angle", 0.0)
         )
     elif entity.type == "capsule" and isinstance(entity.size, CapsuleSize):
         total_ang = entity.size.angle + getattr(entity, "angle", 0.0)
         return point_in_capsule(
-            px, py, entity.position.x, entity.position.y, entity.size.length, entity.size.radius, total_ang, env
+            px, py, ex, ey, entity.size.length, entity.size.radius, total_ang, env
         )
     elif entity.type == "segment" and isinstance(entity.size, SegmentSize):
+        ox, oy = get_anchor_origin(getattr(entity, "anchor", None) or entity.properties.get("anchor"), env)
         return point_near_segment(
-            px, py, entity.position.x, entity.position.y, entity.size.end_x, entity.size.end_y, entity.size.thickness, env
+            px, py, ex, ey, entity.size.end_x + ox, entity.size.end_y + oy, entity.size.thickness, env
         )
     return False
 

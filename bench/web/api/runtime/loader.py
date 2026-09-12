@@ -33,6 +33,13 @@ class MLUEValidationError(Exception):
     pass
 
 
+VALID_ANCHORS = {
+    "top-left", "top-center", "top-right",
+    "center-left", "center", "center-right",
+    "bottom-left", "bottom-center", "bottom-right",
+}
+
+
 def parse_keypath(path_str: str) -> List[Union[str, int]]:
     """
     Parses a keypath string (e.g. 'session.stats.energy', 'inventory[0].durability')
@@ -208,7 +215,20 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
     if not isinstance(background, str):
         raise MLUEValidationError("'environment.background' must be a color string.")
 
-    environment = Environment(width=dims[0], height=dims[1], background=background)
+    safe_area = None
+    if "safe_area" in env_data:
+        sa_raw = env_data["safe_area"]
+        if not isinstance(sa_raw, dict):
+            raise MLUEValidationError("'environment.safe_area' must be an object.")
+        safe_area = {}
+        for side in ("top", "bottom", "left", "right"):
+            if side in sa_raw:
+                val = sa_raw[side]
+                if not (isinstance(val, (int, float)) and not math.isnan(val) and 0.0 <= val < 0.5):
+                    raise MLUEValidationError(f"'environment.safe_area.{side}' must be a number in [0.0, 0.5) (got {val}).")
+                safe_area[side] = float(val)
+
+    environment = Environment(width=dims[0], height=dims[1], background=background, safe_area=safe_area)
 
     # State Variables
     state_variables_raw = data.get("state_variables", {})
@@ -250,15 +270,20 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
         if pos_raw is None and ent_raw.get("parent_id") is not None:
             pos_raw = {"x": 0.5, "y": 0.5}
 
+        has_anchor = ent_raw.get("anchor") is not None or (
+            isinstance(ent_raw.get("properties"), dict) and ent_raw.get("properties").get("anchor") is not None
+        )
+        min_pos = -1.0 if has_anchor else 0.0
+
         if ent_type != "segment":
             if not isinstance(pos_raw, dict):
                 raise MLUEValidationError(f"Entity '{ent_id}' requires a 'position' object.")
             x = pos_raw.get("x")
             y = pos_raw.get("y")
-            if not (isinstance(x, (int, float)) and not math.isnan(x) and 0.0 <= x <= 1.0):
-                raise MLUEValidationError(f"Entity '{ent_id}' position.x must be a number in range [0.0, 1.0] (got {x}).")
-            if not (isinstance(y, (int, float)) and not math.isnan(y) and 0.0 <= y <= 1.0):
-                raise MLUEValidationError(f"Entity '{ent_id}' position.y must be a number in range [0.0, 1.0] (got {y}).")
+            if not (isinstance(x, (int, float)) and not math.isnan(x) and min_pos <= x <= 1.0):
+                raise MLUEValidationError(f"Entity '{ent_id}' position.x must be a number in range [{min_pos}, 1.0] (got {x}).")
+            if not (isinstance(y, (int, float)) and not math.isnan(y) and min_pos <= y <= 1.0):
+                raise MLUEValidationError(f"Entity '{ent_id}' position.y must be a number in range [{min_pos}, 1.0] (got {y}).")
         else:
             # For segment, position can come from 'start' or 'position'
             start_raw = ent_raw.get("start", pos_raw)
@@ -268,10 +293,10 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
                 raise MLUEValidationError(f"Segment entity '{ent_id}' requires a 'start' or 'position' object.")
             x = start_raw.get("x")
             y = start_raw.get("y")
-            if not (isinstance(x, (int, float)) and not math.isnan(x) and 0.0 <= x <= 1.0):
-                raise MLUEValidationError(f"Segment entity '{ent_id}' start.x must be a number in range [0.0, 1.0] (got {x}).")
-            if not (isinstance(y, (int, float)) and not math.isnan(y) and 0.0 <= y <= 1.0):
-                raise MLUEValidationError(f"Segment entity '{ent_id}' start.y must be a number in range [0.0, 1.0] (got {y}).")
+            if not (isinstance(x, (int, float)) and not math.isnan(x) and min_pos <= x <= 1.0):
+                raise MLUEValidationError(f"Segment entity '{ent_id}' start.x must be a number in range [{min_pos}, 1.0] (got {x}).")
+            if not (isinstance(y, (int, float)) and not math.isnan(y) and min_pos <= y <= 1.0):
+                raise MLUEValidationError(f"Segment entity '{ent_id}' start.y must be a number in range [{min_pos}, 1.0] (got {y}).")
 
         # Size
         size_raw = ent_raw.get("size")
@@ -411,8 +436,8 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             if not isinstance(layout_raw, dict):
                 raise MLUEValidationError(f"Entity '{ent_id}' layout must be a dictionary.")
             direction = layout_raw.get("direction", "vertical").lower()
-            if direction not in ("vertical", "horizontal", "stack_y", "stack_x"):
-                raise MLUEValidationError(f"Entity '{ent_id}' layout.direction must be 'vertical' or 'horizontal'.")
+            if direction not in ("vertical", "horizontal", "stack_y", "stack_x", "auto"):
+                raise MLUEValidationError(f"Entity '{ent_id}' layout.direction must be 'vertical', 'horizontal', or 'auto'.")
             gap = float(layout_raw.get("gap", 0.01))
             if gap < 0.0 or gap > 1.0:
                 raise MLUEValidationError(f"Entity '{ent_id}' layout.gap must be in range [0.0, 1.0] (got {gap}).")
@@ -423,6 +448,14 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             if align_items not in ("start", "center", "end", "stretch"):
                 raise MLUEValidationError(f"Entity '{ent_id}' layout.align_items must be 'start', 'center', 'end', or 'stretch'.")
             layout = {"direction": direction, "gap": gap, "padding": padding, "align_items": align_items}
+
+        anchor_val = ent_raw.get("anchor", properties.get("anchor"))
+        if anchor_val is not None:
+            if not isinstance(anchor_val, str) or anchor_val.lower() not in VALID_ANCHORS:
+                raise MLUEValidationError(
+                    f"Entity '{ent_id}' invalid anchor '{anchor_val}'. Supported: {sorted(VALID_ANCHORS)}."
+                )
+            anchor_val = anchor_val.lower()
 
         entity = Entity(
             id=ent_id,
@@ -437,6 +470,7 @@ def validate_and_parse(data: Dict[str, Any]) -> MLUEDocument:
             layout=layout,
             template=template_val,
             angle=angle,
+            anchor=anchor_val,
         )
         entities.append(entity)
 

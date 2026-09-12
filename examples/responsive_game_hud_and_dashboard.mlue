@@ -1,0 +1,194 @@
+{
+  "mlue_version": "2.1",
+  "environment": {
+    "dimensions": [800, 600],
+    "background": "#090D16",
+    "safe_area": {
+      "top": 0.04,
+      "bottom": 0.05,
+      "left": 0.03,
+      "right": 0.03
+    }
+  },
+  "state_variables": {
+    "player_health": 100,
+    "player_shield": 50,
+    "gold_coins": 1250,
+    "current_wave": 7,
+    "status_msg": "WAVE ACTIVE",
+    "auto_pilot": false
+  },
+  "entities": [
+    {
+      "id": "hud_health_card",
+      "type": "box",
+      "anchor": "top-left",
+      "position": { "x": 0.08, "y": 0.04 },
+      "size": { "width": 0.22, "height": 0.07 },
+      "properties": { "color": "#1E293B", "solid": false },
+      "active": true
+    },
+    {
+      "id": "health_text",
+      "type": "text",
+      "anchor": "top-left",
+      "position": { "x": 0.08, "y": 0.04 },
+      "template": "HP: {player_health}% | SHIELD: {player_shield}%",
+      "size": { "font_scale": 0.022, "align": "center" },
+      "properties": { "color": "#10B981" },
+      "active": true
+    },
+    {
+      "id": "hud_score_card",
+      "type": "box",
+      "anchor": "top-right",
+      "position": { "x": -0.08, "y": 0.04 },
+      "size": { "width": 0.22, "height": 0.07 },
+      "properties": { "color": "#1E293B", "solid": false },
+      "active": true
+    },
+    {
+      "id": "score_text",
+      "type": "text",
+      "anchor": "top-right",
+      "position": { "x": -0.08, "y": 0.04 },
+      "template": "GOLD: {gold_coins} | WAVE: {current_wave}",
+      "size": { "font_scale": 0.022, "align": "center" },
+      "properties": { "color": "#F59E0B" },
+      "active": true
+    },
+    {
+      "id": "center_arena",
+      "type": "box",
+      "anchor": "center",
+      "position": { "x": 0.0, "y": 0.0 },
+      "size": { "width": 0.55, "height": 0.4 },
+      "properties": { "color": "#0F172A", "solid": false },
+      "active": true
+    },
+    {
+      "id": "center_status",
+      "type": "text",
+      "anchor": "center",
+      "position": { "x": 0.0, "y": -0.1 },
+      "template": "-- {status_msg} --",
+      "size": { "font_scale": 0.035, "align": "center" },
+      "properties": { "color": "#38BDF8" },
+      "active": true
+    },
+    {
+      "id": "auto_deck",
+      "type": "box",
+      "anchor": "center",
+      "position": { "x": 0.0, "y": 0.05 },
+      "size": { "width": 0.45, "height": 0.12 },
+      "layout": {
+        "direction": "auto",
+        "gap": 0.03,
+        "padding": 0.01,
+        "align_items": "center"
+      },
+      "properties": { "color": "#1E293B", "solid": false },
+      "active": true
+    },
+    {
+      "id": "action_heal_btn",
+      "parent": "auto_deck",
+      "type": "capsule",
+      "position": { "x": 0.0, "y": 0.0 },
+      "size": { "length": 0.1, "radius": 0.03, "angle": 0.0 },
+      "properties": { "color": "#059669", "solid": false },
+      "active": true
+    },
+    {
+      "id": "action_shield_btn",
+      "parent": "auto_deck",
+      "type": "capsule",
+      "position": { "x": 0.0, "y": 0.0 },
+      "size": { "length": 0.1, "radius": 0.03, "angle": 0.0 },
+      "properties": { "color": "#2563EB", "solid": false },
+      "active": true
+    },
+    {
+      "id": "action_coin_btn",
+      "parent": "auto_deck",
+      "type": "capsule",
+      "position": { "x": 0.0, "y": 0.0 },
+      "size": { "length": 0.1, "radius": 0.03, "angle": 0.0 },
+      "properties": { "color": "#D97706", "solid": false },
+      "active": true
+    },
+    {
+      "id": "bottom_nav_bar",
+      "type": "box",
+      "anchor": "bottom-center",
+      "position": { "x": 0.0, "y": -0.03 },
+      "size": { "width": 0.7, "height": 0.06 },
+      "properties": { "color": "#1E293B", "solid": false },
+      "active": true
+    },
+    {
+      "id": "nav_info_text",
+      "type": "text",
+      "anchor": "bottom-center",
+      "position": { "x": 0.0, "y": -0.03 },
+      "template": "[RESPONSIVE RUNTIME] dt=0 SLEEP READY | SAFE AREA ADAPTED",
+      "size": { "font_scale": 0.02, "align": "center" },
+      "properties": { "color": "#94A3B8" },
+      "active": true
+    }
+  ],
+  "rules": [
+    {
+      "trigger": "on_heal_click",
+      "event": "pointer_click",
+      "entity": "action_heal_btn",
+      "actions": [
+        {
+          "type": "increment_path",
+          "target": "player_health",
+          "amount": 10
+        },
+        {
+          "type": "set_path",
+          "target": "status_msg",
+          "value": "HEALTH RESTORED +10"
+        }
+      ]
+    },
+    {
+      "trigger": "on_shield_click",
+      "event": "pointer_click",
+      "entity": "action_shield_btn",
+      "actions": [
+        {
+          "type": "increment_path",
+          "target": "player_shield",
+          "amount": 15
+        },
+        {
+          "type": "set_path",
+          "target": "status_msg",
+          "value": "SHIELDS RECHARGED +15"
+        }
+      ]
+    },
+    {
+      "trigger": "on_coin_click",
+      "event": "pointer_click",
+      "entity": "action_coin_btn",
+      "actions": [
+        {
+          "type": "increment_path",
+          "target": "gold_coins",
+          "amount": 50
+        },
+        {
+          "type": "set_path",
+          "target": "status_msg",
+          "value": "LOOT COLLECTED +50G"
+        }
+      ]
+    }
+  ]
+}

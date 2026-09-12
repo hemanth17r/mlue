@@ -67,6 +67,7 @@ class Entity:
     layout: Optional[Dict[str, Any]] = None
     template: Optional[str] = None
     angle: float = 0.0
+    anchor: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -74,6 +75,8 @@ class Environment:
     width: int = 400
     height: int = 400
     background: str = "#000000"
+    safe_area: Optional[Dict[str, float]] = None
+
 
 
 @dataclass(frozen=True)

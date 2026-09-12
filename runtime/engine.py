@@ -33,7 +33,16 @@ from .model import (
     Constraint,
 )
 from .loader import parse_keypath
-from .spatial import SpatialHashGrid2D, Ray2D, RayHit, cast_ray_scene, hit_test_scene, hit_test_entity
+from .spatial import (
+    SpatialHashGrid2D,
+    Ray2D,
+    RayHit,
+    cast_ray_scene,
+    hit_test_scene,
+    hit_test_entity,
+    get_anchor_origin,
+    get_entity_effective_pos,
+)
 
 TEMPLATE_PATTERN = re.compile(r"\{([a-zA-Z0-9_\.\[\]]+)\}")
 
@@ -177,6 +186,7 @@ class MLUEEngine:
         self,
         entities: List[Entity],
         children_by_parent: Dict[str, List[Entity]],
+        env: Optional[Environment] = None,
     ) -> Dict[str, Tuple[float, float]]:
         """Calculates normalized child positions for containers with auto-stacking layout."""
         stacked_offsets: Dict[str, Tuple[float, float]] = {}
@@ -188,9 +198,19 @@ class MLUEEngine:
             gap = float(layout.get("gap", 0.01))
             padding = float(layout.get("padding", 0.0))
             align_items = layout.get("align_items")
-            children = children_by_parent[container.id]
-            is_vertical = direction in ("vertical", "stack_y")
+            if direction == "auto":
+                if env is not None:
+                    cw = container.size.width * env.width if isinstance(container.size, BoxSize) else float(env.width)
+                    ch = container.size.height * env.height if isinstance(container.size, BoxSize) else float(env.height)
+                    is_vertical = cw < ch
+                elif isinstance(container.size, BoxSize):
+                    is_vertical = container.size.width < container.size.height
+                else:
+                    is_vertical = True
+            else:
+                is_vertical = direction in ("vertical", "stack_y")
             cursor = padding if padding > 0.0 else gap
+            children = children_by_parent[container.id]
 
             for child in children:
                 dim = self._get_stack_dimension(child, is_vertical)
@@ -298,8 +318,9 @@ class MLUEEngine:
         for entity in entities:
             if not entity.active:
                 continue
-            cx = entity.position.x * w
-            cy = entity.position.y * h
+            ex, ey = get_entity_effective_pos(entity, env)
+            cx = ex * w
+            cy = ey * h
             bbox, text_content = self._compute_entity_geometry(
                 entity, w, h, p_min, cx, cy, 0.0, 0.0, state_vars, False
             )
@@ -330,7 +351,7 @@ class MLUEEngine:
             if entity.parent_id is not None:
                 children_by_parent[entity.parent_id].append(entity)
 
-        stacked_offsets = self._calculate_auto_stacking(entities, children_by_parent)
+        stacked_offsets = self._calculate_auto_stacking(entities, children_by_parent, env)
 
         resolved_bboxes: Dict[str, Tuple[float, float, float, float]] = {}
         shape_dict: Dict[str, ComputedShape] = {}
@@ -357,7 +378,10 @@ class MLUEEngine:
                 p_min = min(pw, ph)
 
                 is_stacked = entity.id in stacked_offsets
-                rx, ry = stacked_offsets.get(entity.id, (entity.position.x, entity.position.y))
+                if parent_id is None and not is_stacked:
+                    rx, ry = get_entity_effective_pos(entity, env)
+                else:
+                    rx, ry = stacked_offsets.get(entity.id, (entity.position.x, entity.position.y))
                 cx = px0 + rx * pw
                 cy = py0 + ry * ph
 
@@ -1795,6 +1819,7 @@ class MLUEEngine:
             layout=e.layout,
             template=e.template,
             angle=angle,
+            anchor=e.anchor,
         )
 
     def _get_constraint_inv_mass_inertia(self, entity: Entity) -> Tuple[float, float]:
@@ -2076,6 +2101,16 @@ class MLUEEngine:
 
         return entities
 
+    def is_quiescent(self, state: SimulationState, vel_tol: float = 1e-5) -> bool:
+        """Determines if the simulation state is physically at rest and eligible for host CPU sleep."""
+        for e in state.entities:
+            if not e.active:
+                continue
+            v = e.velocity
+            if abs(v.vx) > vel_tol or abs(v.vy) > vel_tol or abs(v.omega) > vel_tol:
+                return False
+        return True
+
     def step(
         self,
         state: SimulationState,
@@ -2089,6 +2124,49 @@ class MLUEEngine:
         env = state.environment
         input_map = inputs or {}
         state_variables = self._clone_state_variables(state.state_variables)
+
+        # Dual-mode execution fast path: dt == 0.0 processes events without advancing physical time
+        if dt == 0.0:
+            moved_entities = list(state.entities)
+            new_pointer, pointer_events = self._process_pointer_input(state, input_map, moved_entities, env)
+
+            step_reward = 0.0
+            terminated = state.terminated
+            truncated = state.truncated
+
+            entity_map: Dict[str, int] = {e.id: idx for idx, e in enumerate(moved_entities)}
+            for rule in state.rules:
+                if self._is_rule_triggered(
+                    rule, set(), pointer_events, moved_entities, entity_map, state_variables
+                ):
+                    r, term, trunc = self._execute_rule_actions(rule.actions, moved_entities, entity_map, state_variables)
+                    step_reward += r
+                    if term:
+                        terminated = True
+                    if trunc:
+                        truncated = True
+
+            new_shapes = self._compute_shapes(env, moved_entities, state_variables)
+            new_result = EvaluationResult(
+                width=env.width,
+                height=env.height,
+                background=env.background,
+                shapes=new_shapes,
+            )
+
+            return SimulationState(
+                time=state.time,
+                environment=env,
+                entities=moved_entities,
+                result=new_result,
+                state_variables=state_variables,
+                rules=state.rules,
+                step_reward=step_reward,
+                terminated=terminated,
+                truncated=truncated,
+                pointer=new_pointer,
+                constraints=state.constraints,
+            )
 
         # 1. Integrate motion & environment boundary constraints
         moved_entities = [
