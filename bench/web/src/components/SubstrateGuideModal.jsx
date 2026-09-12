@@ -80,6 +80,29 @@ export const DOMAIN_TEMPLATES = {
           { trigger: "sweep_blk3", event: "collision", entities: ["pointer_probe", "heap_block_3"], actions: [{ type: "increment_path", target: "memory.freed_mb", amount: 256 }] }
         ]
       }
+    },
+    {
+      id: 'interactive_button_counter',
+      title: 'Interactive Button Counter & Pointer FSM',
+      category: 'Dashboards & Monitoring',
+      badge: 'Interactive UI',
+      description: 'Zero-DOM reactive capsule button with pointer hover/click state machine, dynamic text templating, and path mutations.',
+      json: {
+        mlue_version: "2.1",
+        environment: { dimensions: [600, 400], background: "#020617" },
+        state_variables: { counter: 0, hovered: false, status: "IDLE" },
+        entities: [
+          { id: "card_bg", type: "box", position: { x: 0.5, y: 0.5 }, size: { width: 0.6, height: 0.6 }, properties: { color: "#0F172A", solid: false } },
+          { id: "counter_label", type: "text", position: { x: 0.5, y: 0.35 }, template: "CLICK COUNT: {counter} - {status}", size: { font_scale: 0.035, align: "center" }, properties: { color: "#38BDF8" } },
+          { id: "increment_btn", type: "capsule", position: { x: 0.5, y: 0.55 }, size: { length: 0.25, radius: 0.045, angle: 0.0 }, properties: { color: "#10B981", solid: false } },
+          { id: "btn_label", type: "text", position: { x: 0.5, y: 0.55 }, template: "TAP TO INCREMENT", size: { font_scale: 0.025, align: "center" }, properties: { color: "#020617" } }
+        ],
+        rules: [
+          { trigger: "on_btn_click", event: "pointer_click", entity: "increment_btn", actions: [{ type: "increment_path", target: "counter", amount: 1 }, { type: "set_path", target: "status", value: "CLICKED" }] },
+          { trigger: "on_btn_hover_enter", event: "pointer_hover_enter", entity: "increment_btn", actions: [{ type: "set_path", target: "hovered", value: true }, { type: "set_path", target: "status", value: "HOVERING" }] },
+          { trigger: "on_btn_hover_exit", event: "pointer_hover_exit", entity: "increment_btn", actions: [{ type: "set_path", target: "hovered", value: false }, { type: "set_path", target: "status", value: "IDLE" }] }
+        ]
+      }
     }
   ],
   simulations: [
@@ -258,6 +281,51 @@ export const DOMAIN_TEMPLATES = {
           { trigger: "hit_ast_1", event: "collision", entities: ["player_ship", "asteroid_1"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_1", position: { x: 0.2, y: 0.05 }, velocity: { vx: 0.12, vy: 0.35 } }] },
           { trigger: "hit_ast_2", event: "collision", entities: ["player_ship", "asteroid_2"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_2", position: { x: 0.5, y: 0.05 }, velocity: { vx: -0.18, vy: 0.28 } }] },
           { trigger: "hit_ast_3", event: "collision", entities: ["player_ship", "asteroid_3"], actions: [{ type: "increment_path", target: "game.lives", amount: -1 }, { type: "reset_entity", target: "asteroid_3", position: { x: 0.8, y: 0.05 }, velocity: { vx: 0.08, vy: 0.40 } }] }
+        ]
+      }
+    },
+    {
+      id: 'suspension_bridge',
+      title: 'Suspension Bridge & Physics Ragdoll',
+      category: 'Games & Arcade',
+      badge: 'Mechanical Constraints',
+      description: '3-plank suspension bridge with Baumgarte distance joints, damped spring vehicle chassis, and swinging revolute pin hinge.',
+      json: {
+        mlue_version: "1.6",
+        environment: { dimensions: [800, 800], background: "#080C14" },
+        entities: [
+          { id: "pier_left", type: "box", position: { x: 0.15, y: 0.45 }, size: { width: 0.08, height: 0.3 }, properties: { color: "#475569", solid: true, static: true } },
+          { id: "pier_right", type: "box", position: { x: 0.85, y: 0.45 }, size: { width: 0.08, height: 0.3 }, properties: { color: "#475569", solid: true, static: true } },
+          { id: "plank_1", type: "box", position: { x: 0.32, y: 0.42 }, size: { width: 0.16, height: 0.03 }, properties: { color: "#38BDF8", solid: true, mass: 1.5, friction: 0.3 } },
+          { id: "plank_2", type: "box", position: { x: 0.50, y: 0.44 }, size: { width: 0.16, height: 0.03 }, properties: { color: "#0284C7", solid: true, mass: 2.0, friction: 0.3 } },
+          { id: "plank_3", type: "box", position: { x: 0.68, y: 0.42 }, size: { width: 0.16, height: 0.03 }, properties: { color: "#38BDF8", solid: true, mass: 1.5, friction: 0.3 } },
+          { id: "cart_chassis", type: "box", position: { x: 0.50, y: 0.25 }, size: { width: 0.12, height: 0.05 }, properties: { color: "#10B981", solid: true, mass: 3.0 } },
+          { id: "wheel_left", type: "circle", position: { x: 0.46, y: 0.30 }, size: { radius: 0.02 }, properties: { color: "#F59E0B", solid: true, mass: 0.5, friction: 0.8 } },
+          { id: "wheel_right", type: "circle", position: { x: 0.54, y: 0.30 }, size: { radius: 0.02 }, properties: { color: "#F59E0B", solid: true, mass: 0.5, friction: 0.8 } }
+        ],
+        constraints: [
+          { id: "c_pier_l", type: "distance", entity_a: "pier_left", entity_b: "plank_1", anchor_a: { x: 0.04, y: -0.12 }, anchor_b: { x: -0.08, y: 0.0 }, length: 0.10 },
+          { id: "c_p1_p2", type: "distance", entity_a: "plank_1", entity_b: "plank_2", anchor_a: { x: 0.08, y: 0.0 }, anchor_b: { x: -0.08, y: 0.0 }, length: 0.04 },
+          { id: "c_p2_p3", type: "distance", entity_a: "plank_2", entity_b: "plank_3", anchor_a: { x: 0.08, y: 0.0 }, anchor_b: { x: -0.08, y: 0.0 }, length: 0.04 },
+          { id: "c_p3_pier_r", type: "distance", entity_a: "plank_3", entity_b: "pier_right", anchor_a: { x: 0.08, y: 0.0 }, anchor_b: { x: -0.04, y: -0.12 }, length: 0.10 },
+          { id: "susp_l", type: "spring", entity_a: "cart_chassis", entity_b: "wheel_left", anchor_a: { x: -0.04, y: 0.025 }, anchor_b: { x: 0.0, y: 0.0 }, length: 0.03, stiffness: 120.0, damping: 4.0 },
+          { id: "susp_r", type: "spring", entity_a: "cart_chassis", entity_b: "wheel_right", anchor_a: { x: 0.04, y: 0.025 }, anchor_b: { x: 0.0, y: 0.0 }, length: 0.03, stiffness: 120.0, damping: 4.0 }
+        ]
+      }
+    },
+    {
+      id: 'spinning_paddle_arena',
+      title: 'Spinning Paddle Dynamic Arena',
+      category: 'Games & Arcade',
+      badge: 'Rotational Physics',
+      description: 'Central motorized rotor spinning at high angular velocity, dynamic oriented bounding boxes (OBBs), and Coulomb surface friction.',
+      json: {
+        mlue_version: "1.6",
+        environment: { dimensions: [800, 800], background: "#090D16" },
+        entities: [
+          { id: "center_rotor", type: "box", position: { x: 0.5, y: 0.5 }, size: { width: 0.35, height: 0.04 }, angle: 0.0, velocity: { vx: 0.0, vy: 0.0, omega: 3.14159 }, properties: { color: "#F59E0B", solid: true, static: true, restitution: 0.95, friction: 0.4 } },
+          { id: "dynamic_spinner", type: "box", position: { x: 0.3, y: 0.3 }, size: { width: 0.12, height: 0.04 }, angle: 0.785, velocity: { vx: 0.1, vy: 0.0, omega: 1.0 }, properties: { color: "#38BDF8", solid: true, mass: 1.0, restitution: 0.8, friction: 0.2 } },
+          { id: "bouncing_puck", type: "circle", position: { x: 0.5, y: 0.25 }, size: { radius: 0.03 }, velocity: { vx: 0.2, vy: 0.3 }, properties: { color: "#10B981", solid: true, mass: 0.5, restitution: 0.9, friction: 0.1 } }
         ]
       }
     }

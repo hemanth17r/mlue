@@ -5,17 +5,18 @@ simulations, dynamic entity destructions, and multi-variable HUDs to an
 observable desktop window via Tkinter.
 """
 
+import math
 import sys
 import time
-from typing import Optional, Dict, Set
-from .model import EvaluationResult, MLUEDocument, SimulationState, ComputedShape
+from typing import Optional, Dict, Set, List
+from .model import EvaluationResult, MLUEDocument, SimulationState, ComputedShape, ComputedConstraint
 from .engine import MLUEEngine
 
 
 class TkinterAdapter:
     """Disposable bootstrap scaffolding for rendering MLUE state and simulations to OS display."""
 
-    def __init__(self, title: str = "MLUE Runtime — Phase 0.6 Capstone"):
+    def __init__(self, title: str = "MLUE Runtime — Presentation Adapter"):
         self.title = title
 
     def _draw_shape(self, canvas, shape: ComputedShape):
@@ -25,6 +26,21 @@ class TkinterAdapter:
             return canvas.create_oval(x0, y0, x1, y1, fill=shape.color, outline="")
         elif shape.type == "box":
             outline_color = "#334155" if shape.color in ("#1E293B", "#161F30", "#0F172A") else ""
+            if shape.theta != 0.0:
+                cx, cy = shape.center
+                w = max(1.0, x1 - x0)
+                h = max(1.0, y1 - y0)
+                hw, hh = w / 2.0, h / 2.0
+                cos_t = math.cos(shape.theta)
+                sin_t = math.sin(shape.theta)
+                pts = [
+                    (cx - hw * cos_t + hh * sin_t, cy - hw * sin_t - hh * cos_t),
+                    (cx + hw * cos_t + hh * sin_t, cy + hw * sin_t - hh * cos_t),
+                    (cx + hw * cos_t - hh * sin_t, cy + hw * sin_t + hh * cos_t),
+                    (cx - hw * cos_t - hh * sin_t, cy - hw * sin_t + hh * cos_t),
+                ]
+                flat_pts = [c for pt in pts for c in pt]
+                return canvas.create_polygon(*flat_pts, fill=shape.color, outline=outline_color)
             return canvas.create_rectangle(
                 x0, y0, x1, y1,
                 fill=shape.color,
@@ -89,6 +105,11 @@ class TkinterAdapter:
             highlightthickness=0,
         )
         canvas.pack(fill=tk.BOTH, expand=True)
+
+        for c in result.constraints:
+            canvas.create_line(c.p1[0], c.p1[1], c.p2[0], c.p2[1], fill=c.color, width=2, dash=(4, 2) if c.type == "spring" else ())
+            canvas.create_oval(c.p1[0]-3, c.p1[1]-3, c.p1[0]+3, c.p1[1]+3, fill="#38BDF8")
+            canvas.create_oval(c.p2[0]-3, c.p2[1]-3, c.p2[0]+3, c.p2[1]+3, fill="#38BDF8")
 
         for shape in result.shapes:
             self._draw_shape(canvas, shape)
@@ -232,9 +253,28 @@ class TkinterAdapter:
             if is_running[0]:
                 root.after(interval_ms, tick)
 
+        # Initial constraints creation
+        for c in state.result.constraints:
+            canvas.create_line(c.p1[0], c.p1[1], c.p2[0], c.p2[1], fill=c.color, width=2, dash=(4, 2) if c.type == "spring" else ())
+            canvas.create_oval(c.p1[0]-3, c.p1[1]-3, c.p1[0]+3, c.p1[0]+3, fill="#38BDF8")
+            canvas.create_oval(c.p2[0]-3, c.p2[1]-3, c.p2[0]+3, c.p2[1]+3, fill="#38BDF8")
+
         root.after(interval_ms, tick)
 
         if block:
             root.mainloop()
         else:
             root.update()
+
+
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        from .loader import load_mlue
+        from .engine import MLUEEngine
+        mlue_path = sys.argv[1]
+        doc = load_mlue(mlue_path)
+        adapter = TkinterAdapter(title=f"MLUE Presentation — {mlue_path}")
+        print(f"Loaded {mlue_path} ({len(doc.entities)} entities, {len(doc.constraints)} constraints). Starting presentation...")
+        adapter.present(MLUEEngine().evaluate(doc), block=True)
+    else:
+        print("Usage: python -m runtime.adapter <path/to/file.mlue>")

@@ -25,6 +25,7 @@ from .model import (
     Velocity,
     EvaluationResult,
     ComputedShape,
+    ComputedConstraint,
     SimulationState,
     PointerState,
     Rule,
@@ -324,6 +325,11 @@ class MLUEEngine:
             bbox, text_content = self._compute_entity_geometry(
                 entity, w, h, p_min, cx, cy, 0.0, 0.0, state_vars, False
             )
+            ang = (
+                float(entity.size.angle + entity.angle)
+                if (entity.type == "capsule" and isinstance(entity.size, CapsuleSize))
+                else float(entity.angle)
+            )
             shapes.append(
                 ComputedShape(
                     id=entity.id,
@@ -332,6 +338,7 @@ class MLUEEngine:
                     center=(cx, cy),
                     color=entity.properties.get("color", "#FFFFFF"),
                     text=text_content,
+                    theta=ang,
                 )
             )
         return shapes
@@ -398,6 +405,11 @@ class MLUEEngine:
                     )
 
                 resolved_bboxes[entity.id] = bbox
+                ang = (
+                    float(entity.size.angle + entity.angle)
+                    if (entity.type == "capsule" and isinstance(entity.size, CapsuleSize))
+                    else float(entity.angle)
+                )
                 shape_dict[entity.id] = ComputedShape(
                     id=entity.id,
                     type=entity.type,
@@ -405,6 +417,7 @@ class MLUEEngine:
                     center=(cx, cy),
                     color=entity.properties.get("color", "#FFFFFF"),
                     text=text_content,
+                    theta=ang,
                 )
 
             if not progress and remaining:
@@ -430,11 +443,35 @@ class MLUEEngine:
     def evaluate(self, doc: MLUEDocument) -> EvaluationResult:
         """Evaluates an MLUEDocument into resolved computational entity states (instantaneous snapshot)."""
         shapes = self._compute_shapes(doc.environment, doc.entities, doc.state_variables)
+        computed_constraints: List[ComputedConstraint] = []
+        if doc.constraints:
+            w = float(doc.environment.width)
+            h = float(doc.environment.height)
+            entity_by_id = {e.id: e for e in doc.entities}
+            for c in doc.constraints:
+                if c.entity_a not in entity_by_id:
+                    continue
+                e_a = entity_by_id[c.entity_a]
+                e_b = entity_by_id.get(c.entity_b) if c.entity_b else None
+                p_ax, p_ay, _, _ = self._compute_anchor_world(e_a, c.anchor_a)
+                if e_b is not None:
+                    p_bx, p_by, _, _ = self._compute_anchor_world(e_b, c.anchor_b)
+                else:
+                    p_bx, p_by = c.anchor_b.x, c.anchor_b.y
+                computed_constraints.append(
+                    ComputedConstraint(
+                        id=c.id,
+                        type=c.type,
+                        p1=(p_ax * w, p_ay * h),
+                        p2=(p_bx * w, p_by * h),
+                    )
+                )
         return EvaluationResult(
             width=doc.environment.width,
             height=doc.environment.height,
             background=doc.environment.background,
             shapes=shapes,
+            constraints=computed_constraints,
         )
 
     def init_simulation(self, doc: MLUEDocument) -> SimulationState:

@@ -840,9 +840,19 @@ export default function Playground({ onOpenBenchmarks }) {
         ctx.scale(dpr, dpr);
 
         if (isPlaying) {
-          const rawDt = (time - lastTime) / 1000.0;
-          const dt = Math.min(rawDt, 0.05) * simSpeed;
-          stepSimulation(dt);
+          const isMoving = state.entities.some(e => 
+            e.active !== false && (
+              Math.abs(e.velocity?.vx || 0) > 1e-4 || 
+              Math.abs(e.velocity?.vy || 0) > 1e-4 || 
+              Math.abs(e.velocity?.omega || 0) > 1e-4
+            )
+          );
+          const hasInput = Object.keys(keysDownRef.current).length > 0 || dragEntityRef.current != null;
+          if (isMoving || hasInput) {
+            const rawDt = (time - lastTime) / 1000.0;
+            const dt = Math.min(rawDt, 0.05) * simSpeed;
+            stepSimulation(dt);
+          }
         }
         lastTime = time;
 
@@ -865,6 +875,56 @@ export default function Playground({ onOpenBenchmarks }) {
             ctx.moveTo(0, y);
             ctx.lineTo(envW, y);
             ctx.stroke();
+          }
+        }
+
+        // Render Constraints (Distance joints, springs, pin hinges)
+        if (Array.isArray(state.constraints)) {
+          const entityMap = {};
+          for (const ent of state.entities) entityMap[ent.id] = ent;
+
+          for (const c of state.constraints) {
+            const eA = entityMap[c.entity_a];
+            if (!eA) continue;
+            const eB = c.entity_b ? entityMap[c.entity_b] : null;
+
+            const aA = c.anchor_a || { x: 0, y: 0 };
+            const angA = eA.position?.theta || eA.angle || 0;
+            const cosA = Math.cos(angA), sinA = Math.sin(angA);
+            const ax1 = (eA.position.x + (aA.x * cosA - aA.y * sinA)) * envW;
+            const ay1 = (eA.position.y + (aA.x * sinA + aA.y * cosA)) * envH;
+
+            let ax2, ay2;
+            if (eB) {
+              const aB = c.anchor_b || { x: 0, y: 0 };
+              const angB = eB.position?.theta || eB.angle || 0;
+              const cosB = Math.cos(angB), sinB = Math.sin(angB);
+              ax2 = (eB.position.x + (aB.x * cosB - aB.y * sinB)) * envW;
+              ay2 = (eB.position.y + (aB.x * sinB + aB.y * cosB)) * envH;
+            } else {
+              const wAnc = c.anchor_b || c.world_anchor || { x: 0, y: 0 };
+              ax2 = wAnc.x * envW;
+              ay2 = wAnc.y * envH;
+            }
+
+            ctx.save();
+            ctx.strokeStyle = c.type === 'spring' ? '#F59E0B' : '#94A3B8';
+            ctx.lineWidth = c.type === 'pin' ? 3 : 2;
+            if (c.type === 'spring') {
+              ctx.setLineDash([5, 4]);
+            }
+            ctx.beginPath();
+            ctx.moveTo(ax1, ay1);
+            ctx.lineTo(ax2, ay2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#38BDF8';
+            ctx.beginPath();
+            ctx.arc(ax1, ay1, 3.5, 0, Math.PI * 2);
+            ctx.arc(ax2, ay2, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
           }
         }
 
@@ -932,14 +992,19 @@ export default function Playground({ onOpenBenchmarks }) {
           } else if (ent.type === 'box') {
             const w = ent.size.width * envW;
             const h = ent.size.height * envH;
-            const px = (ent.position.x * envW) - (w / 2.0);
-            const py = (ent.position.y * envH) - (h / 2.0);
+            const cx = ent.position.x * envW;
+            const cy = ent.position.y * envH;
+            const angle = ent.position?.theta || ent.angle || 0.0;
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            if (angle !== 0.0) ctx.rotate(angle);
 
             // Halo Glow
             ctx.shadowColor = color;
             ctx.shadowBlur = isSelected ? 20 : 10;
             ctx.fillStyle = color;
-            ctx.fillRect(px, py, w, h);
+            ctx.fillRect(-w / 2.0, -h / 2.0, w, h);
             ctx.shadowBlur = 0;
 
             // Selection Border
@@ -947,7 +1012,7 @@ export default function Playground({ onOpenBenchmarks }) {
               ctx.strokeStyle = "#FFFFFF";
               ctx.lineWidth = 2.5;
               ctx.setLineDash([4, 4]);
-              ctx.strokeRect(px - 4, py - 4, w + 8, h + 8);
+              ctx.strokeRect(-w / 2.0 - 4, -h / 2.0 - 4, w + 8, h + 8);
               ctx.setLineDash([]);
             }
 
@@ -955,28 +1020,103 @@ export default function Playground({ onOpenBenchmarks }) {
             if (showHitboxes) {
               ctx.strokeStyle = "#F43F5E";
               ctx.lineWidth = 1;
-              ctx.strokeRect(px, py, w, h);
+              ctx.strokeRect(-w / 2.0, -h / 2.0, w, h);
             }
+            ctx.restore();
 
             // Velocity Vector Debug
             if (showVectors && (ent.velocity.vx !== 0 || ent.velocity.vy !== 0)) {
               ctx.strokeStyle = "#38BDF8";
               ctx.lineWidth = 2;
               ctx.beginPath();
-              ctx.moveTo(px + (w / 2), py + (h / 2));
-              ctx.lineTo(px + (w / 2) + (ent.velocity.vx * 120), py + (h / 2) + (ent.velocity.vy * 120));
+              ctx.moveTo(cx, cy);
+              ctx.lineTo(cx + (ent.velocity.vx * 120), cy + (ent.velocity.vy * 120));
               ctx.stroke();
             }
 
             // Drag Coordinate Label
             if (isDraggingThis || isSelected) {
               ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-              ctx.fillRect(px + (w / 2) - 36, py - 26, 72, 18);
+              ctx.fillRect(cx - 36, cy - (h / 2.0) - 26, 72, 18);
               ctx.fillStyle = "#38BDF8";
               ctx.font = "10px monospace";
               ctx.textAlign = "center";
-              ctx.fillText(`${ent.position.x.toFixed(2)}, ${ent.position.y.toFixed(2)}`, px + (w / 2), py - 13);
+              ctx.fillText(`${ent.position.x.toFixed(2)}, ${ent.position.y.toFixed(2)}`, cx, cy - (h / 2.0) - 13);
             }
+
+          } else if (ent.type === 'capsule') {
+            const cx = ent.position.x * envW;
+            const cy = ent.position.y * envH;
+            const r = (ent.size?.radius || 0.03) * minDim;
+            const len = (ent.size?.length || 0.1) * minDim;
+            const angle = (ent.position?.theta || ent.angle || 0.0) + (ent.size?.angle || 0.0);
+
+            ctx.save();
+            ctx.translate(cx, cy);
+            if (angle !== 0.0) ctx.rotate(angle);
+
+            ctx.shadowColor = color;
+            ctx.shadowBlur = isSelected ? 20 : 10;
+            ctx.fillStyle = color;
+
+            const hl = len / 2.0;
+            ctx.beginPath();
+            ctx.arc(-hl, 0, r, Math.PI / 2, (Math.PI * 3) / 2);
+            ctx.arc(hl, 0, r, (Math.PI * 3) / 2, Math.PI / 2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            if (isSelected) {
+              ctx.strokeStyle = "#FFFFFF";
+              ctx.lineWidth = 2;
+              ctx.setLineDash([4, 4]);
+              ctx.stroke();
+              ctx.setLineDash([]);
+            }
+            ctx.restore();
+
+          } else if (ent.type === 'segment') {
+            const sx = ent.position.x * envW;
+            const sy = ent.position.y * envH;
+            const ex = (ent.size?.end_x ?? ent.position.x) * envW;
+            const ey = (ent.size?.end_y ?? ent.position.y) * envH;
+            const th = Math.max(2, (ent.size?.thickness || 0.005) * minDim);
+
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = th;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+            ctx.restore();
+
+          } else if (ent.type === 'text') {
+            const px = ent.position.x * envW;
+            const py = ent.position.y * envH;
+            const fontScale = ent.size?.font_scale || 0.025;
+            const fontSize = Math.max(10, Math.round(fontScale * minDim));
+            const align = ent.size?.align || 'center';
+
+            let displayText = ent.template || ent.id;
+            if (ent.template && state.state_variables) {
+              displayText = ent.template.replace(/\{([a-zA-Z0-9_.]+)\}/g, (_, path) => {
+                const parts = path.split('.');
+                let val = state.state_variables;
+                for (const p of parts) val = val != null ? val[p] : undefined;
+                return val !== undefined ? String(val) : `{${path}}`;
+              });
+            }
+
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.font = `600 ${fontSize}px "Segoe UI", Inter, system-ui, sans-serif`;
+            ctx.textAlign = align;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(displayText, px, py);
+            ctx.restore();
           }
 
           ctx.restore();

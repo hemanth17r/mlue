@@ -122,6 +122,16 @@ class ComputedShape:
     center: Tuple[float, float]
     color: str
     text: Optional[str] = None
+    theta: float = 0.0
+
+
+@dataclass(frozen=True)
+class ComputedConstraint:
+    id: str
+    type: str  # "distance", "spring", "pin"
+    p1: Tuple[float, float]  # (x1, y1) in concrete screen coords
+    p2: Tuple[float, float]  # (x2, y2) in concrete screen coords
+    color: str = "#94A3B8"
 
 
 @dataclass(frozen=True)
@@ -130,6 +140,7 @@ class EvaluationResult:
     height: int
     background: str
     shapes: List[ComputedShape]
+    constraints: List[ComputedConstraint] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
