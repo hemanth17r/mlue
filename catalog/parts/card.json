@@ -1,0 +1,30 @@
+{
+  "id": "card",
+  "kind": "part",
+  "version": "1.0.0",
+  "tags": ["ui", "surface", "card", "container", "panel"],
+  "summary": "Hairline surface container with elevated luminance background and internal padding",
+  "defaults": {
+    "id": "card_main",
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.7, "height": 0.5 },
+    "color": "#161F30",
+    "border_color": "#1E293B"
+  },
+  "entity_template": {
+    "id": "card_main",
+    "type": "box",
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.7, "height": 0.5 },
+    "layout": {
+      "direction": "vertical",
+      "gap": 0.03,
+      "padding": 0.04,
+      "align_items": "start"
+    },
+    "properties": {
+      "color": "#161F30",
+      "solid": false
+    }
+  }
+}

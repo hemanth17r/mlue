@@ -1,0 +1,25 @@
+{
+  "id": "ball",
+  "kind": "part",
+  "version": "1.0.0",
+  "tags": ["game", "dynamic", "kinematic", "ball", "bounce", "elastic"],
+  "summary": "Dynamic elastic restitution ball with velocity vector and pairwise reflection",
+  "defaults": {
+    "id": "ball_01",
+    "position": { "x": 0.5, "y": 0.7 },
+    "radius": 0.025,
+    "velocity": { "vx": 0.35, "vy": -0.45 },
+    "color": "#38BDF8"
+  },
+  "entity_template": {
+    "id": "ball_01",
+    "type": "circle",
+    "position": { "x": 0.5, "y": 0.7 },
+    "size": { "radius": 0.025 },
+    "velocity": { "vx": 0.35, "vy": -0.45 },
+    "properties": {
+      "color": "#38BDF8",
+      "solid": true
+    }
+  }
+}

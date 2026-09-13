@@ -199,7 +199,6 @@ class MLUEEngine:
             gap = float(layout.get("gap", 0.01))
             padding = float(layout.get("padding", 0.0))
             align_items = layout.get("align_items")
-            children = children_by_parent[container.id]
             if direction == "auto":
                 if env is not None:
                     cw = container.size.width * env.width if isinstance(container.size, BoxSize) else float(env.width)
@@ -212,6 +211,7 @@ class MLUEEngine:
             else:
                 is_vertical = direction in ("vertical", "stack_y")
             cursor = padding if padding > 0.0 else gap
+            children = children_by_parent[container.id]
 
             for child in children:
                 dim = self._get_stack_dimension(child, is_vertical)

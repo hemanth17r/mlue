@@ -29,7 +29,7 @@ def make_playable_url(scene: dict) -> str:
         b64 = base64.b64encode(encoded.encode('utf-8')).decode('utf-8')
         return f"https://mlue-bench.vercel.app/#data={b64}"
     except Exception:
-        return "https://mlue-bench.vercel.app/#playground"
+        return "https://mlue-bench.vercel.app/#benchmarks"
 
 
 class handler(BaseHTTPRequestHandler):

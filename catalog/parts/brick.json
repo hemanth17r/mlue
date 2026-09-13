@@ -1,0 +1,35 @@
+{
+  "id": "brick",
+  "kind": "part",
+  "version": "1.0.0",
+  "tags": ["game", "obstacle", "destructible", "brick", "target"],
+  "summary": "Destructible score-yielding rectangular obstacle with collision rule and destroy action",
+  "defaults": {
+    "id": "brick_01",
+    "position": { "x": 0.25, "y": 0.18 },
+    "size": { "width": 0.18, "height": 0.05 },
+    "color": "#F43F5E",
+    "score_value": 10
+  },
+  "entity_template": {
+    "id": "brick_01",
+    "type": "box",
+    "position": { "x": 0.25, "y": 0.18 },
+    "size": { "width": 0.18, "height": 0.05 },
+    "properties": {
+      "color": "#F43F5E",
+      "solid": true
+    }
+  },
+  "rules": [
+    {
+      "trigger": "collision",
+      "event": "collision",
+      "entities": ["ball_01", "brick_01"],
+      "actions": [
+        { "type": "destroy_entity", "target": "brick_01" },
+        { "type": "increment", "target": "score", "amount": 10 }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "id": "boundary",
+  "kind": "part",
+  "version": "1.0.0",
+  "tags": ["game", "arena", "wall", "boundary", "solid"],
+  "summary": "Standard 4-wall arena boundary enclosure with elastic collision reflection",
+  "defaults": {
+    "thickness": 0.02,
+    "color": "#334155"
+  },
+  "entities_template": [
+    {
+      "id": "wall_top",
+      "type": "box",
+      "position": { "x": 0.5, "y": 0.01 },
+      "size": { "width": 1.0, "height": 0.02 },
+      "properties": { "color": "#334155", "solid": true }
+    },
+    {
+      "id": "wall_left",
+      "type": "box",
+      "position": { "x": 0.01, "y": 0.5 },
+      "size": { "width": 0.02, "height": 1.0 },
+      "properties": { "color": "#334155", "solid": true }
+    },
+    {
+      "id": "wall_right",
+      "type": "box",
+      "position": { "x": 0.99, "y": 0.5 },
+      "size": { "width": 0.02, "height": 1.0 },
+      "properties": { "color": "#334155", "solid": true }
+    },
+    {
+      "id": "wall_bottom",
+      "type": "box",
+      "position": { "x": 0.5, "y": 0.99 },
+      "size": { "width": 1.0, "height": 0.02 },
+      "properties": { "color": "#334155", "solid": true }
+    }
+  ]
+}

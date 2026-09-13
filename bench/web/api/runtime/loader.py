@@ -135,7 +135,6 @@ def load_mlue(source: Union[str, Path, Dict[str, Any]]) -> MLUEDocument:
     if isinstance(source, (str, Path)):
         path = Path(source)
         if path.exists() and path.is_file():
-            # Check for binary .mlueb magic or extension
             if path.suffix.lower() == ".mlueb":
                 from runtime.binary import load_mlueb
                 return load_mlueb(path)

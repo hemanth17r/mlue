@@ -1,0 +1,35 @@
+{
+  "id": "palettes",
+  "kind": "token",
+  "version": "1.0.0",
+  "tags": ["token", "design", "palette", "color", "slate"],
+  "summary": "Curated Big-Tech color tokens: deep slate surfaces, hairline borders, and primary status accents",
+  "data": {
+    "surfaces": {
+      "background_dark": "#0B0F19",
+      "background_canvas": "#0F172A",
+      "surface_card": "#161F30",
+      "surface_raised": "#1E293B",
+      "surface_overlay": "#334155"
+    },
+    "borders": {
+      "hairline_subtle": "#1E293B",
+      "hairline_strong": "#334155",
+      "hairline_focus": "#38BDF8"
+    },
+    "accents": {
+      "sky": "#38BDF8",
+      "emerald": "#10B981",
+      "rose": "#F43F5E",
+      "amber": "#F59E0B",
+      "indigo": "#6366F1",
+      "violet": "#8B5CF6"
+    },
+    "text": {
+      "primary": "#F8FAFC",
+      "secondary": "#94A3B8",
+      "muted": "#64748B",
+      "inverse": "#0F172A"
+    }
+  }
+}

@@ -25,9 +25,8 @@ from .loader import load_mlue, validate_and_parse, MLUEValidationError
 from .engine import MLUEEngine
 from .adapter import PresentationAdapter, TkinterAdapter
 from .ai_interface import MLUEAIInterface
-from .binary import load_mlueb, save_mlueb
-from .wal import WALWriter, WALReader, WALReplayer
 from .patch import MLUEPatchEngine, apply_patch
+from .linter import MLUELinter, lint_mlue, LintReport, DiagnosticIssue
 from .spatial import SpatialGrid, BVHTree2D, AABB2D
 from .fixed_point import FixedPointEngine, FixedVector
 from .batch import BatchSimulator
@@ -61,13 +60,12 @@ __all__ = [
     "PresentationAdapter",
     "TkinterAdapter",
     "MLUEAIInterface",
-    "load_mlueb",
-    "save_mlueb",
-    "WALWriter",
-    "WALReader",
-    "WALReplayer",
     "MLUEPatchEngine",
     "apply_patch",
+    "MLUELinter",
+    "lint_mlue",
+    "LintReport",
+    "DiagnosticIssue",
     "SpatialGrid",
     "BVHTree2D",
     "AABB2D",

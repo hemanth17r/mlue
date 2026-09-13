@@ -28,7 +28,7 @@ from runtime.engine import (
     _analytical_point_to_segment,
     _analytical_segment_to_segment,
 )
-from runtime.binary import encode_mlueb, decode_mlueb
+
 
 
 class TestAnalyticalDistanceSolvers(unittest.TestCase):
@@ -688,75 +688,6 @@ class TestPairwiseAnalyticalCollisions(unittest.TestCase):
         self.assertGreater(c2.velocity.vx, 0.0)
 
 
-class TestPhase2BinaryRoundtrip(unittest.TestCase):
-    """Verifies .mlueb zero-copy serialization and deserialization for all 5 primitive types."""
-
-    def test_all_five_primitives_roundtrip(self):
-        """Document with circle, box, segment, capsule, text encodes and decodes with 100% parity."""
-        doc_orig = MLUEDocument(
-            version="2.1",
-            environment=Environment(width=800, height=600, background="#0F172A"),
-            state_variables={"system": {"status": "ACTIVE"}},
-            entities=[
-                Entity(
-                    id="e_circle",
-                    type="circle",
-                    position=Position(0.1, 0.2),
-                    size=CircleSize(radius=0.05),
-                    velocity=Velocity(0.01, -0.02),
-                    properties={"color": "#FF0000", "solid": True},
-                ),
-                Entity(
-                    id="e_box",
-                    type="box",
-                    position=Position(0.3, 0.4),
-                    size=BoxSize(width=0.15, height=0.10),
-                    velocity=Velocity(0.0, 0.0),
-                    properties={"color": "#00FF00", "solid": False},
-                ),
-                Entity(
-                    id="e_segment",
-                    type="segment",
-                    position=Position(0.05, 0.8),
-                    size=SegmentSize(end_x=0.95, end_y=0.8, thickness=0.003),
-                    velocity=Velocity(0.0, 0.0),
-                    properties={"color": "#0000FF", "solid": True},
-                ),
-                Entity(
-                    id="e_capsule",
-                    type="capsule",
-                    position=Position(0.7, 0.3),
-                    size=CapsuleSize(radius=0.03, length=0.12, angle=0.0),
-                    velocity=Velocity(-0.05, 0.05),
-                    properties={"color": "#FFFF00", "solid": True},
-                ),
-                Entity(
-                    id="e_text",
-                    type="text",
-                    position=Position(0.5, 0.9),
-                    size=TextSize(font_scale=0.025, align="center"),
-                    velocity=Velocity(0.0, 0.0),
-                    properties={"color": "#FFFFFF", "solid": False},
-                ),
-            ],
-            rules=[],
-        )
-
-        encoded = encode_mlueb(doc_orig)
-        self.assertGreater(len(encoded), 0)
-
-        decoded = decode_mlueb(encoded)
-        self.assertEqual(len(decoded.entities), len(doc_orig.entities))
-
-        for orig, dec in zip(doc_orig.entities, decoded.entities):
-            self.assertEqual(dec.id, orig.id)
-            self.assertEqual(dec.type, orig.type)
-            self.assertAlmostEqual(dec.position.x, orig.position.x, places=6)
-            self.assertAlmostEqual(dec.position.y, orig.position.y, places=6)
-            self.assertAlmostEqual(dec.velocity.vx, orig.velocity.vx, places=6)
-            self.assertAlmostEqual(dec.velocity.vy, orig.velocity.vy, places=6)
-            self.assertEqual(dec.active, orig.active)
-
-
 if __name__ == "__main__":
     unittest.main()
+

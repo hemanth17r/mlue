@@ -43,6 +43,28 @@ TOOLS_DEFINITIONS = [
         },
     },
     {
+        "name": "mlue_lint",
+        "description": "Performs compile-time static diagnostic linting on an MLUE document, returning structured issues with JSON pointers, error codes, and suggested fixes for self-healing AI generation.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "document": {
+                    "type": "object",
+                    "description": "The MLUE document object to lint."
+                },
+                "scene_string": {
+                    "type": "string",
+                    "description": "Raw JSON string of the MLUE document."
+                },
+                "file_path": {
+                    "type": "string",
+                    "description": "File path on disk to the .mlue scene."
+                }
+            },
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "mlue_start_simulation",
         "description": "Initializes a stateful in-memory MLUE simulation session from a document object or file path.",
         "inputSchema": {
@@ -236,6 +258,75 @@ TOOLS_DEFINITIONS = [
             "additionalProperties": False,
         },
     },
+    {
+        "name": "mlue_catalog_query",
+        "description": "Searches the MLUE catalog for standardized shapes, parts, design tokens, and blueprints using semantic keyword and tag matching.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Search keyword or tag (e.g. 'paddle', 'ball', 'bounce', 'card', 'slate', 'breakout')."
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": ["shape", "part", "token", "blueprint"],
+                    "description": "Optional category filter."
+                }
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "mlue_catalog_get",
+        "description": "Fetches the complete schema, default properties, entity templates, and rules for a specific catalog shape, part, token, or blueprint.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": ["shape", "part", "token", "blueprint"],
+                    "description": "Category of the catalog entry."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Identifier of the catalog entry (e.g. 'paddle', 'ball', 'palettes', 'breakout')."
+                }
+            },
+            "required": ["kind", "name"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "mlue_catalog_register",
+        "description": "Programmatically registers and persists a newly synthesized shape, part, token, or blueprint into the MLUE catalog after validating [0.0, 1.0] coordinate invariants.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": ["shape", "part", "token", "blueprint"],
+                    "description": "Category of the catalog entry."
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Unique identifier for the new entry."
+                },
+                "entry": {
+                    "type": "object",
+                    "description": "The complete catalog entry dictionary conforming to MLUE specification."
+                },
+                "overwrite": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Whether to overwrite an existing entry with the same name."
+                }
+            },
+            "required": ["kind", "name", "entry"],
+            "additionalProperties": False,
+        },
+    },
 ]
 
 
@@ -249,6 +340,14 @@ def handle_tool_call(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         doc = arguments.get("document")
         result = ai_interface.validate_scene(doc)
         return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
+    elif name == "mlue_lint":
+        from runtime.linter import lint_mlue
+        target = arguments.get("document") or arguments.get("scene_string") or arguments.get("file_path")
+        if not target:
+            return {"isError": True, "content": [{"type": "text", "text": "Error: Must provide 'document', 'scene_string', or 'file_path'."}]}
+        report = lint_mlue(target)
+        return {"content": [{"type": "text", "text": json.dumps(report.to_dict(), indent=2)}]}
 
     elif name == "mlue_start_simulation":
         target = arguments.get("document") or arguments.get("file_path")
@@ -311,6 +410,30 @@ def handle_tool_call(name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
         result = ai_interface.close_session(session_id)
         return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
 
+    elif name == "mlue_catalog_query":
+        query = arguments.get("query", "")
+        kind = arguments.get("kind")
+        result = ai_interface.catalog_query(query, kind=kind)
+        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
+    elif name == "mlue_catalog_get":
+        kind = arguments.get("kind", "")
+        entry_name = arguments.get("name", "")
+        result = ai_interface.catalog_get(kind, entry_name)
+        if result is None:
+            return {"isError": True, "content": [{"type": "text", "text": f"Catalog entry '{kind}/{entry_name}' not found."}]}
+        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
+    elif name == "mlue_catalog_register":
+        kind = arguments.get("kind", "")
+        entry_name = arguments.get("name", "")
+        entry = arguments.get("entry", {})
+        overwrite = arguments.get("overwrite", False)
+        result = ai_interface.catalog_register(kind, entry_name, entry, overwrite=overwrite)
+        if not result.get("success"):
+            return {"isError": True, "content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+        return {"content": [{"type": "text", "text": json.dumps(result, indent=2)}]}
+
     else:
         return {"isError": True, "content": [{"type": "text", "text": f"Unknown tool '{name}'."}]}
 
@@ -328,7 +451,8 @@ def handle_jsonrpc_message(msg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             "result": {
                 "protocolVersion": PROTOCOL_VERSION,
                 "capabilities": {
-                    "tools": {}
+                    "tools": {},
+                    "resources": {}
                 },
                 "serverInfo": {
                     "name": SERVER_NAME,
@@ -360,6 +484,43 @@ def handle_jsonrpc_message(msg: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             "jsonrpc": "2.0",
             "id": msg_id,
             "result": res
+        }
+
+    elif method == "resources/list":
+        resources = ai_interface.catalog_list_resources()
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "result": {
+                "resources": resources
+            }
+        }
+
+    elif method == "resources/read":
+        uri = params.get("uri", "")
+        if uri.startswith("mlue://catalog/"):
+            parts = uri.replace("mlue://catalog/", "").strip("/").split("/")
+            if len(parts) >= 2:
+                kind, name = parts[0], parts[1]
+                entry = ai_interface.catalog_get(kind, name)
+                if entry is not None:
+                    return {
+                        "jsonrpc": "2.0",
+                        "id": msg_id,
+                        "result": {
+                            "contents": [
+                                {
+                                    "uri": uri,
+                                    "mimeType": "application/json",
+                                    "text": json.dumps(entry, indent=2)
+                                }
+                            ]
+                        }
+                    }
+        return {
+            "jsonrpc": "2.0",
+            "id": msg_id,
+            "error": {"code": -32602, "message": f"Resource '{uri}' not found."}
         }
 
     else:
@@ -512,6 +673,59 @@ def run_self_test():
     close_obj = json.loads(close_resp["result"]["content"][0]["text"])
     assert close_obj["success"] is True
     print("[PASS] mlue_close_simulation verified.")
+
+    # 9. Resources List
+    res_list_req = {"jsonrpc": "2.0", "id": 9, "method": "resources/list", "params": {}}
+    res_list_resp = handle_jsonrpc_message(res_list_req)
+    resources = res_list_resp["result"]["resources"]
+    assert len(resources) >= 18
+    assert any(r["uri"] == "mlue://catalog/part/paddle" for r in resources)
+    print(f"[PASS] MCP resources/list verified ({len(resources)} catalog resources discovered).")
+
+    # 10. Resources Read
+    res_read_req = {
+        "jsonrpc": "2.0",
+        "id": 10,
+        "method": "resources/read",
+        "params": {"uri": "mlue://catalog/part/paddle"}
+    }
+    res_read_resp = handle_jsonrpc_message(res_read_req)
+    content_text = res_read_resp["result"]["contents"][0]["text"]
+    paddle_obj = json.loads(content_text)
+    assert paddle_obj["id"] == "paddle"
+    print("[PASS] MCP resources/read verified for mlue://catalog/part/paddle.")
+
+    # 11. Tool: mlue_catalog_query
+    query_req = {
+        "jsonrpc": "2.0",
+        "id": 11,
+        "method": "tools/call",
+        "params": {
+            "name": "mlue_catalog_query",
+            "arguments": {"query": "paddle"}
+        }
+    }
+    query_resp = handle_jsonrpc_message(query_req)
+    query_results = json.loads(query_resp["result"]["content"][0]["text"])
+    assert len(query_results) > 0
+    assert query_results[0]["id"] == "paddle"
+    print("[PASS] mlue_catalog_query verified.")
+
+    # 12. Tool: mlue_catalog_get
+    get_req = {
+        "jsonrpc": "2.0",
+        "id": 12,
+        "method": "tools/call",
+        "params": {
+            "name": "mlue_catalog_get",
+            "arguments": {"kind": "part", "name": "ball"}
+        }
+    }
+    get_resp = handle_jsonrpc_message(get_req)
+    ball_obj = json.loads(get_resp["result"]["content"][0]["text"])
+    assert ball_obj["id"] == "ball"
+    assert ball_obj["entity_template"]["type"] == "circle"
+    print("[PASS] mlue_catalog_get verified.")
 
     print("=== All MCP Protocol Tests Passed Successfully! ===")
 

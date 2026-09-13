@@ -1,0 +1,15 @@
+{
+  "id": "typography",
+  "kind": "token",
+  "version": "1.0.0",
+  "tags": ["token", "design", "typography", "scale", "font"],
+  "summary": "4-tier grotesque typography scale expressed as normalized viewport ratios",
+  "data": {
+    "scales": {
+      "display": { "font_scale": 0.048, "line_height": 1.1, "letter_spacing": -0.02 },
+      "title": { "font_scale": 0.032, "line_height": 1.2, "letter_spacing": -0.01 },
+      "body": { "font_scale": 0.022, "line_height": 1.4, "letter_spacing": 0.0 },
+      "mono": { "font_scale": 0.018, "line_height": 1.3, "letter_spacing": 0.02 }
+    }
+  }
+}

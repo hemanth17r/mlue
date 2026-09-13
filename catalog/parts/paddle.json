@@ -1,0 +1,31 @@
+{
+  "id": "paddle",
+  "kind": "part",
+  "version": "1.0.0",
+  "tags": ["game", "kinematic", "controller", "player", "paddle"],
+  "summary": "Horizontal user-controlled kinematic paddle with clamped screen boundaries",
+  "defaults": {
+    "id": "paddle_bottom",
+    "position": { "x": 0.5, "y": 0.92 },
+    "size": { "width": 0.22, "height": 0.035 },
+    "color": "#10B981",
+    "speed": 0.7,
+    "channel": "player_bottom",
+    "axis": "x"
+  },
+  "entity_template": {
+    "id": "paddle_bottom",
+    "type": "box",
+    "position": { "x": 0.5, "y": 0.92 },
+    "size": { "width": 0.22, "height": 0.035 },
+    "properties": {
+      "color": "#10B981",
+      "solid": true,
+      "control": {
+        "channel": "player_bottom",
+        "axis": "x",
+        "speed": 0.7
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "id": "breakout",
+  "kind": "blueprint",
+  "version": "1.0.0",
+  "tags": ["game", "blueprint", "recipe", "breakout", "arcade"],
+  "summary": "Classic 2D Breakout assembly recipe: Arena boundaries, player paddle, elastic ball, and destructible bricks",
+  "layers": [
+    {
+      "layer": 1,
+      "name": "State Substrate",
+      "state_variables": {
+        "score": 0,
+        "lives": 3,
+        "bricks_remaining": 6,
+        "game_state": "PLAYING"
+      }
+    },
+    {
+      "layer": 2,
+      "name": "Arena Bounds",
+      "parts_required": ["boundary"]
+    },
+    {
+      "layer": 3,
+      "name": "Kinematic Actors",
+      "parts_required": ["paddle", "ball"]
+    },
+    {
+      "layer": 4,
+      "name": "Destructible Obstacles",
+      "parts_required": ["brick"]
+    },
+    {
+      "layer": 5,
+      "name": "Rules & State Transitions",
+      "rules": [
+        {
+          "trigger": "collision",
+          "event": "collision",
+          "entities": ["ball_01", "brick_01"],
+          "actions": [
+            { "type": "destroy_entity", "target": "brick_01" },
+            { "type": "increment", "target": "score", "amount": 10 },
+            { "type": "increment", "target": "bricks_remaining", "amount": -1 }
+          ]
+        },
+        {
+          "trigger": "state_condition",
+          "condition": { "state_variable": "bricks_remaining", "op": "<=", "value": 0 },
+          "actions": [
+            { "type": "set", "target": "game_state", "value": "WON" }
+          ]
+        }
+      ]
+    }
+  ]
+}
