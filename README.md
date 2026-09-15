@@ -98,25 +98,52 @@ We believe in radical engineering honesty:
 
 MLUE provides a single, zero-dependency canonical MCP gateway (`mlue-mcp`) giving AI models (Claude Desktop, Cursor, autonomous agents) native tool access to discover catalog parts, statically lint scenes, run deterministic simulations in microseconds, and apply surgical in-flight entity mutations.
 
-### Quickstart for Claude Desktop (Zero-Install via `uvx`)
-Add this block to your Claude Desktop config (`claude_desktop_config.json`):
+### Quickstart for Claude Desktop
 
+#### 1. Open Claude Desktop Config
+* In Claude Desktop: Click **Settings** (⚙️) $\to$ **Developer** $\to$ **Edit Config**.
+* *Or open the file directly:*
+  * **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+  * **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+#### 2. Paste Configuration
+
+**Option A: Instant Zero-Install via `uvx` (No git clone needed):**
 ```json
 {
   "mcpServers": {
     "mlue": {
       "command": "uvx",
-      "args": ["mlue-mcp"]
+      "args": [
+        "--from",
+        "git+https://github.com/hemanth17r/mlue.git",
+        "mlue-mcp"
+      ]
     }
   }
 }
 ```
-*(Or if running from local source: `["python", "C:/path/to/mlue/mcp_server.py"]`)*
+
+**Option B: From Local Source (If you cloned the repo):**
+```json
+{
+  "mcpServers": {
+    "mlue": {
+      "command": "python",
+      "args": ["/path/to/mlue/mcp_server.py"]
+    }
+  }
+}
+```
+
+#### 3. Restart Claude Desktop
+Look for the **hammer icon 🔨** in the prompt box. Claude now has access to all 12 MLUE tools.
 
 ### Example Prompts to Try with Claude:
 * *"Search the MLUE catalog for a paddle and ball, assemble a breakout arena, and simulate 60 ticks."*
 * *"Statically lint this MLUE document and auto-repair any coordinate bounds or schema violations."*
 * *"Inspect the live simulation state and mutate the ball velocity vector in real-time."*
+* *"Run a 100-step simulation of examples/pong.mlue and tell me the final score."*
 
 ---
 
