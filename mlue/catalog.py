@@ -34,7 +34,7 @@ class Catalog:
             self.catalog_dir = Path(catalog_dir).resolve()
         else:
             # Check packaged catalog_data first, then fallback to repo root catalog
-            pkg_data_dir = (Path(__file__).resolve().parent.parent / "mlue" / "catalog_data").resolve()
+            pkg_data_dir = (Path(__file__).resolve().parent / "catalog_data").resolve()
             if pkg_data_dir.exists():
                 self.catalog_dir = pkg_data_dir
             else:

@@ -21,10 +21,7 @@ export default function VerificationTerminal() {
         <div className="p-2.5 rounded-xl bg-black/50 border border-cyan-500/20 text-cyan-400 shrink-0">
           <Terminal className="w-4 h-4" />
         </div>
-        <div>
-          <h4 className="text-xs font-bold text-white font-mono">Reproduce Locally: Run Verification Suite</h4>
-          <p className="text-[11px] text-slate-400 font-sans mt-0.5">Execute the self-verifying benchmark harness directly on your machine.</p>
-        </div>
+        <h4 className="text-xs font-bold text-white font-mono">Local Execution</h4>
       </div>
 
       {/* Right: Clean Terminal Command Box */}

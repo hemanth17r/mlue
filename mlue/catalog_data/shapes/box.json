@@ -1,0 +1,23 @@
+{
+  "id": "box",
+  "kind": "shape",
+  "version": "1.0.0",
+  "tags": ["shape", "geometry", "primitive", "rectangle", "box"],
+  "summary": "Normalized 2D rectangle primitive with continuous coordinates and optional corner squircle radius",
+  "defaults": {
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.2, "height": 0.1 },
+    "color": "#38BDF8",
+    "solid": true,
+    "anchor": "center"
+  },
+  "entity_template": {
+    "type": "box",
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.2, "height": 0.1 },
+    "properties": {
+      "color": "#38BDF8",
+      "solid": true
+    }
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "id": "pong",
+  "kind": "blueprint",
+  "version": "1.0.0",
+  "tags": ["game", "blueprint", "recipe", "pong", "two_player"],
+  "summary": "Dual-player 2D Pong recipe: Top & bottom boundary walls, dual kinematic paddles, and ball reset rules",
+  "layers": [
+    {
+      "layer": 1,
+      "name": "State Substrate",
+      "state_variables": {
+        "score_player_1": 0,
+        "score_player_2": 0,
+        "game_state": "PLAYING"
+      }
+    },
+    {
+      "layer": 2,
+      "name": "Arena Bounds",
+      "parts_required": ["boundary"]
+    },
+    {
+      "layer": 3,
+      "name": "Kinematic Actors",
+      "parts_required": ["paddle", "ball"]
+    },
+    {
+      "layer": 4,
+      "name": "Scoring Rules",
+      "rules": [
+        {
+          "trigger": "collision",
+          "event": "collision",
+          "entities": ["ball_01", "wall_bottom"],
+          "actions": [
+            { "type": "increment", "target": "score_player_2", "amount": 1 },
+            { "type": "set_property", "target": "ball_01", "property": "position.y", "value": 0.5 }
+          ]
+        },
+        {
+          "trigger": "collision",
+          "event": "collision",
+          "entities": ["ball_01", "wall_top"],
+          "actions": [
+            { "type": "increment", "target": "score_player_1", "amount": 1 },
+            { "type": "set_property", "target": "ball_01", "property": "position.y", "value": 0.5 }
+          ]
+        }
+      ]
+    }
+  ]
+}

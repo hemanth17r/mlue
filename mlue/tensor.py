@@ -10,8 +10,8 @@ import math
 import ctypes
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any, Union, Tuple
-from runtime.model import SimulationState, Entity
-from runtime.engine import MLUEEngine
+from mlue.model import SimulationState, Entity
+from mlue.engine import MLUEEngine
 
 # Optional zero-copy NumPy integration
 try:

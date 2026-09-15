@@ -27,6 +27,7 @@ from .patch import (
     compute_document_hash,
     MLUEPatchError,
 )
+from .catalog import Catalog, CatalogError, CatalogValidationError
 
 
 class MLUEAIInterface:
@@ -36,6 +37,7 @@ class MLUEAIInterface:
         self.engine = MLUEEngine()
         self._sessions: Dict[str, SimulationState] = {}
         self._checkpoints = SessionCheckpointManager()
+        self.catalog = Catalog()
 
     def get_schema(self) -> Dict[str, Any]:
         """Returns the machine-readable schema definition and spatial invariant constraints."""
@@ -395,4 +397,36 @@ class MLUEAIInterface:
             return {"success": False, "error": f"Session '{session_id}' not found."}
         cps = self._checkpoints.list_checkpoints(session_id)
         return {"success": True, "session_id": session_id, "checkpoints": cps}
+
+    def catalog_query(self, query: str, kind: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Searches the catalog for matching shapes, parts, tokens, or blueprints."""
+        return self.catalog.search(query, kind=kind)
+
+    def catalog_get(self, kind: str, name: str) -> Optional[Dict[str, Any]]:
+        """Retrieves a catalog entry by kind and name."""
+        return self.catalog.get(kind, name)
+
+    def catalog_register(self, kind: str, name: str, entry: Dict[str, Any], overwrite: bool = False) -> Dict[str, Any]:
+        """Registers a new entry in the catalog."""
+        try:
+            return self.catalog.register(kind, name, entry, overwrite=overwrite)
+        except CatalogValidationError as e:
+            return {"success": False, "error": "Validation failed", "details": e.errors}
+        except CatalogError as e:
+            return {"success": False, "error": str(e)}
+
+    def catalog_list_resources(self) -> List[Dict[str, Any]]:
+        """Lists all catalog items as MCP Resource representations."""
+        items = self.catalog.list()
+        resources = []
+        for item in items:
+            kind = item.get("kind", "part")
+            item_id = item.get("id", "")
+            resources.append({
+                "uri": f"mlue://catalog/{kind}/{item_id}",
+                "name": f"{kind}/{item_id}",
+                "description": item.get("summary", ""),
+                "mimeType": "application/json"
+            })
+        return resources
 

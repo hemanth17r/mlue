@@ -9,7 +9,7 @@ import zlib
 import json
 from pathlib import Path
 from typing import Dict, Any, List, Tuple, Optional, Union
-from runtime.model import (
+from mlue.model import (
     MLUEDocument,
     Environment,
     Entity,
@@ -24,7 +24,7 @@ from runtime.model import (
     Condition,
     Action,
 )
-from runtime.loader import MLUEValidationError, validate_and_parse
+from mlue.loader import MLUEValidationError, validate_and_parse
 
 
 # Magic identifiers & format constants

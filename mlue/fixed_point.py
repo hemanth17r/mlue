@@ -8,7 +8,7 @@ Adheres strictly to Tier L1 Substrate Decoupling (Standard Library only: math, d
 import math
 from dataclasses import dataclass
 from typing import Tuple, Union, List, Set, FrozenSet, Optional
-from runtime.model import Entity, Position, Velocity, CircleSize, BoxSize, Environment
+from mlue.model import Entity, Position, Velocity, CircleSize, BoxSize, Environment
 
 
 # Q32.32 Fixed-Point Constants

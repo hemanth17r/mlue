@@ -9,7 +9,7 @@ import math
 from dataclasses import dataclass
 from typing import Dict, List, Tuple, Optional, Set, Union
 from collections import defaultdict
-from runtime.model import Entity, CircleSize, BoxSize, SegmentSize, CapsuleSize, TextSize, Environment
+from mlue.model import Entity, CircleSize, BoxSize, SegmentSize, CapsuleSize, TextSize, Environment
 
 
 @dataclass(slots=True)

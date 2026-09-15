@@ -14,7 +14,7 @@ from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from typing import Dict, Any, List, Optional, Union, Tuple
 
-from runtime.model import MLUEDocument, Entity, Environment
+from mlue.model import MLUEDocument, Entity, Environment
 
 
 VALID_ENTITY_TYPES = {"circle", "box", "segment", "capsule", "text"}
@@ -159,7 +159,7 @@ class MLUELinter:
 
         if isinstance(source, MLUEDocument):
             # Convert document to dictionary representation for full path traversal
-            from runtime.loader import document_to_dict
+            from mlue.loader import document_to_dict
             raw_data = document_to_dict(source)
         elif isinstance(source, (str, Path)):
             if isinstance(source, Path):

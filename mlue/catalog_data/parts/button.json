@@ -1,0 +1,33 @@
+{
+  "id": "button",
+  "kind": "part",
+  "version": "1.0.0",
+  "tags": ["ui", "interactive", "button", "trigger", "action"],
+  "summary": "Interactive pointer-colliding surface with discrete trigger action",
+  "defaults": {
+    "id": "btn_action",
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.18, "height": 0.06 },
+    "color": "#38BDF8",
+    "label": "SUBMIT"
+  },
+  "entity_template": {
+    "id": "btn_action",
+    "type": "box",
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.18, "height": 0.06 },
+    "properties": {
+      "color": "#38BDF8",
+      "solid": false
+    }
+  },
+  "rules": [
+    {
+      "trigger": "pointer_down",
+      "target": "btn_action",
+      "actions": [
+        { "type": "set_property", "target": "btn_action", "property": "color", "value": "#0284C7" }
+      ]
+    }
+  ]
+}

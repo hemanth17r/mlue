@@ -1,0 +1,24 @@
+{
+  "id": "spawner",
+  "kind": "part",
+  "version": "1.0.0",
+  "tags": ["simulation", "spawner", "emitter", "particles", "kinematic"],
+  "summary": "Kinematic entity position anchor with continuous emission parameters",
+  "defaults": {
+    "id": "emitter_center",
+    "position": { "x": 0.5, "y": 0.2 },
+    "rate_hz": 5,
+    "initial_speed": 0.3
+  },
+  "entity_template": {
+    "id": "emitter_center",
+    "type": "circle",
+    "position": { "x": 0.5, "y": 0.2 },
+    "size": { "radius": 0.015 },
+    "properties": {
+      "color": "#F59E0B",
+      "solid": false,
+      "emitter": true
+    }
+  }
+}

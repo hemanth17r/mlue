@@ -4,6 +4,10 @@ import { Cpu, BarChart3, BookOpen } from 'lucide-react';
 import { tapScale } from '../lib/motion';
 
 export default function Header({ latestRun, onOpenThesis }) {
+  const passedCount = latestRun?.passed_count ?? 14;
+  const totalCount = latestRun?.total_count ?? 15;
+  const pendingCount = Math.max(0, totalCount - passedCount);
+
   return (
     <header className="sticky top-0 z-50 border-b border-cyan-500/10 bg-[#030712]/90 backdrop-blur-2xl transition-all">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
@@ -20,18 +24,24 @@ export default function Header({ latestRun, onOpenThesis }) {
               <span className="text-xs sm:text-sm font-bold tracking-tight text-white">MLUE</span>
               <span className="text-[9px] sm:text-[10px] text-cyan-400 font-semibold tracking-wider hidden xs:inline">BENCHMARK</span>
             </div>
-            <span className="text-[9px] text-slate-400 font-sans hidden md:inline mt-0.5">15-Pillar Empirical Telemetry Suite</span>
           </div>
         </div>
 
         {/* Center: Real Substrate Telemetry Pill */}
         <div className="hidden sm:flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-black/60 border border-white/[0.08] shadow-inner font-mono text-xs text-slate-300">
           <BarChart3 className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="text-white font-semibold">15 Orthogonal Pillars</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-emerald-400 font-semibold">14 Passing</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-amber-400 font-semibold">1 Pending WASM</span>
+          <span className="text-emerald-400 font-semibold">{passedCount} Passing</span>
+          {pendingCount > 0 ? (
+            <>
+              <span className="text-slate-600">|</span>
+              <span className="text-amber-400 font-semibold">{pendingCount} Pending</span>
+            </>
+          ) : (
+            <>
+              <span className="text-slate-600">|</span>
+              <span className="text-cyan-400 font-semibold">100% Verified</span>
+            </>
+          )}
         </div>
 
         {/* Right: Architecture Thesis Link & Calm Runtime Operational Indicator */}

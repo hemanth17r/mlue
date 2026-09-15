@@ -56,12 +56,24 @@ export default function App() {
   const currentRun = runs[selectedRunIdx] || runs[runs.length - 1];
   const benchmarks = currentRun?.benchmarks || [];
 
+  const getCategoryGroup = (b) => {
+    if (!b) return 'Architecture';
+    if (b.id === 'B12' || (b.category && b.category.includes('Portability'))) return 'Verification';
+    if (b.id === 'B13' || (b.category && b.category.includes('RL'))) return 'Performance';
+    return b.category || 'Architecture';
+  };
+
   const categories = ['All', 'Architecture', 'Performance', 'Engineering', 'Physics', 'Verification'];
+
+  const getCategoryCount = (cat) => {
+    if (cat === 'All') return benchmarks.length;
+    return benchmarks.filter((b) => getCategoryGroup(b).toLowerCase() === cat.toLowerCase()).length;
+  };
 
   const filteredBenchmarks =
     selectedCategory === 'All'
       ? benchmarks
-      : benchmarks.filter((b) => b.category.toLowerCase() === selectedCategory.toLowerCase());
+      : benchmarks.filter((b) => getCategoryGroup(b).toLowerCase() === selectedCategory.toLowerCase());
 
   return (
     <div className="min-h-screen beach-radial-bg text-slate-100 flex flex-col justify-between selection:bg-cyan-400 selection:text-black">
@@ -94,7 +106,7 @@ export default function App() {
               <div className="flex items-center space-x-2">
                 <h2 className="text-sm font-bold tracking-tight text-white font-mono uppercase flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_6px_rgba(34,211,238,0.8)]" />
-                  <span>Benchmark Specifications ({benchmarks.length})</span>
+                  <span>Specifications</span>
                 </h2>
               </div>
 
@@ -102,6 +114,7 @@ export default function App() {
               <div className="flex flex-wrap items-center gap-1 bg-black/60 p-1 rounded-2xl sm:rounded-full border border-white/[0.08] shadow-inner font-mono text-xs relative">
                 {categories.map((cat) => {
                   const isActive = selectedCategory === cat;
+                  const count = getCategoryCount(cat);
                   return (
                     <motion.button
                       {...tapScale.pill}
@@ -120,7 +133,7 @@ export default function App() {
                           transition={springJelly}
                         />
                       )}
-                      {cat}
+                      {cat} ({count})
                     </motion.button>
                   );
                 })}

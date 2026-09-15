@@ -94,6 +94,32 @@ We believe in radical engineering honesty:
 
 ---
 
+## 🤖 Connect to AI Agents via MCP (Model Context Protocol)
+
+MLUE provides a single, zero-dependency canonical MCP gateway (`mlue-mcp`) giving AI models (Claude Desktop, Cursor, autonomous agents) native tool access to discover catalog parts, statically lint scenes, run deterministic simulations in microseconds, and apply surgical in-flight entity mutations.
+
+### Quickstart for Claude Desktop (Zero-Install via `uvx`)
+Add this block to your Claude Desktop config (`claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "mlue": {
+      "command": "uvx",
+      "args": ["mlue-mcp"]
+    }
+  }
+}
+```
+*(Or if running from local source: `["python", "C:/path/to/mlue/mcp_server.py"]`)*
+
+### Example Prompts to Try with Claude:
+* *"Search the MLUE catalog for a paddle and ball, assemble a breakout arena, and simulate 60 ticks."*
+* *"Statically lint this MLUE document and auto-repair any coordinate bounds or schema violations."*
+* *"Inspect the live simulation state and mutate the ball velocity vector in real-time."*
+
+---
+
 ## 🚀 Quickstart
 
 ### 1. Installation

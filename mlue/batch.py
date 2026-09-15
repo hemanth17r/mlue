@@ -7,8 +7,8 @@ Adheres strictly to Tier L1 Substrate Decoupling (Standard Library only).
 
 import copy
 from typing import List, Dict, Any, Optional
-from runtime.model import MLUEDocument, Entity, Environment, Velocity
-from runtime.native_core import NativeCore
+from mlue.model import MLUEDocument, Entity, Environment, Velocity
+from mlue.native_core import NativeCore
 
 
 class BatchEnvironmentPool:

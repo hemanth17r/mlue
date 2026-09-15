@@ -11,6 +11,11 @@ import {
   GitBranch, 
   Lock, 
   ShieldAlert,
+  Boxes,
+  Cpu,
+  Bot,
+  Wrench,
+  Terminal,
   ChevronDown, 
   ChevronUp, 
   Award,
@@ -97,6 +102,89 @@ const GROUNDING_DATA = {
   },
 };
 
+const BENCHMARK_ARCHETYPES = {
+  B1: 'Headless Substrate Decoupling',
+  B2: 'Combinatorial DSL Emergence',
+  B3: 'Normalized Coordinate Invariance',
+  B4: 'Symplectic Kinetic Conservation',
+  B5: 'Type-State Boundary Verification',
+  B6: 'Evaluation Step Throughput',
+  B7: 'Steady-State Churn Minimization',
+  B8: 'Bounded Structural Complexity',
+  B9: 'Cryptographic State Determinism',
+  B10: 'Continuous Collision Containment',
+  B11: 'Sublinear Spatial Partitioning',
+  B12: 'Dual-Engine Binary Parity',
+  B13: 'Vectorized Perception Environment',
+  B14: 'Static Self-Healing Diagnostics',
+  B15: 'Microsecond State Manipulation',
+};
+
+const getCategoryTheme = (category = '') => {
+  const cat = (category || '').toLowerCase();
+  if (cat.includes('architecture')) {
+    return {
+      iconContainer: 'bg-cyan-500/10 border-cyan-500/30',
+      iconColor: 'text-cyan-400',
+      idBadge: 'text-cyan-400 bg-cyan-950/60 border-cyan-800/40',
+      archetypeColor: 'text-cyan-400/90',
+      hoverBorder: 'hover:border-cyan-500/40',
+    };
+  }
+  if (cat.includes('performance')) {
+    return {
+      iconContainer: 'bg-amber-500/10 border-amber-500/30',
+      iconColor: 'text-amber-400',
+      idBadge: 'text-amber-400 bg-amber-950/60 border-amber-800/40',
+      archetypeColor: 'text-amber-400/90',
+      hoverBorder: 'hover:border-amber-500/40',
+    };
+  }
+  if (cat.includes('physics')) {
+    return {
+      iconContainer: 'bg-emerald-500/10 border-emerald-500/30',
+      iconColor: 'text-emerald-400',
+      idBadge: 'text-emerald-400 bg-emerald-950/60 border-emerald-800/40',
+      archetypeColor: 'text-emerald-400/90',
+      hoverBorder: 'hover:border-emerald-500/40',
+    };
+  }
+  if (cat.includes('verification')) {
+    return {
+      iconContainer: 'bg-indigo-500/10 border-indigo-500/30',
+      iconColor: 'text-indigo-400',
+      idBadge: 'text-indigo-400 bg-indigo-950/60 border-indigo-800/40',
+      archetypeColor: 'text-indigo-400/90',
+      hoverBorder: 'hover:border-indigo-500/40',
+    };
+  }
+  if (cat.includes('portability') || cat.includes('engineering')) {
+    return {
+      iconContainer: 'bg-purple-500/10 border-purple-500/30',
+      iconColor: 'text-purple-400',
+      idBadge: 'text-purple-400 bg-purple-950/60 border-purple-800/40',
+      archetypeColor: 'text-purple-400/90',
+      hoverBorder: 'hover:border-purple-500/40',
+    };
+  }
+  if (cat.includes('rl') || cat.includes('perception')) {
+    return {
+      iconContainer: 'bg-rose-500/10 border-rose-500/30',
+      iconColor: 'text-rose-400',
+      idBadge: 'text-rose-400 bg-rose-950/60 border-rose-800/40',
+      archetypeColor: 'text-rose-400/90',
+      hoverBorder: 'hover:border-rose-500/40',
+    };
+  }
+  return {
+    iconContainer: 'bg-cyan-500/10 border-cyan-500/30',
+    iconColor: 'text-cyan-400',
+    idBadge: 'text-cyan-400 bg-cyan-950/60 border-cyan-800/40',
+    archetypeColor: 'text-cyan-400/90',
+    hoverBorder: 'hover:border-cyan-500/40',
+  };
+};
+
 export default function BenchmarkCard({ benchmark, allRuns, currentRunIdx, compareRunIdx, compareMode }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -112,11 +200,11 @@ export default function BenchmarkCard({ benchmark, allRuns, currentRunIdx, compa
       case 'B8': return GitBranch;
       case 'B9': return Lock;
       case 'B10': return ShieldAlert;
-      case 'B11': return Compass;
-      case 'B12': return Lock;
-      case 'B13': return Zap;
-      case 'B14': return ShieldCheck;
-      case 'B15': return Sparkles;
+      case 'B11': return Boxes;
+      case 'B12': return Cpu;
+      case 'B13': return Bot;
+      case 'B14': return Wrench;
+      case 'B15': return Terminal;
       default: return Activity;
     }
   };
@@ -544,35 +632,40 @@ export default function BenchmarkCard({ benchmark, allRuns, currentRunIdx, compa
   };
 
   const isPending = benchmark.parity_status === 'PENDING' || (benchmark.id === 'B12' && !benchmark.passed);
+  const catTheme = getCategoryTheme(benchmark.category);
+  const archetype = BENCHMARK_ARCHETYPES[benchmark.id] || benchmark.category;
 
   return (
     <motion.div 
       {...tapScale.card}
-      className="p-5 rounded-2xl bg-slate-900/80 border border-white/[0.08] hover:border-cyan-500/40 shadow-xl transition-colors flex flex-col justify-between"
+      className={`p-5 rounded-2xl bg-slate-900/80 border border-white/[0.08] ${catTheme.hoverBorder} shadow-xl transition-colors flex flex-col justify-between`}
     >
       <div>
-        {/* Header: ID, Category, Name & Status Pill */}
+        {/* 3-Coordinate Identity Architecture & Status Pill */}
         <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex items-center space-x-2.5">
-            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/[0.08] text-cyan-400">
-              <Icon className="w-4 h-4" />
+          <div className="flex items-center space-x-2.5 min-w-0">
+            {/* Coordinate 1: Distinct Icon Anchor in spectral container */}
+            <div className={`p-2 rounded-xl border shrink-0 ${catTheme.iconContainer}`}>
+              <Icon className={`w-4 h-4 ${catTheme.iconColor}`} />
             </div>
-            <div>
+            <div className="min-w-0">
+              {/* Coordinate 2: Primary Entity Title + ID */}
               <div className="flex items-center space-x-1.5 font-mono">
-                <span className="text-[10px] font-bold text-cyan-400 px-1.5 py-0.2 rounded bg-cyan-950/60 border border-cyan-800/40">
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${catTheme.idBadge}`}>
                   {benchmark.id}
                 </span>
-                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-                  {benchmark.category}
-                </span>
+                <h3 className="text-sm font-semibold text-white tracking-tight font-mono truncate">
+                  {benchmark.name}
+                </h3>
               </div>
-              <h3 className="text-sm font-semibold text-white tracking-tight mt-0.5 font-mono">
-                {benchmark.name}
-              </h3>
+              {/* Coordinate 3: Categorical Archetype */}
+              <div className={`text-[11px] font-mono font-medium ${catTheme.archetypeColor} mt-0.5`}>
+                {archetype}
+              </div>
             </div>
           </div>
 
-          <div className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border ${
+          <div className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold flex items-center space-x-1 border shrink-0 ${
             benchmark.passed 
               ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300' 
               : isPending

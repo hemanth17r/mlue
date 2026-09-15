@@ -1,0 +1,35 @@
+{
+  "id": "telemetry_card",
+  "kind": "blueprint",
+  "version": "1.0.0",
+  "tags": ["ui", "blueprint", "recipe", "dashboard", "telemetry"],
+  "summary": "Telemetry Dashboard Card recipe: Elevated surface container, hairline divider, and dynamic status pills",
+  "layers": [
+    {
+      "layer": 1,
+      "name": "State Substrate",
+      "state_variables": {
+        "system": {
+          "status": "HEALTHY",
+          "uptime": "99.98%",
+          "nodes": 42
+        }
+      }
+    },
+    {
+      "layer": 2,
+      "name": "Surface Containers",
+      "parts_required": ["card"]
+    },
+    {
+      "layer": 3,
+      "name": "Dividers & Headings",
+      "parts_required": ["segment"]
+    },
+    {
+      "layer": 4,
+      "name": "Telemetry Cells",
+      "parts_required": ["metric_pill"]
+    }
+  ]
+}

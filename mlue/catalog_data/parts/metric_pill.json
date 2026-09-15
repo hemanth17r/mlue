@@ -1,0 +1,26 @@
+{
+  "id": "metric_pill",
+  "kind": "part",
+  "version": "1.0.0",
+  "tags": ["ui", "telemetry", "metric", "status", "pill"],
+  "summary": "Telemetry key-value row with status node and reactive text template",
+  "defaults": {
+    "id": "metric_status",
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.35, "height": 0.05 },
+    "template": "SYSTEM STATUS: {system.status}"
+  },
+  "entity_template": {
+    "id": "metric_status",
+    "type": "text",
+    "position": { "x": 0.5, "y": 0.5 },
+    "template": "SYSTEM STATUS: {system.status}",
+    "size": {
+      "font_scale": 0.024,
+      "align": "left"
+    },
+    "properties": {
+      "color": "#F8FAFC"
+    }
+  }
+}

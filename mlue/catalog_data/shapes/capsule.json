@@ -1,0 +1,23 @@
+{
+  "id": "capsule",
+  "kind": "shape",
+  "version": "1.0.0",
+  "tags": ["shape", "geometry", "primitive", "capsule", "pill"],
+  "summary": "Normalized capsule pill geometry with clamped aspect-ratio constraints and radial caps",
+  "defaults": {
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.25, "height": 0.08 },
+    "color": "#6366F1",
+    "solid": true
+  },
+  "entity_template": {
+    "type": "box",
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "width": 0.25, "height": 0.08 },
+    "properties": {
+      "color": "#6366F1",
+      "corner_radius": 0.04,
+      "solid": true
+    }
+  }
+}

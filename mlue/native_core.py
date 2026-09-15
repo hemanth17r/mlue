@@ -9,7 +9,7 @@ import sys
 import ctypes
 from pathlib import Path
 from typing import List, Tuple, Optional, Set, FrozenSet
-from runtime.model import (
+from mlue.model import (
     Entity,
     Position,
     Velocity,
@@ -20,7 +20,7 @@ from runtime.model import (
     TextSize,
     Environment,
 )
-from runtime.fixed_point import FixedPointEngine
+from mlue.fixed_point import FixedPointEngine
 
 
 # =========================================================================

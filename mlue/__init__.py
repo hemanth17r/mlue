@@ -29,6 +29,7 @@ from .patch import MLUEPatchEngine, apply_patch
 from .linter import MLUELinter, lint_mlue, LintReport, DiagnosticIssue
 from .spatial import SpatialGrid, BVHTree2D, AABB2D
 from .fixed_point import FixedPointEngine, FixedVector
+from .catalog import Catalog, CatalogError, CatalogValidationError
 from .batch import BatchSimulator
 
 __version__ = "2.5.0"
@@ -71,7 +72,9 @@ __all__ = [
     "AABB2D",
     "FixedPointEngine",
     "FixedVector",
-    "BatchSimulator",
+    "Catalog",
+    "CatalogError",
+    "CatalogValidationError",
     "__version__",
 ]
 

@@ -1,0 +1,24 @@
+{
+  "id": "segment",
+  "kind": "shape",
+  "version": "1.0.0",
+  "tags": ["shape", "geometry", "primitive", "segment", "line", "hairline"],
+  "summary": "Normalized 2D line segment primitive with start/end vector endpoints and optical thickness",
+  "defaults": {
+    "start": { "x": 0.1, "y": 0.5 },
+    "end": { "x": 0.9, "y": 0.5 },
+    "thickness": 0.003,
+    "color": "#334155",
+    "solid": false
+  },
+  "entity_template": {
+    "type": "segment",
+    "start": { "x": 0.1, "y": 0.5 },
+    "end": { "x": 0.9, "y": 0.5 },
+    "thickness": 0.003,
+    "properties": {
+      "color": "#334155",
+      "solid": false
+    }
+  }
+}

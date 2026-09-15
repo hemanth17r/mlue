@@ -49,8 +49,8 @@ dev = [
 ]
 
 [project.scripts]
-mlue = "mlue:main"
-mlue-mcp = "mcp_server:main"
+mlue = "mlue.__main__:main"
+mlue-mcp = "mlue.mcp:main"
 
 [project.urls]
 Homepage = "https://github.com/hemanth17r/mlue"
@@ -59,9 +59,10 @@ Repository = "https://github.com/hemanth17r/mlue.git"
 Tracker = "https://github.com/hemanth17r/mlue/issues"
 LiveDashboard = "https://mlue-ai.vercel.app"
 
-[tool.setuptools]
-py-modules = ["mlue", "mcp_server"]
-
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["runtime*", "bench*"]
+include = ["mlue*"]
+exclude = ["bench*", "tests*", "docs*"]
+
+[tool.setuptools.package-data]
+"mlue" = ["catalog_data/**/*.json", "native/*"]

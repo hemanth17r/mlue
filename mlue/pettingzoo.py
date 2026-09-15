@@ -6,11 +6,11 @@ Adheres strictly to Tier L1 Substrate Decoupling (Standard Library only, optiona
 """
 
 from typing import Dict, Any, List, Optional, Union, Tuple
-from runtime.model import MLUEDocument, SimulationState
-from runtime.loader import load_mlue, validate_and_parse
-from runtime.engine import MLUEEngine
-from runtime.tensor import ObservationSpec, TensorObservationBuffer, HAS_NUMPY
-from runtime.gym import spaces
+from mlue.model import MLUEDocument, SimulationState
+from mlue.loader import load_mlue, validate_and_parse
+from mlue.engine import MLUEEngine
+from mlue.tensor import ObservationSpec, TensorObservationBuffer, HAS_NUMPY
+from mlue.gym import spaces
 
 if HAS_NUMPY:
     import numpy as np

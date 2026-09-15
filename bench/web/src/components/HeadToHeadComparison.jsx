@@ -24,35 +24,30 @@ export default function HeadToHeadComparison() {
       specs: [
         {
           label: 'Application Boilerplate',
-          sublabel: 'Code required to build UI & state',
           icon: <Code className="w-4 h-4 text-cyan-400" />,
           traditional: { value: '450+ Lines', desc: 'React hooks, CSS flexbox, Redux store' },
           mlue: { value: '1 JSON Document', desc: 'Zero code, 100% declarative substrate' }
         },
         {
           label: 'Memory Footprint',
-          sublabel: 'RAM consumption on launch',
           icon: <Trash2 className="w-4 h-4 text-rose-400" />,
           traditional: { value: '300MB – 500MB', desc: 'Heavy Chromium/Electron sandbox' },
           mlue: { value: '< 15 KB Total', desc: 'Direct memory-mapped state' }
         },
         {
           label: 'Evaluation Latency',
-          sublabel: 'Time to evaluate state transition',
           icon: <Zap className="w-4 h-4 text-amber-400" />,
           traditional: { value: '16ms – 50ms', desc: 'Virtual DOM diffing & browser reflow' },
           mlue: { value: '26.8 µs', desc: 'Microsecond mathematical engine' }
         },
         {
           label: 'State Invariant Safety',
-          sublabel: 'Data corruption & crash risk',
           icon: <ShieldAlert className="w-4 h-4 text-indigo-400" />,
           traditional: { value: 'Runtime Exceptions', desc: 'Undefined prop & null pointer errors' },
           mlue: { value: '100% Statically Verified', desc: 'Mathematical reachability enforcement' }
         },
         {
           label: 'AI Agent Control',
-          sublabel: 'How AI agents inspect & mutate',
           icon: <Lock className="w-4 h-4 text-emerald-400" />,
           traditional: { value: 'Fragile DOM Scraping', desc: 'Breaks with every CSS change' },
           mlue: { value: 'Native MCP Protocol', desc: 'Deterministic JSON-RPC tools' }
@@ -66,35 +61,30 @@ export default function HeadToHeadComparison() {
       specs: [
         {
           label: 'Code Complexity',
-          sublabel: 'Code required & logic nesting',
           icon: <Code className="w-4 h-4 text-cyan-400" />,
           traditional: { value: '280+ Lines (CC = 48)', desc: 'Tangled nested if-else webs' },
           mlue: { value: '1 JSON Schema (CC = 21)', desc: 'Clean, modular math blocks' }
         },
         {
           label: 'Simulation Speed',
-          sublabel: 'Physics execution throughput',
           icon: <Zap className="w-4 h-4 text-amber-400" />,
           traditional: { value: '3,500 ticks/s', desc: 'Occasional frame drops under load' },
           mlue: { value: '37,400 ticks/s', desc: '10.7x faster (ultra smooth)' }
         },
         {
           label: 'High-Speed Tunneling',
-          sublabel: 'Ball collision boundary integrity',
           icon: <ShieldAlert className="w-4 h-4 text-indigo-400" />,
           traditional: { value: 'Clips Through Walls', desc: 'Fails under high velocity' },
           mlue: { value: '0.00% Defect Rate', desc: 'Continuous collision detection' }
         },
         {
           label: 'Memory Waste',
-          sublabel: 'Heap allocations during play',
           icon: <Trash2 className="w-4 h-4 text-rose-400" />,
           traditional: { value: '~18 KB/s Churn', desc: 'Garbage collection stutters' },
           mlue: { value: '< 1 Byte/tick', desc: 'Zero steady-state allocation' }
         },
         {
           label: 'Cross-Display Scale',
-          sublabel: 'Viewport adaptation',
           icon: <Maximize2 className="w-4 h-4 text-teal-400" />,
           traditional: { value: 'Breaks on Resize', desc: 'Hardcoded pixel coordinates' },
           mlue: { value: '>16 Decades Precision', desc: 'Normalized [0, 1] across all screens' }
@@ -108,35 +98,30 @@ export default function HeadToHeadComparison() {
       specs: [
         {
           label: 'Energy Conservation',
-          sublabel: 'Kinetic realism & drift',
           icon: <Zap className="w-4 h-4 text-amber-400" />,
           traditional: { value: 'Energy Leaks / Explosions', desc: 'Particles slow down or explode' },
           mlue: { value: '0.0 PPB Drift', desc: 'Symplectic conservation across 1,000 hits' }
         },
         {
           label: 'Spatial Acceleration',
-          sublabel: 'Collision pair scaling',
           icon: <Code className="w-4 h-4 text-cyan-400" />,
           traditional: { value: 'O(N²) Quadratic', desc: 'Checks all pairs every frame' },
           mlue: { value: 'O(N log N) Dynamic', desc: '96.8% broadphase cull efficiency' }
         },
         {
           label: 'Step Latency',
-          sublabel: 'Per-tick evaluation time',
           icon: <Sparkles className="w-4 h-4 text-amber-400" />,
           traditional: { value: '8.5ms / step', desc: 'Tied to display driver & OS' },
           mlue: { value: '13.1 µs / step', desc: 'Sub-microsecond mathematical engine' }
         },
         {
           label: 'RL Agent Training',
-          sublabel: 'Vectorized stepping speed',
           icon: <Lock className="w-4 h-4 text-emerald-400" />,
           traditional: { value: '350 – 900 steps/s', desc: 'Heavy Python IPC bottleneck' },
           mlue: { value: '4,673 steps/s', desc: 'Preallocated contiguous tensor buffers' }
         },
         {
           label: 'Determinism Parity',
-          sublabel: 'State match across platforms',
           icon: <ShieldAlert className="w-4 h-4 text-indigo-400" />,
           traditional: { value: 'Floating-Point Drift', desc: 'Deviates across OS and GPU' },
           mlue: { value: '100% Bit-Exact SHA-256', desc: 'Cryptographic match on 50k steps' }
@@ -159,9 +144,6 @@ export default function HeadToHeadComparison() {
               Substrate vs. Traditional Stack
             </h3>
           </div>
-          <p className="text-xs text-slate-400 font-sans mt-0.5">
-            Empirical comparison across applications, interactive UIs, physics simulations, and state trees.
-          </p>
         </div>
 
         {/* Tab Pills - Single Clean Non-Wrapping Row */}
@@ -202,7 +184,7 @@ export default function HeadToHeadComparison() {
             <div className="grid grid-cols-12 bg-black/40 border-b border-white/[0.06] p-4 text-xs font-mono font-bold tracking-wider">
               <div className="col-span-5 text-left text-rose-300 flex items-center space-x-2">
                 <span className="w-2 h-2 rounded-full bg-rose-400" />
-                <span className="truncate">CONVENTIONAL WEB STACK (Human Code)</span>
+                <span className="truncate">CONVENTIONAL WEB STACK</span>
               </div>
               <div className="col-span-2 text-center text-slate-500 uppercase tracking-widest text-[10px]">
                 METRIC
@@ -264,11 +246,8 @@ export default function HeadToHeadComparison() {
           </div>
           <div>
             <p className="text-xs text-slate-300 font-mono leading-relaxed">
-              <strong className="text-amber-400 uppercase tracking-wider mr-1.5 font-bold">Demonstrated Findings:</strong>
+              <strong className="text-amber-400 uppercase tracking-wider mr-1.5 font-bold">Verdict:</strong>
               {activeGame.verdict}
-            </p>
-            <p className="text-[10px] text-slate-500 font-sans mt-0.5">
-              Workload comparison evaluates deterministic runtime evaluation against equivalent declarative browser components.
             </p>
           </div>
         </div>

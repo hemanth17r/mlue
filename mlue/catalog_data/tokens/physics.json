@@ -1,0 +1,26 @@
+{
+  "id": "physics",
+  "kind": "token",
+  "version": "1.0.0",
+  "tags": ["token", "physics", "constants", "restitution", "friction"],
+  "summary": "Standard restitution, damping, and simulation clock constants for 2D kinematics",
+  "data": {
+    "dt_standard": 0.016667,
+    "restitution": {
+      "elastic": 1.0,
+      "bouncy": 0.85,
+      "damped": 0.5,
+      "inelastic": 0.0
+    },
+    "friction": {
+      "none": 0.0,
+      "low": 0.05,
+      "medium": 0.2,
+      "high": 0.6
+    },
+    "clamping": {
+      "min_coordinate": 0.0,
+      "max_coordinate": 1.0
+    }
+  }
+}

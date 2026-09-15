@@ -136,14 +136,14 @@ def load_mlue(source: Union[str, Path, Dict[str, Any]]) -> MLUEDocument:
         path = Path(source)
         if path.exists() and path.is_file():
             if path.suffix.lower() == ".mlueb":
-                from runtime.binary import load_mlueb
+                from mlue.binary import load_mlueb
                 return load_mlueb(path)
 
             with open(path, "rb") as f:
                 header_bytes = f.read(4)
                 if header_bytes == b"MLUE":
                     f.seek(0)
-                    from runtime.binary import decode_mlueb
+                    from mlue.binary import decode_mlueb
                     return decode_mlueb(f.read())
 
             with open(path, "r", encoding="utf-8") as f:

@@ -1,0 +1,22 @@
+{
+  "id": "circle",
+  "kind": "shape",
+  "version": "1.0.0",
+  "tags": ["shape", "geometry", "primitive", "circle", "radial"],
+  "summary": "Normalized radial circle primitive with continuous coordinates and radial collision bounds",
+  "defaults": {
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "radius": 0.03 },
+    "color": "#10B981",
+    "solid": true
+  },
+  "entity_template": {
+    "type": "circle",
+    "position": { "x": 0.5, "y": 0.5 },
+    "size": { "radius": 0.03 },
+    "properties": {
+      "color": "#10B981",
+      "solid": true
+    }
+  }
+}
